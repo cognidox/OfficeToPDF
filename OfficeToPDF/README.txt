@@ -14,6 +14,18 @@ project page:
 http://www.cognidox.com/opensource/officetopdf
 
 
+Supported file types:
+---------------------
+
+The following file types can be converted:
+
+ * Word       - .doc, .dot,  .docx, .dotx, .docm, .dotm
+ * Excel      - .xls, .xlsx, .xlsm
+ * Powerpoint - .ppt, .pptx, .pptm
+ * Visio      - .vsd
+ * Publisher  - .pub
+
+
 Usage:
 ------
 
