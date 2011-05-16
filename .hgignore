@@ -1,9 +1,6 @@
 syntax: glob
-OfficeToPDF.sln
 OfficeToPDF.suo
-OfficeToPDF/OfficeToPDF.csproj
 OfficeToPDF/OfficeToPDF.csproj.user
-OfficeToPDF/Properties/AssemblyInfo.cs
 OfficeToPDF/bin/Release/OfficeToPDF.exe
 OfficeToPDF/bin/Release/OfficeToPDF.pdb
 OfficeToPDF/bin/Release/OfficeToPDF.vshost.exe
