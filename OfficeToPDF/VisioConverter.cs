@@ -34,6 +34,7 @@ namespace OfficeToPDF
     {
         public static new Boolean Convert(String inputFile, String outputFile)
         {
+            MessageFilter.Register();
             Microsoft.Office.Interop.Visio.Application app;
             String tmpFile = null;
             try
@@ -61,6 +62,7 @@ namespace OfficeToPDF
                     System.IO.File.Delete(tmpFile);
                 }
                 app = null;
+                MessageFilter.Revoke();
             }
         }
     }

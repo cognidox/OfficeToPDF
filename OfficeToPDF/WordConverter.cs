@@ -42,10 +42,11 @@ namespace OfficeToPDF
         {
             try
             {
+                MessageFilter.Register();
                 Microsoft.Office.Interop.Word.Application word = new Microsoft.Office.Interop.Word.Application();
                 object oMissing = System.Reflection.Missing.Value;
                 Object filename = (Object)inputFile;
-                Document doc = word.Documents.Open(ref filename, ref oMissing,
+                Document doc = word.Documents.OpenNoRepairDialog(ref filename, ref oMissing,
                     ref oMissing, ref oMissing, ref oMissing, ref oMissing, ref oMissing,
                     ref oMissing, ref oMissing, ref oMissing, ref oMissing, ref oMissing,
                     ref oMissing, ref oMissing, ref oMissing, ref oMissing);
@@ -71,6 +72,10 @@ namespace OfficeToPDF
             {
                 Console.WriteLine(e.Message);
                 return false;
+            }
+            finally
+            {
+                MessageFilter.Revoke();
             }
         }
     }

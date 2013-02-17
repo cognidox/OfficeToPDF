@@ -28,6 +28,7 @@ namespace OfficeToPDF
 {
     class Program
     {
+        [STAThread]
         static void Main(string[] args)
         {
             // Need to error here, as we need input and output files as the
