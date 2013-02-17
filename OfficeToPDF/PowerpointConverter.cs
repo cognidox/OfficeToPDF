@@ -34,12 +34,13 @@ namespace OfficeToPDF
     {
         public static new Boolean Convert(String inputFile, String outputFile)
         {
+            MessageFilter.Register();
             Microsoft.Office.Interop.PowerPoint.Application app;
             try
             {
                 app = new Microsoft.Office.Interop.PowerPoint.Application();
                 app.Visible = MSCore.MsoTriState.msoTrue;
-                app.Presentations.Open(inputFile, MSCore.MsoTriState.msoFalse, MSCore.MsoTriState.msoTrue,MSCore.MsoTriState.msoTrue);
+                app.Presentations.Open2007(inputFile, MSCore.MsoTriState.msoFalse, MSCore.MsoTriState.msoTrue,MSCore.MsoTriState.msoTrue,MSCore.MsoTriState.msoCTrue);
                 app.ActivePresentation.SaveAs(outputFile, Microsoft.Office.Interop.PowerPoint.PpSaveAsFileType.ppSaveAsPDF, MSCore.MsoTriState.msoCTrue);
                 app.ActivePresentation.Close();
                 app.Quit();
@@ -53,6 +54,7 @@ namespace OfficeToPDF
             finally
             {
                 app = null;
+                MessageFilter.Revoke();
             }
         }
     }

@@ -33,6 +33,7 @@ namespace OfficeToPDF
     {
         public static new Boolean Convert(String inputFile, String outputFile)
         {
+            MessageFilter.Register();
             Microsoft.Office.Interop.Excel.Application app;
             String tmpFile = null;
             object oMissing = System.Reflection.Missing.Value;
@@ -68,6 +69,7 @@ namespace OfficeToPDF
                     System.IO.File.Delete(tmpFile);
                 }
                 app = null;
+                MessageFilter.Revoke();
             }
         }
     }
