@@ -18,6 +18,7 @@
  */
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -32,21 +33,25 @@ namespace OfficeToPDF
     /// </summary>
     class PublisherConverter: Converter
     {
-        public static new Boolean Convert(String inputFile, String outputFile)
+        public static new Boolean Convert(String inputFile, String outputFile, Hashtable options)
         {
-            Microsoft.Office.Interop.Publisher.Application app;
+            Microsoft.Office.Interop.Publisher.Application app = null;
             String tmpFile = null;
             try
             {
+                Boolean nowrite = (Boolean)options["readonly"];
                 app = new Microsoft.Office.Interop.Publisher.Application();
-                app.Open(inputFile, false, false, PbSaveOptions.pbDoNotSaveChanges);
+                if ((Boolean)options["hidden"])
+                {
+                    app.ActiveWindow.Visible = false;
+                }
+                app.Open(inputFile, nowrite, false, PbSaveOptions.pbDoNotSaveChanges);
 
                 // Try and avoid dialogs about versions
                 tmpFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".pub";
                 app.ActiveDocument.SaveAs(tmpFile, PbFileFormat.pbFilePublication, false);
                 app.ActiveDocument.ExportAsFixedFormat(PbFixedFormatType.pbFixedFormatTypePDF, outputFile, PbFixedFormatIntent.pbIntentStandard, true);
                 app.ActiveDocument.Close();
-                ((Microsoft.Office.Interop.Publisher._Application)app).Quit();
                 return true;
             }
             catch (Exception e)
@@ -60,7 +65,11 @@ namespace OfficeToPDF
                 {
                     System.IO.File.Delete(tmpFile);
                 }
-                app = null;
+                if (app != null)
+                {
+                    ((Microsoft.Office.Interop.Publisher._Application)app).Quit();
+                    app = null;
+                }
             }
         }
     }
