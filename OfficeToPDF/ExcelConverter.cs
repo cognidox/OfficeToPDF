@@ -18,6 +18,7 @@
  */
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -31,30 +32,46 @@ namespace OfficeToPDF
     /// </summary>
     class ExcelConverter: Converter
     {
-        public static new Boolean Convert(String inputFile, String outputFile)
+        public static new Boolean Convert(String inputFile, String outputFile, Hashtable options)
         {
             MessageFilter.Register();
-            Microsoft.Office.Interop.Excel.Application app;
+            Microsoft.Office.Interop.Excel.Application app = null;
             String tmpFile = null;
             object oMissing = System.Reflection.Missing.Value;
+            Boolean nowrite = (Boolean)options["readonly"];
             try
             {
                 app = new Microsoft.Office.Interop.Excel.Application();
                 app.Visible = true;
+                if ((Boolean)options["hidden"])
+                {
+                    // Try and at least minimise it
+                    app.WindowState = XlWindowState.xlMinimized;
+                    app.Visible = false;
+                }
                 Microsoft.Office.Interop.Excel.Workbooks workbooks = null;
                 Microsoft.Office.Interop.Excel.Workbook workbook = null;
-
                 workbooks = app.Workbooks;
-                workbook = workbooks.Open(inputFile, true, true, oMissing, oMissing, oMissing, true, oMissing, oMissing, oMissing, oMissing, oMissing, false, oMissing, oMissing);
-                
-                // Try and avoid xls files raising a dialog
-                tmpFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".xls" + (workbook.HasVBProject ? "m" : "x");
-                workbook.SaveAs(tmpFile, Microsoft.Office.Interop.Excel.XlFileFormat.xlOpenXMLWorkbook, Type.Missing, Type.Missing, Type.Missing, false, Microsoft.Office.Interop.Excel.XlSaveAsAccessMode.xlNoChange, Type.Missing, false, Type.Missing, Type.Missing, Type.Missing);
+                workbook = workbooks.Open(inputFile, true, nowrite, oMissing, oMissing, oMissing, true, oMissing, oMissing, oMissing, oMissing, oMissing, false, oMissing, oMissing);
 
+                // Try and avoid xls files raising a dialog
+                tmpFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".xls";
+                XlFileFormat fmt = XlFileFormat.xlOpenXMLWorkbook;
+                if (workbook.HasVBProject)
+                {
+                    fmt = XlFileFormat.xlOpenXMLWorkbookMacroEnabled;
+                    tmpFile += "m";
+                }
+                else
+                {
+                    tmpFile += "x";
+                }
+                workbook.Windows[1].Visible = (Boolean)options["hidden"] ? false : true;
+                app.Windows[1].Visible = (Boolean)options["hidden"] ? false : true;
+                workbook.SaveAs(tmpFile, fmt, Type.Missing, Type.Missing, Type.Missing, false, Microsoft.Office.Interop.Excel.XlSaveAsAccessMode.xlNoChange, Type.Missing, false, Type.Missing, Type.Missing, Type.Missing);
                 workbook.ExportAsFixedFormat(Microsoft.Office.Interop.Excel.XlFixedFormatType.xlTypePDF,
-                outputFile, Microsoft.Office.Interop.Excel.XlFixedFormatQuality.xlQualityStandard,Type.Missing, false, Type.Missing, Type.Missing, false, Type.Missing);
+                outputFile, Microsoft.Office.Interop.Excel.XlFixedFormatQuality.xlQualityStandard, Type.Missing, false, Type.Missing, Type.Missing, false, Type.Missing);
                 workbooks.Close();
-                app.Quit();
                 return true;
             }
             catch (Exception e)
@@ -68,8 +85,12 @@ namespace OfficeToPDF
                 {
                     System.IO.File.Delete(tmpFile);
                 }
-                app = null;
-                MessageFilter.Revoke();
+                if (app != null)
+                {
+                    app.Quit();
+                    app = null;
+                }
+                 MessageFilter.Revoke();
             }
         }
     }

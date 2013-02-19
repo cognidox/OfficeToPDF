@@ -32,4 +32,12 @@ Usage:
 In order to use the tool, simply call officetopdf.exe with two arguments -
 the source Office document and the destination PDF document. e.g.
 
-officetopdf.exe  somefile.docx  somefile.pdf
+officetopdf.exe somefile.docx somefile.pdf
+
+Switches:
+---------
+
+The following optional switches can be used:
+
+  /readonly - attempts to open the source documet in read-only mode
+  /hidden   - attempts to minimise the Office application when converting

@@ -18,6 +18,7 @@
  */
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -32,18 +33,24 @@ namespace OfficeToPDF
     /// </summary>
     class PowerpointConverter: Converter
     {
-        public static new Boolean Convert(String inputFile, String outputFile)
+        public static new Boolean Convert(String inputFile, String outputFile, Hashtable options)
         {
             MessageFilter.Register();
-            Microsoft.Office.Interop.PowerPoint.Application app;
+            Microsoft.Office.Interop.PowerPoint.Application app = null;
             try
             {
+                MSCore.MsoTriState nowrite = (Boolean)options["readonly"] ? MSCore.MsoTriState.msoTrue : MSCore.MsoTriState.msoFalse;
                 app = new Microsoft.Office.Interop.PowerPoint.Application();
+                if ((Boolean)options["hidden"])
+                {
+                    // Can't really hide the window, so at least minimise it
+                    app.WindowState = PpWindowState.ppWindowMinimized;
+                }
+
                 app.Visible = MSCore.MsoTriState.msoTrue;
-                app.Presentations.Open2007(inputFile, MSCore.MsoTriState.msoFalse, MSCore.MsoTriState.msoTrue,MSCore.MsoTriState.msoTrue,MSCore.MsoTriState.msoCTrue);
-                app.ActivePresentation.SaveAs(outputFile, Microsoft.Office.Interop.PowerPoint.PpSaveAsFileType.ppSaveAsPDF, MSCore.MsoTriState.msoCTrue);
+                app.Presentations.Open2007(inputFile, nowrite, MSCore.MsoTriState.msoTrue, MSCore.MsoTriState.msoTrue, MSCore.MsoTriState.msoTrue);
+                app.ActivePresentation.SaveAs(outputFile, Microsoft.Office.Interop.PowerPoint.PpSaveAsFileType.ppSaveAsPDF, MSCore.MsoTriState.msoTrue);
                 app.ActivePresentation.Close();
-                app.Quit();
                 return true;
             }
             catch (Exception e)
@@ -53,7 +60,11 @@ namespace OfficeToPDF
             }
             finally
             {
-                app = null;
+                if (app != null)
+                {
+                    app.Quit();
+                    app = null;
+                }
                 MessageFilter.Revoke();
             }
         }

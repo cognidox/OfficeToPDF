@@ -18,6 +18,7 @@
  */
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -38,19 +39,27 @@ namespace OfficeToPDF
         /// <param name="inputFile">Full path of the input Word file</param>
         /// <param name="outputFile">Full path of the output PDF</param>
         /// <returns></returns>
-        public static new Boolean Convert(String inputFile, String outputFile)
+        public static new Boolean Convert(String inputFile, String outputFile, Hashtable options)
         {
+            MessageFilter.Register();
+            Microsoft.Office.Interop.Word.Application word = null;
+            object oMissing = System.Reflection.Missing.Value;
             try
             {
-                MessageFilter.Register();
-                Microsoft.Office.Interop.Word.Application word = new Microsoft.Office.Interop.Word.Application();
-                object oMissing = System.Reflection.Missing.Value;
+                word = new Microsoft.Office.Interop.Word.Application();
                 Object filename = (Object)inputFile;
-                Document doc = word.Documents.OpenNoRepairDialog(ref filename, ref oMissing,
-                    ref oMissing, ref oMissing, ref oMissing, ref oMissing, ref oMissing,
-                    ref oMissing, ref oMissing, ref oMissing, ref oMissing, ref oMissing,
-                    ref oMissing, ref oMissing, ref oMissing, ref oMissing);
+                Boolean visible = !(Boolean)options["hidden"];
+                Boolean nowrite = (Boolean)options["readonly"];
+                Document doc = word.Documents.Open(ref filename, ref oMissing,
+                        nowrite, ref oMissing, ref oMissing, ref oMissing, ref oMissing,
+                        ref oMissing, ref oMissing, ref oMissing, ref oMissing, visible,
+                        true, ref oMissing, ref oMissing, ref oMissing);
                 doc.Activate();
+                if ((Boolean)options["hidden"])
+               {
+                    word.ActiveWindow.Visible = false;
+                    word.ActiveWindow.WindowState = WdWindowState.wdWindowStateMinimize;
+                }
                 object outputFileName = (Object)outputFile;
                 object fileFormat = WdSaveFormat.wdFormatPDF;
 
@@ -63,9 +72,6 @@ namespace OfficeToPDF
 
                 ((_Document)doc).Close(ref saveChanges, ref oMissing, ref oMissing);
                 doc = null;
-                ((_Application)word).Quit(ref oMissing, ref oMissing, ref oMissing);
-                word = null;
-
                 return true;
             }
             catch (Exception e)
@@ -75,6 +81,11 @@ namespace OfficeToPDF
             }
             finally
             {
+                if (word != null)
+                {
+                    ((_Application)word).Quit(ref oMissing, ref oMissing, ref oMissing);
+                    word = null;
+                }
                 MessageFilter.Revoke();
             }
         }

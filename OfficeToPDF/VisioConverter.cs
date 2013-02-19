@@ -18,6 +18,7 @@
  */
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -32,22 +33,31 @@ namespace OfficeToPDF
     /// </summary>
     class VisioConverter: Converter
     {
-        public static new Boolean Convert(String inputFile, String outputFile)
+        public static new Boolean Convert(String inputFile, String outputFile, Hashtable options)
         {
             MessageFilter.Register();
-            Microsoft.Office.Interop.Visio.Application app;
+            Microsoft.Office.Interop.Visio.InvisibleApp app = null;
             String tmpFile = null;
             try
             {
-                app = new Microsoft.Office.Interop.Visio.Application();
-                app.Documents.Open(inputFile);
+                app = new Microsoft.Office.Interop.Visio.InvisibleApp();
+                short flags = 0;
+                if ((Boolean)options["readonly"])
+                {
+                    flags += 2;
+                }
+                if (!(Boolean)options["hidden"])
+                {
+                    app.Visible = true;
+                }
+
+                app.Documents.OpenEx(inputFile, flags);
 
                 // Try and avoid dialogs about versions
                 tmpFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".vsd";
                 app.ActiveDocument.SaveAs(tmpFile);
                 app.ActiveDocument.ExportAsFixedFormat(VisFixedFormatTypes.visFixedFormatPDF, outputFile, VisDocExIntent.visDocExIntentScreen, VisPrintOutRange.visPrintAll);
                 app.ActiveDocument.Close();
-                app.Quit();
                 return true;
             }
             catch (Exception e)
@@ -61,7 +71,11 @@ namespace OfficeToPDF
                 {
                     System.IO.File.Delete(tmpFile);
                 }
-                app = null;
+                if (app != null)
+                {
+                    app.Quit();
+                    app = null;
+                }
                 MessageFilter.Revoke();
             }
         }

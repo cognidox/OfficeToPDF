@@ -18,6 +18,7 @@
  */
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -36,7 +37,7 @@ namespace OfficeToPDF
         /// <param name="inputFile">Full path of the input file</param>
         /// <param name="outputFile">Full path of the file to output PDF</param>
         /// <returns></returns>
-        public static Boolean Convert(String inputFile, String outputFile)
+        public static Boolean Convert(String inputFile, String outputFile, Hashtable options)
         {
             return false;
         }

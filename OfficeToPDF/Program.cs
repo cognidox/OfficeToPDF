@@ -18,6 +18,7 @@
  */
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -31,18 +32,54 @@ namespace OfficeToPDF
         [STAThread]
         static void Main(string[] args)
         {
+            string[] files = new string[2];
+            int filesSeen = 0;
+            Hashtable options = new Hashtable();
+
+            // Loop through the input, grabbing switches off the command line
+            options["hidden"] = false;
+            options["readonly"] = false;
+            Regex switches = new Regex(@"^/(hidden|readonly|help|\?)$", RegexOptions.IgnoreCase);
+            foreach (string item in args)
+            {
+                // see if this starts with a /
+                Match m = Regex.Match(item, @"^/");
+                if (m.Success)
+                {
+                    // This is an option
+                    Match itemMatch = switches.Match(item);
+                    if (itemMatch.Success)
+                    {
+                        if (itemMatch.Groups[1].Value.ToLower().Equals("help") ||
+                            itemMatch.Groups[1].Value.Equals("?"))
+                        {
+                            showHelp();
+                        }
+                        options[itemMatch.Groups[1].Value.ToLower()] = true;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Unknown option: {0}", item);
+                        Environment.Exit(1);
+                    }
+                }
+                else if (filesSeen < 2)
+                {
+                    files[filesSeen++] = item;
+                }
+            }
+
             // Need to error here, as we need input and output files as the
             // arguments to this script
-            if (args.Length != 2)
+            if (filesSeen != 2)
             {
-                Console.WriteLine("Please provide the input and output files as arguments");
-                Environment.Exit(1);
+                showHelp();
             }
 
             // Make sure the input file looks like something we can handle (i.e. has an office
             // filename extension)
             Regex fileMatch = new Regex(@"\.(((ppt|do[ct]|xls)[xm]?)|vsd|pub)$", RegexOptions.IgnoreCase);
-            if (fileMatch.Matches(args[0]).Count != 1)
+            if (fileMatch.Matches(files[0]).Count != 1)
             {
                 Console.WriteLine("Input file can not be handled. Must be Word, PowerPoint, Excel, Publisher or Visio");
                 Environment.Exit(1);
@@ -52,7 +89,7 @@ namespace OfficeToPDF
             String outputFile;
 
             // Make sure the input file exists and is readable
-            FileInfo info = new FileInfo(args[0]);
+            FileInfo info = new FileInfo(files[0]);
             if (info == null || !info.Exists)
             {
                 Console.WriteLine("Input file doesn't exist");
@@ -61,7 +98,7 @@ namespace OfficeToPDF
             inputFile = info.FullName;
 
             // Make sure the destination location exists
-            FileInfo outputInfo = new FileInfo(args[1]);
+            FileInfo outputInfo = new FileInfo(files[1]);
             if (outputInfo != null && outputInfo.Exists)
             {
                 System.IO.File.Delete(outputInfo.FullName);
@@ -88,27 +125,27 @@ namespace OfficeToPDF
                     case "docm":
                     case "dotm":
                         // Word
-                        converted = WordConverter.Convert(inputFile, outputFile);
+                        converted = WordConverter.Convert(inputFile, outputFile, options);
                         break;
                     case "xls":
                     case "xlsx":
                     case "xlsm":
                         // Excel
-                        converted = ExcelConverter.Convert(inputFile, outputFile);
+                        converted = ExcelConverter.Convert(inputFile, outputFile, options);
                         break;
                     case "ppt":
                     case "pptx":
                     case "pptm":
                         // Powerpoint
-                        converted = PowerpointConverter.Convert(inputFile, outputFile);
+                        converted = PowerpointConverter.Convert(inputFile, outputFile, options);
                         break;
                     case "vsd":
                         // Visio
-                        converted = VisioConverter.Convert(inputFile, outputFile);
+                        converted = VisioConverter.Convert(inputFile, outputFile, options);
                         break;
                     case "pub":
                         // Publisher
-                        converted = PublisherConverter.Convert(inputFile, outputFile);
+                        converted = PublisherConverter.Convert(inputFile, outputFile, options);
                         break;
                 }
             }
@@ -119,5 +156,19 @@ namespace OfficeToPDF
             }
             Environment.Exit(0);
         }
-    }
+
+        static void showHelp()
+        {
+            Console.Write(@"Converts Office documents to PDF from the command line.
+Handles Office files:
+  doc, dot, docx, dotx, docm, dotm, ppt, pptx, pptm, xls, xlsx, xlsm, vsd, pub
+
+OfficeToPDF.exe [/hidden] [/readonly] input output
+
+  /hidden     Attempt to hide the Office application window when converting
+  /readonly   Load the input file in read only mode where possible
+");
+            Environment.Exit(0);
+        }
+    } 
 }
