@@ -34,7 +34,6 @@ namespace OfficeToPDF
     {
         public static new Boolean Convert(String inputFile, String outputFile, Hashtable options)
         {
-            MessageFilter.Register();
             Microsoft.Office.Interop.Excel.Application app = null;
             String tmpFile = null;
             object oMissing = System.Reflection.Missing.Value;
@@ -90,7 +89,6 @@ namespace OfficeToPDF
                     app.Quit();
                     app = null;
                 }
-                 MessageFilter.Revoke();
             }
         }
     }

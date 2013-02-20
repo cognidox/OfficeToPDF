@@ -41,7 +41,6 @@ namespace OfficeToPDF
         /// <returns></returns>
         public static new Boolean Convert(String inputFile, String outputFile, Hashtable options)
         {
-            MessageFilter.Register();
             Microsoft.Office.Interop.Word.Application word = null;
             object oMissing = System.Reflection.Missing.Value;
             try
@@ -86,7 +85,6 @@ namespace OfficeToPDF
                     ((_Application)word).Quit(ref oMissing, ref oMissing, ref oMissing);
                     word = null;
                 }
-                MessageFilter.Revoke();
             }
         }
     }
