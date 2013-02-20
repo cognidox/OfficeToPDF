@@ -35,7 +35,6 @@ namespace OfficeToPDF
     {
         public static new Boolean Convert(String inputFile, String outputFile, Hashtable options)
         {
-            MessageFilter.Register();
             Microsoft.Office.Interop.PowerPoint.Application app = null;
             try
             {
@@ -65,7 +64,6 @@ namespace OfficeToPDF
                     app.Quit();
                     app = null;
                 }
-                MessageFilter.Revoke();
             }
         }
     }
