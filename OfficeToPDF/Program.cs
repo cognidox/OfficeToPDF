@@ -39,7 +39,8 @@ namespace OfficeToPDF
             // Loop through the input, grabbing switches off the command line
             options["hidden"] = false;
             options["readonly"] = false;
-            Regex switches = new Regex(@"^/(hidden|readonly|help|\?)$", RegexOptions.IgnoreCase);
+            options["bookmarks"] = false;
+            Regex switches = new Regex(@"^/(hidden|readonly|bookmarks|help|\?)$", RegexOptions.IgnoreCase);
             foreach (string item in args)
             {
                 // see if this starts with a /
@@ -163,10 +164,15 @@ namespace OfficeToPDF
 Handles Office files:
   doc, dot, docx, dotx, docm, dotm, ppt, pptx, pptm, xls, xlsx, xlsm, vsd, pub
 
-OfficeToPDF.exe [/hidden] [/readonly] input output
+OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file output_file
 
+  /bookmarks  Create bookmarks in the PDF when they are supported by the
+              Office application
   /hidden     Attempt to hide the Office application window when converting
   /readonly   Load the input file in read only mode where possible
+
+  input_file  The filename of the Office document to convert
+  output_file The filename of the PDF to create
 ");
             Environment.Exit(0);
         }

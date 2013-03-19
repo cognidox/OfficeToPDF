@@ -49,23 +49,23 @@ namespace OfficeToPDF
                 Object filename = (Object)inputFile;
                 Boolean visible = !(Boolean)options["hidden"];
                 Boolean nowrite = (Boolean)options["readonly"];
+                WdExportCreateBookmarks bookmarks = (Boolean)options["bookmarks"] ? 
+                    WdExportCreateBookmarks.wdExportCreateHeadingBookmarks : 
+                    WdExportCreateBookmarks.wdExportCreateNoBookmarks;
                 Document doc = word.Documents.Open(ref filename, ref oMissing,
                         nowrite, ref oMissing, ref oMissing, ref oMissing, ref oMissing,
                         ref oMissing, ref oMissing, ref oMissing, ref oMissing, visible,
                         true, ref oMissing, ref oMissing, ref oMissing);
                 doc.Activate();
                 if ((Boolean)options["hidden"])
-               {
+                {
                     word.ActiveWindow.Visible = false;
                     word.ActiveWindow.WindowState = WdWindowState.wdWindowStateMinimize;
                 }
-                object outputFileName = (Object)outputFile;
-                object fileFormat = WdSaveFormat.wdFormatPDF;
 
-                doc.SaveAs(ref outputFileName, ref fileFormat, ref oMissing, ref oMissing,
-                    ref oMissing, ref oMissing, ref oMissing, ref oMissing,
-                    ref oMissing, ref oMissing, ref oMissing, ref oMissing,
-                    ref oMissing, ref oMissing, ref oMissing, ref oMissing);
+                doc.ExportAsFixedFormat(outputFile, WdExportFormat.wdExportFormatPDF, false, 
+                    WdExportOptimizeFor.wdExportOptimizeForOnScreen, WdExportRange.wdExportAllDocument, 
+                    1, 1, WdExportItem.wdExportDocumentContent, false, true, bookmarks);
 
                 object saveChanges = WdSaveOptions.wdDoNotSaveChanges;
 
