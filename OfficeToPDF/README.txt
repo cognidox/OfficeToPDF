@@ -39,5 +39,6 @@ Switches:
 
 The following optional switches can be used:
 
-  /readonly - attempts to open the source documet in read-only mode
-  /hidden   - attempts to minimise the Office application when converting
+  /bookmarks - create bookmarks in the PDF when they are supported by the Office application
+  /readonly  - attempts to open the source documet in read-only mode
+  /hidden    - attempts to minimise the Office application when converting
