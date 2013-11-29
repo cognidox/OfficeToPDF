@@ -46,6 +46,9 @@ namespace OfficeToPDF
                     app.WindowState = PpWindowState.ppWindowMinimized;
                 }
 
+                app.FeatureInstall = MSCore.MsoFeatureInstall.msoFeatureInstallNone;
+                app.DisplayDocumentInformationPanel = false;
+                app.DisplayAlerts = PpAlertLevel.ppAlertsNone;
                 app.Visible = MSCore.MsoTriState.msoTrue;
                 app.Presentations.Open2007(inputFile, nowrite, MSCore.MsoTriState.msoTrue, MSCore.MsoTriState.msoTrue, MSCore.MsoTriState.msoTrue);
                 app.ActivePresentation.SaveAs(outputFile, Microsoft.Office.Interop.PowerPoint.PpSaveAsFileType.ppSaveAsPDF, MSCore.MsoTriState.msoTrue);

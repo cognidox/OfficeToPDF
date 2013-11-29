@@ -46,6 +46,10 @@ namespace OfficeToPDF
             try
             {
                 word = new Microsoft.Office.Interop.Word.Application();
+                word.DisplayAlerts = Microsoft.Office.Interop.Word.WdAlertLevel.wdAlertsNone;
+                word.DisplayRecentFiles = false;
+                word.DisplayDocumentInformationPanel = false;
+                word.FeatureInstall = Microsoft.Office.Core.MsoFeatureInstall.msoFeatureInstallNone;
                 Object filename = (Object)inputFile;
                 Boolean visible = !(Boolean)options["hidden"];
                 Boolean nowrite = (Boolean)options["readonly"];
