@@ -42,6 +42,10 @@ namespace OfficeToPDF
             {
                 app = new Microsoft.Office.Interop.Excel.Application();
                 app.Visible = true;
+                app.DisplayAlerts = false;
+                app.AskToUpdateLinks = false;
+                app.AlertBeforeOverwriting = false;
+                app.FeatureInstall = Microsoft.Office.Core.MsoFeatureInstall.msoFeatureInstallNone;
                 if ((Boolean)options["hidden"])
                 {
                     // Try and at least minimise it
