@@ -24,6 +24,7 @@ The following file types can be converted:
  * Powerpoint - .ppt, .pptx, .pptm
  * Visio      - .vsd
  * Publisher  - .pub
+ * Outlook    - .msg
 
 
 Usage:
