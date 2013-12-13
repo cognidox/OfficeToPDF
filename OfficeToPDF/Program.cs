@@ -79,10 +79,10 @@ namespace OfficeToPDF
 
             // Make sure the input file looks like something we can handle (i.e. has an office
             // filename extension)
-            Regex fileMatch = new Regex(@"\.(((ppt|do[ct]|xls)[xm]?)|vsd|pub)$", RegexOptions.IgnoreCase);
+            Regex fileMatch = new Regex(@"\.(((ppt|do[ct]|xls)[xm]?)|vsd|pub|msg)$", RegexOptions.IgnoreCase);
             if (fileMatch.Matches(files[0]).Count != 1)
             {
-                Console.WriteLine("Input file can not be handled. Must be Word, PowerPoint, Excel, Publisher or Visio");
+                Console.WriteLine("Input file can not be handled. Must be Word, PowerPoint, Excel, Outlook, Publisher or Visio");
                 Environment.Exit(1);
             }
 
@@ -147,6 +147,10 @@ namespace OfficeToPDF
                     case "pub":
                         // Publisher
                         converted = PublisherConverter.Convert(inputFile, outputFile, options);
+                        break;
+                    case "msg":
+                        // Outlook
+                        converted = OutlookConverter.Convert(inputFile, outputFile, options);
                         break;
                 }
             }
