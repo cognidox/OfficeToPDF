@@ -40,21 +40,47 @@ namespace OfficeToPDF
             try
             {
                 app = new Microsoft.Office.Interop.Outlook.Application();
-                Microsoft.Office.Interop.Outlook.MailItem message = null;
-                message = (MailItem) app.Session.OpenSharedItem(inputFile);
-                if (message == null)
-                {
-                    return false;
-                }
+                FileInfo fi = new FileInfo(inputFile);
+                // Create a temporary doc file from the message
                 tmpDocFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".doc";
-                message.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
+                switch(fi.Extension)
+                {
+                    case ".msg":
+                        Microsoft.Office.Interop.Outlook.MailItem message = null;
+                        message = (MailItem) app.Session.OpenSharedItem(inputFile);
+                        if (message == null)
+                        {
+                            return false;
+                        }
+                        message.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
+                        break;
+                    case ".vcf":
+                        Microsoft.Office.Interop.Outlook.ContactItem contact = null;
+                        contact = (ContactItem)app.Session.OpenSharedItem(inputFile);
+                        if (contact == null)
+                        {
+                            return false;
+                        }
+                        contact.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
+                        break;
+                    case ".ics":
+                        Microsoft.Office.Interop.Outlook.AppointmentItem appointment = null;
+                        appointment = (AppointmentItem)app.Session.OpenSharedItem(inputFile);
+                        if (appointment == null)
+                        {
+                            return false;
+                        }
+                        appointment.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
+                        break;
+                }
+
+                
                 if (!File.Exists(tmpDocFile))
                 {
                     return false;
                 }
-                bool converted = false;
-                converted = WordConverter.Convert(tmpDocFile, outputFile, options);
-                return converted;
+                // Convert the doc file to a PDF
+                return WordConverter.Convert(tmpDocFile, outputFile, options);
             }
             catch (System.Exception e)
             {
@@ -63,13 +89,13 @@ namespace OfficeToPDF
             }
             finally
             {
-                if (tmpDocFile != null)
+                if (tmpDocFile != null && File.Exists(tmpDocFile))
                 {
                     System.IO.File.Delete(tmpDocFile);
                 }
                 if (app != null)
                 {
-                    app.Quit();
+                    ((Microsoft.Office.Interop.Outlook._Application)app).Quit();
                     app = null;
                 }
             }
