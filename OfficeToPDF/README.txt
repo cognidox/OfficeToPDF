@@ -2,9 +2,11 @@
 =============
 
 This is the Cognidox Ltd Office To PDF tool. It can be used to convert
-Microsoft Office 2007, 2010 & 2013 documents to PDF from the command line.
+Microsoft Office 2003, 2007, 2010 & 2013 documents to PDF from the
+command line.
 
-In order to run the tool, MS Office 2007 or 2010 must be installed.
+In order to run the tool, .net 4 and one of MS Office 2007, 2010 or 2013
+must be installed.
 
 It is distributed under the Apache License v2.0:
 http://opensource.org/licenses/apache2.0
