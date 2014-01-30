@@ -1,6 +1,6 @@
 ﻿/**
  *  OfficeToPDF command line PDF conversion for Office 2007/2010
- *  Copyright (C) 2011-2013 Cognidox Ltd
+ *  Copyright (C) 2011-2014 Cognidox Ltd
  *  http://www.cognidox.com/opensource/
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -45,13 +45,17 @@ namespace OfficeToPDF
                     // Can't really hide the window, so at least minimise it
                     app.WindowState = PpWindowState.ppWindowMinimized;
                 }
-
+                PpFixedFormatIntent quality = PpFixedFormatIntent.ppFixedFormatIntentScreen;
+                if ((Boolean)options["print"])
+                {
+                    quality = PpFixedFormatIntent.ppFixedFormatIntentPrint;
+                }
                 app.FeatureInstall = MSCore.MsoFeatureInstall.msoFeatureInstallNone;
                 app.DisplayDocumentInformationPanel = false;
                 app.DisplayAlerts = PpAlertLevel.ppAlertsNone;
                 app.Visible = MSCore.MsoTriState.msoTrue;
                 app.Presentations.Open2007(inputFile, nowrite, MSCore.MsoTriState.msoTrue, MSCore.MsoTriState.msoTrue, MSCore.MsoTriState.msoTrue);
-                app.ActivePresentation.SaveAs(outputFile, Microsoft.Office.Interop.PowerPoint.PpSaveAsFileType.ppSaveAsPDF, MSCore.MsoTriState.msoTrue);
+                app.ActivePresentation.ExportAsFixedFormat(outputFile, PpFixedFormatType.ppFixedFormatTypePDF, quality, MSCore.MsoTriState.msoFalse, PpPrintHandoutOrder.ppPrintHandoutVerticalFirst, PpPrintOutputType.ppPrintOutputSlides, MSCore.MsoTriState.msoFalse, null, PpPrintRangeType.ppPrintAll, "", false, true, true, true, false, Type.Missing);
                 app.ActivePresentation.Close();
                 return true;
             }

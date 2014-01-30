@@ -2,7 +2,7 @@
 =============
 
 This is the Cognidox Ltd Office To PDF tool. It can be used to convert
-Microsoft Office 2007 and 2010 documents to PDF from the command line.
+Microsoft Office 2007, 2010 & 2013 documents to PDF from the command line.
 
 In order to run the tool, MS Office 2007 or 2010 must be installed.
 
@@ -43,3 +43,4 @@ The following optional switches can be used:
   /bookmarks - create bookmarks in the PDF when they are supported by the Office application
   /readonly  - attempts to open the source document in read-only mode
   /hidden    - attempts to minimise the Office application when converting
+  /print     - create high-quality PDFs optimised for print

@@ -1,6 +1,6 @@
 ﻿/**
  *  OfficeToPDF command line PDF conversion for Office 2007/2010
- *  Copyright (C) 2011-2013 Cognidox Ltd
+ *  Copyright (C) 2011-2014 Cognidox Ltd
  *  http://www.cognidox.com/opensource/
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -46,13 +46,18 @@ namespace OfficeToPDF
             try
             {
                 word = new Microsoft.Office.Interop.Word.Application();
-                word.DisplayAlerts = Microsoft.Office.Interop.Word.WdAlertLevel.wdAlertsNone;
+                word.DisplayAlerts = WdAlertLevel.wdAlertsNone;
                 word.DisplayRecentFiles = false;
                 word.DisplayDocumentInformationPanel = false;
                 word.FeatureInstall = Microsoft.Office.Core.MsoFeatureInstall.msoFeatureInstallNone;
                 Object filename = (Object)inputFile;
                 Boolean visible = !(Boolean)options["hidden"];
                 Boolean nowrite = (Boolean)options["readonly"];
+                WdExportOptimizeFor quality = WdExportOptimizeFor.wdExportOptimizeForOnScreen;
+                if ((Boolean)options["print"])
+                {
+                    quality = WdExportOptimizeFor.wdExportOptimizeForPrint;
+                }
                 WdExportCreateBookmarks bookmarks = (Boolean)options["bookmarks"] ? 
                     WdExportCreateBookmarks.wdExportCreateHeadingBookmarks : 
                     WdExportCreateBookmarks.wdExportCreateNoBookmarks;
@@ -68,7 +73,7 @@ namespace OfficeToPDF
                 }
 
                 doc.ExportAsFixedFormat(outputFile, WdExportFormat.wdExportFormatPDF, false, 
-                    WdExportOptimizeFor.wdExportOptimizeForOnScreen, WdExportRange.wdExportAllDocument, 
+                    quality, WdExportRange.wdExportAllDocument, 
                     1, 1, WdExportItem.wdExportDocumentContent, false, true, bookmarks);
 
                 object saveChanges = WdSaveOptions.wdDoNotSaveChanges;

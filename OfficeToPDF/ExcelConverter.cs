@@ -1,6 +1,6 @@
 ﻿/**
  *  OfficeToPDF command line PDF conversion for Office 2007/2010
- *  Copyright (C) 2011-2013 Cognidox Ltd
+ *  Copyright (C) 2011-2014 Cognidox Ltd
  *  http://www.cognidox.com/opensource/
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -60,6 +60,7 @@ namespace OfficeToPDF
                 // Try and avoid xls files raising a dialog
                 tmpFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".xls";
                 XlFileFormat fmt = XlFileFormat.xlOpenXMLWorkbook;
+                XlFixedFormatQuality quality = XlFixedFormatQuality.xlQualityStandard;
                 if (workbook.HasVBProject)
                 {
                     fmt = XlFileFormat.xlOpenXMLWorkbookMacroEnabled;
@@ -71,9 +72,9 @@ namespace OfficeToPDF
                 }
                 workbook.Windows[1].Visible = (Boolean)options["hidden"] ? false : true;
                 app.Windows[1].Visible = (Boolean)options["hidden"] ? false : true;
-                workbook.SaveAs(tmpFile, fmt, Type.Missing, Type.Missing, Type.Missing, false, Microsoft.Office.Interop.Excel.XlSaveAsAccessMode.xlNoChange, Type.Missing, false, Type.Missing, Type.Missing, Type.Missing);
-                workbook.ExportAsFixedFormat(Microsoft.Office.Interop.Excel.XlFixedFormatType.xlTypePDF,
-                outputFile, Microsoft.Office.Interop.Excel.XlFixedFormatQuality.xlQualityStandard, Type.Missing, false, Type.Missing, Type.Missing, false, Type.Missing);
+                workbook.SaveAs(tmpFile, fmt, Type.Missing, Type.Missing, Type.Missing, false, XlSaveAsAccessMode.xlNoChange, Type.Missing, false, Type.Missing, Type.Missing, Type.Missing);
+                workbook.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF,
+                outputFile, quality, Type.Missing, false, Type.Missing, Type.Missing, false, Type.Missing);
                 workbooks.Close();
                 return true;
             }

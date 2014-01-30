@@ -1,6 +1,6 @@
 ﻿/**
  *  OfficeToPDF command line PDF conversion for Office 2007/2010
- *  Copyright (C) 2011-2013 Cognidox Ltd
+ *  Copyright (C) 2011-2014 Cognidox Ltd
  *  http://www.cognidox.com/opensource/
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -46,11 +46,16 @@ namespace OfficeToPDF
                     app.ActiveWindow.Visible = false;
                 }
                 app.Open(inputFile, nowrite, false, PbSaveOptions.pbDoNotSaveChanges);
+                PbFixedFormatIntent quality = PbFixedFormatIntent.pbIntentStandard;
+                if ((Boolean)options["print"])
+                {
+                    quality = PbFixedFormatIntent.pbIntentPrinting;
+                }
 
                 // Try and avoid dialogs about versions
                 tmpFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".pub";
                 app.ActiveDocument.SaveAs(tmpFile, PbFileFormat.pbFilePublication, false);
-                app.ActiveDocument.ExportAsFixedFormat(PbFixedFormatType.pbFixedFormatTypePDF, outputFile, PbFixedFormatIntent.pbIntentStandard, true);
+                app.ActiveDocument.ExportAsFixedFormat(PbFixedFormatType.pbFixedFormatTypePDF, outputFile, quality, true);
                 app.ActiveDocument.Close();
                 return true;
             }
