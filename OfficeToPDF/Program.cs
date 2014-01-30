@@ -1,6 +1,6 @@
 ﻿/**
  *  OfficeToPDF command line PDF conversion for Office 2007/2010
- *  Copyright (C) 2011-2013 Cognidox Ltd
+ *  Copyright (C) 2011-2014 Cognidox Ltd
  *  http://www.cognidox.com/opensource/
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,7 +40,8 @@ namespace OfficeToPDF
             options["hidden"] = false;
             options["readonly"] = false;
             options["bookmarks"] = false;
-            Regex switches = new Regex(@"^/(hidden|readonly|bookmarks|help|\?)$", RegexOptions.IgnoreCase);
+            options["print"] = false;
+            Regex switches = new Regex(@"^/(hidden|readonly|bookmarks|print|help|\?)$", RegexOptions.IgnoreCase);
             foreach (string item in args)
             {
                 // see if this starts with a /
@@ -176,6 +177,7 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file output_file
               Office application
   /hidden     Attempt to hide the Office application window when converting
   /readonly   Load the input file in read only mode where possible
+  /print      Create high-quality PDFs optimised for print
 
   input_file  The filename of the Office document to convert
   output_file The filename of the PDF to create
