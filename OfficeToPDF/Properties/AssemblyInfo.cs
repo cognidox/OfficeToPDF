@@ -6,11 +6,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("OfficeToPDF")]
-[assembly: AssemblyDescription("Converts MSOffice 2003/2007/2010 documents to PDF")]
+[assembly: AssemblyDescription("Converts MSOffice 2003/2007/2010/2013 documents to PDF")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Cognidox Ltd")]
 [assembly: AssemblyProduct("OfficeToPDF")]
-[assembly: AssemblyCopyright("Copyright © Cognidox Ltd 2013")]
+[assembly: AssemblyCopyright("Copyright © Cognidox Ltd 2014")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
