@@ -80,7 +80,7 @@ namespace OfficeToPDF
 
             // Make sure the input file looks like something we can handle (i.e. has an office
             // filename extension)
-            Regex fileMatch = new Regex(@"\.(((ppt|do[ct]|xls)[xm]?)|vsd|pub|msg|vcf|ics)$", RegexOptions.IgnoreCase);
+            Regex fileMatch = new Regex(@"\.(((ppt|do[ct]|xls)[xm]?)|csv|vsd|pub|msg|vcf|ics|mpp)$", RegexOptions.IgnoreCase);
             if (fileMatch.Matches(files[0]).Count != 1)
             {
                 Console.WriteLine("Input file can not be handled. Must be Word, PowerPoint, Excel, Outlook, Publisher or Visio");
@@ -129,6 +129,7 @@ namespace OfficeToPDF
                         // Word
                         converted = WordConverter.Convert(inputFile, outputFile, options);
                         break;
+                    case "csv":
                     case "xls":
                     case "xlsx":
                     case "xlsm":
@@ -155,6 +156,10 @@ namespace OfficeToPDF
                         // Outlook
                         converted = OutlookConverter.Convert(inputFile, outputFile, options);
                         break;
+                    case "mpp":
+                        // Project
+                        converted = ProjectConverter.Convert(inputFile, outputFile, options);
+                        break;
                 }
             }
             if (!converted)
@@ -169,7 +174,7 @@ namespace OfficeToPDF
         {
             Console.Write(@"Converts Office documents to PDF from the command line.
 Handles Office files:
-  doc, dot, docx, dotx, docm, dotm, ppt, pptx, pptm, xls, xlsx, xlsm, vsd, pub
+  doc, dot, docx, dotx, docm, dotm, ppt, pptx, pptm, xls, xlsx, xlsm, vsd, pub, mpp
 
 OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file output_file
 
