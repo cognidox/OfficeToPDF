@@ -22,11 +22,12 @@ Supported file types:
 The following file types can be converted:
 
  * Word       - .doc, .dot,  .docx, .dotx, .docm, .dotm
- * Excel      - .xls, .xlsx, .xlsm
+ * Excel      - .xls, .xlsx, .xlsm, .csv
  * Powerpoint - .ppt, .pptx, .pptm
  * Visio      - .vsd
  * Publisher  - .pub
  * Outlook    - .msg, .vcf, .ics
+ * Project    - .mpp (Requires Office 2010 or greater)
 
 
 Usage:
