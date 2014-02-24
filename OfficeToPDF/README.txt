@@ -21,9 +21,9 @@ Supported file types:
 
 The following file types can be converted:
 
- * Word       - .doc, .dot,  .docx, .dotx, .docm, .dotm
- * Excel      - .xls, .xlsx, .xlsm, .csv
- * Powerpoint - .ppt, .pptx, .pptm
+ * Word       - .doc, .dot,  .docx, .dotx, .docm, .dotm, .rtf, .odt
+ * Excel      - .xls, .xlsx, .xlsm, .csv, .odc
+ * Powerpoint - .ppt, .pptx, .pptm, .odp
  * Visio      - .vsd
  * Publisher  - .pub
  * Outlook    - .msg, .vcf, .ics
@@ -47,3 +47,18 @@ The following optional switches can be used:
   /readonly  - attempts to open the source document in read-only mode
   /hidden    - attempts to minimise the Office application when converting
   /print     - create high-quality PDFs optimised for print
+  /template <template_path> - use a .dot, .dotx or .dotm template when converting with Word
+
+
+  Templates:
+  ----------
+
+  When converting documents with Word, the /template switch can be used to open
+  the source document with a specific Word template file. If no /template switch
+  is set, the default Normal.dotm template will be used.
+  
+  The template path must be the full path to the template file. e.g.
+    /template c:\users\fred\Application Data\Microsoft\Templates\example.dotx
+  
+  For more information about Office template paths, see:
+  http://office.microsoft.com/en-001/word-help/about-document-template-locations-HP003082725.aspx

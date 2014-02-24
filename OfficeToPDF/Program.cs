@@ -41,9 +41,11 @@ namespace OfficeToPDF
             options["readonly"] = false;
             options["bookmarks"] = false;
             options["print"] = false;
-            Regex switches = new Regex(@"^/(hidden|readonly|bookmarks|print|help|\?)$", RegexOptions.IgnoreCase);
-            foreach (string item in args)
+            options["template"] = "";
+            Regex switches = new Regex(@"^/(hidden|readonly|bookmarks|print|template|help|\?)$", RegexOptions.IgnoreCase);
+            for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
+                string item = args[argIdx];
                 // see if this starts with a /
                 Match m = Regex.Match(item, @"^/");
                 if (m.Success)
@@ -57,7 +59,28 @@ namespace OfficeToPDF
                         {
                             showHelp();
                         }
-                        options[itemMatch.Groups[1].Value.ToLower()] = true;
+                        switch (itemMatch.Groups[1].Value.ToLower())
+                        {
+                            case "template":
+                                // Only accept the next option if there are enough options
+                                if (argIdx + 3 < args.Length)
+                                {
+                                    if (File.Exists(args[argIdx + 1]))
+                                    {
+                                        options[itemMatch.Groups[1].Value.ToLower()] = args[argIdx + 1];
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("Unable to find {0} {1}", itemMatch.Groups[1].Value.ToLower(), args[argIdx + 1]);
+                                    }
+                                    argIdx++;
+
+                                }
+                                break;
+                            default:
+                                options[itemMatch.Groups[1].Value.ToLower()] = true;
+                                break;
+                        }
                     }
                     else
                     {
@@ -80,7 +103,7 @@ namespace OfficeToPDF
 
             // Make sure the input file looks like something we can handle (i.e. has an office
             // filename extension)
-            Regex fileMatch = new Regex(@"\.(((ppt|do[ct]|xls)[xm]?)|csv|vsd|pub|msg|vcf|ics|mpp)$", RegexOptions.IgnoreCase);
+            Regex fileMatch = new Regex(@"\.(((ppt|do[ct]|xls)[xm]?)|od[cpt]|rtf|csv|vsd|pub|msg|vcf|ics|mpp)$", RegexOptions.IgnoreCase);
             if (fileMatch.Matches(files[0]).Count != 1)
             {
                 Console.WriteLine("Input file can not be handled. Must be Word, PowerPoint, Excel, Outlook, Publisher or Visio");
@@ -120,6 +143,8 @@ namespace OfficeToPDF
             {
                 switch (extMatch.Groups[1].ToString())
                 {
+                    case "rtf":
+                    case "odt":
                     case "doc":
                     case "dot":
                     case "docx":
@@ -130,12 +155,14 @@ namespace OfficeToPDF
                         converted = WordConverter.Convert(inputFile, outputFile, options);
                         break;
                     case "csv":
+                    case "odc":
                     case "xls":
                     case "xlsx":
                     case "xlsm":
                         // Excel
                         converted = ExcelConverter.Convert(inputFile, outputFile, options);
                         break;
+                    case "odp":
                     case "ppt":
                     case "pptx":
                     case "pptm":
@@ -174,7 +201,8 @@ namespace OfficeToPDF
         {
             Console.Write(@"Converts Office documents to PDF from the command line.
 Handles Office files:
-  doc, dot, docx, dotx, docm, dotm, ppt, pptx, pptm, xls, xlsx, xlsm, vsd, pub, mpp
+  doc, dot, docx, dotx, docm, dotm, rtf, odt, ppt, pptx, pptm, odp,
+  xls, xlsx, xlsm, csv, odc, vsd, pub, mpp, ics, vcf, msg
 
 OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file output_file
 
@@ -183,6 +211,7 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file output_file
   /hidden     Attempt to hide the Office application window when converting
   /readonly   Load the input file in read only mode where possible
   /print      Create high-quality PDFs optimised for print
+  /template <template_path> use a .dot, .dotx or .dotm template when converting with Word
 
   input_file  The filename of the Office document to convert
   output_file The filename of the PDF to create

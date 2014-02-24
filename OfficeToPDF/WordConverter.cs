@@ -43,8 +43,10 @@ namespace OfficeToPDF
         {
             Microsoft.Office.Interop.Word.Application word = null;
             object oMissing = System.Reflection.Missing.Value;
+            Microsoft.Office.Interop.Word.Template tmpl;
             try
             {
+                tmpl = null;
                 word = new Microsoft.Office.Interop.Word.Application();
                 word.DisplayAlerts = WdAlertLevel.wdAlertsNone;
                 word.DisplayRecentFiles = false;
@@ -72,14 +74,36 @@ namespace OfficeToPDF
                     word.ActiveWindow.WindowState = WdWindowState.wdWindowStateMinimize;
                 }
 
+                // Check if we have a template file to apply to this document
+                // The template must be a file and must end in .dot, .dotx or .dotm
+                if (!String.IsNullOrEmpty((String)options["template"]))
+                {
+                    string template = (string)options["template"];
+                    if (File.Exists(template) && System.Text.RegularExpressions.Regex.IsMatch(template, @"^.*\.dot[mx]?$"))
+                    {
+                        doc.set_AttachedTemplate(template);
+                        doc.UpdateStyles();
+                        tmpl = doc.get_AttachedTemplate();
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid template '{0}'", template);
+                    }
+                }
+
                 doc.ExportAsFixedFormat(outputFile, WdExportFormat.wdExportFormatPDF, false, 
                     quality, WdExportRange.wdExportAllDocument, 
                     1, 1, WdExportItem.wdExportDocumentContent, false, true, bookmarks);
 
-                object saveChanges = WdSaveOptions.wdDoNotSaveChanges;
+                if (tmpl != null)
+                {
+                    tmpl.Saved = true;
+                }
 
+                object saveChanges = WdSaveOptions.wdDoNotSaveChanges;
                 ((_Document)doc).Close(ref saveChanges, ref oMissing, ref oMissing);
                 doc = null;
+
                 return true;
             }
             catch (Exception e)
