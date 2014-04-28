@@ -41,5 +41,18 @@ namespace OfficeToPDF
         {
             return false;
         }
+
+        protected static void releaseCOMObject(object obj)
+        {
+            try
+            {
+                while (System.Runtime.InteropServices.Marshal.ReleaseComObject(obj) > 0) { };
+            }
+            catch { }
+            finally
+            {
+                obj = null;
+            }
+        }
     }
 }

@@ -37,7 +37,7 @@ namespace OfficeToPDF
             Microsoft.Office.Interop.Excel.Application app = null;
             Microsoft.Office.Interop.Excel.Workbooks workbooks = null;
             Microsoft.Office.Interop.Excel.Workbook workbook = null;
-            Microsoft.Office.Interop.Excel.Worksheet worksheet = null;
+
             String tmpFile = null;
             object oMissing = System.Reflection.Missing.Value;
             Boolean nowrite = (Boolean)options["readonly"];
@@ -58,8 +58,12 @@ namespace OfficeToPDF
                 }
                 workbooks = app.Workbooks;
                 workbook = workbooks.Open(inputFile, true, nowrite, oMissing, oMissing, oMissing, true, oMissing, oMissing, oMissing, oMissing, oMissing, false, oMissing, oMissing);
-                worksheet = (Microsoft.Office.Interop.Excel.Worksheet)workbook.ActiveSheet;
 
+                // Unable to open workbook
+                if (workbook == null)
+                {
+                    return false;
+                }
                 // Try and avoid xls files raising a dialog
                 tmpFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".xls";
                 XlFileFormat fmt = XlFileFormat.xlOpenXMLWorkbook;
@@ -73,12 +77,22 @@ namespace OfficeToPDF
                 {
                     tmpFile += "x";
                 }
-                workbook.Windows[1].Visible = (Boolean)options["hidden"] ? false : true;
-                app.Windows[1].Visible = (Boolean)options["hidden"] ? false : true;
+
+                // Remember - Never use 2 dots with COM objects!
+                // Using more than one dot leaves wrapper objects left over
+                var wbWin = workbook.Windows;
+                var appWin = app.Windows;
+                if (wbWin.Count > 0)
+                {
+                    wbWin[1].Visible = (Boolean)options["hidden"] ? false : true;
+                }
+                if (appWin.Count > 0)
+                {
+                    appWin[1].Visible = (Boolean)options["hidden"] ? false : true;
+                }
                 workbook.SaveAs(tmpFile, fmt, Type.Missing, Type.Missing, Type.Missing, false, XlSaveAsAccessMode.xlNoChange, Type.Missing, false, Type.Missing, Type.Missing, Type.Missing);
                 workbook.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF,
                     outputFile, quality, Type.Missing, false, Type.Missing, Type.Missing, false, Type.Missing);
-
                 return true;
             }
             catch (Exception e)
@@ -88,21 +102,26 @@ namespace OfficeToPDF
             }
             finally
             {
+                if (workbook != null)
+                {
+                    workbook.Close();
+                }
+
+                if (workbooks != null)
+                {
+                    workbooks.Close();
+                }
+
                 if (app != null)
                 {
-                    // Try and clear excel as best we can. Add-ins can cause excel to hang around
-                    ((Microsoft.Office.Interop.Excel._Workbook)workbook).Close(oMissing, oMissing, oMissing);
-                    workbooks.Close();
-                    while (System.Runtime.InteropServices.Marshal.ReleaseComObject(worksheet) > 0) ;
-                    while (System.Runtime.InteropServices.Marshal.ReleaseComObject(workbook) > 0) ;
-                    while (System.Runtime.InteropServices.Marshal.ReleaseComObject(workbooks) > 0) ;
-                    worksheet = null;
-                    workbook = null;
-                    workbooks = null;
                     ((Microsoft.Office.Interop.Excel._Application)app).Quit();
-                    while (System.Runtime.InteropServices.Marshal.ReleaseComObject(app) > 0) ;
-                    app = null;
                 }
+
+                // Clean all the COM leftovers
+                Converter.releaseCOMObject(workbook);
+                Converter.releaseCOMObject(workbooks);
+                Converter.releaseCOMObject(app);
+
                 if (tmpFile != null)
                 {
                     System.IO.File.Delete(tmpFile);

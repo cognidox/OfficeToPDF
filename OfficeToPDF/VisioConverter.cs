@@ -55,13 +55,15 @@ namespace OfficeToPDF
                     quality = VisDocExIntent.visDocExIntentPrint;
                 }
 
-                app.Documents.OpenEx(inputFile, flags);
+                var documents = app.Documents;
+                documents.OpenEx(inputFile, flags);
 
                 // Try and avoid dialogs about versions
                 tmpFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".vsd";
-                app.ActiveDocument.SaveAs(tmpFile);
-                app.ActiveDocument.ExportAsFixedFormat(VisFixedFormatTypes.visFixedFormatPDF, outputFile, quality, VisPrintOutRange.visPrintAll);
-                app.ActiveDocument.Close();
+                var activeDoc = app.ActiveDocument;
+                activeDoc.SaveAs(tmpFile);
+                activeDoc.ExportAsFixedFormat(VisFixedFormatTypes.visFixedFormatPDF, outputFile, quality, VisPrintOutRange.visPrintAll);
+                activeDoc.Close();
                 return true;
             }
             catch (Exception e)
@@ -78,8 +80,8 @@ namespace OfficeToPDF
                 if (app != null)
                 {
                     app.Quit();
-                    app = null;
                 }
+                Converter.releaseCOMObject(app);
             }
         }
     }

@@ -31,46 +31,56 @@ namespace OfficeToPDF
     /// <summary>
     /// Handle conversion of Powerpoint files
     /// </summary>
-    class PowerpointConverter: Converter
+    class PowerpointConverter : Converter
     {
         public static new Boolean Convert(String inputFile, String outputFile, Hashtable options)
         {
-            Microsoft.Office.Interop.PowerPoint.Application app = null;
             try
             {
-                MSCore.MsoTriState nowrite = (Boolean)options["readonly"] ? MSCore.MsoTriState.msoTrue : MSCore.MsoTriState.msoFalse;
-                app = new Microsoft.Office.Interop.PowerPoint.Application();
-                if ((Boolean)options["hidden"])
+                Microsoft.Office.Interop.PowerPoint.Application app = null;
+                try
                 {
-                    // Can't really hide the window, so at least minimise it
-                    app.WindowState = PpWindowState.ppWindowMinimized;
+                    MSCore.MsoTriState nowrite = (Boolean)options["readonly"] ? MSCore.MsoTriState.msoTrue : MSCore.MsoTriState.msoFalse;
+                    app = new Microsoft.Office.Interop.PowerPoint.Application();
+                    if ((Boolean)options["hidden"])
+                    {
+                        // Can't really hide the window, so at least minimise it
+                        app.WindowState = PpWindowState.ppWindowMinimized;
+                    }
+                    PpFixedFormatIntent quality = PpFixedFormatIntent.ppFixedFormatIntentScreen;
+                    if ((Boolean)options["print"])
+                    {
+                        quality = PpFixedFormatIntent.ppFixedFormatIntentPrint;
+                    }
+                    app.FeatureInstall = MSCore.MsoFeatureInstall.msoFeatureInstallNone;
+                    app.DisplayDocumentInformationPanel = false;
+                    app.DisplayAlerts = PpAlertLevel.ppAlertsNone;
+                    app.Visible = MSCore.MsoTriState.msoTrue;
+                    var presentations = app.Presentations;
+                    presentations.Open2007(inputFile, nowrite, MSCore.MsoTriState.msoTrue, MSCore.MsoTriState.msoTrue, MSCore.MsoTriState.msoTrue);
+                    var activePresentation = app.ActivePresentation;
+                    activePresentation.ExportAsFixedFormat(outputFile, PpFixedFormatType.ppFixedFormatTypePDF, quality, MSCore.MsoTriState.msoFalse, PpPrintHandoutOrder.ppPrintHandoutVerticalFirst, PpPrintOutputType.ppPrintOutputSlides, MSCore.MsoTriState.msoFalse, null, PpPrintRangeType.ppPrintAll, "", false, true, true, true, false, Type.Missing);
+                    activePresentation.Close();
+                    return true;
                 }
-                PpFixedFormatIntent quality = PpFixedFormatIntent.ppFixedFormatIntentScreen;
-                if ((Boolean)options["print"])
+                catch (Exception e)
                 {
-                    quality = PpFixedFormatIntent.ppFixedFormatIntentPrint;
+                    Console.WriteLine(e.Message);
+                    return false;
                 }
-                app.FeatureInstall = MSCore.MsoFeatureInstall.msoFeatureInstallNone;
-                app.DisplayDocumentInformationPanel = false;
-                app.DisplayAlerts = PpAlertLevel.ppAlertsNone;
-                app.Visible = MSCore.MsoTriState.msoTrue;
-                app.Presentations.Open2007(inputFile, nowrite, MSCore.MsoTriState.msoTrue, MSCore.MsoTriState.msoTrue, MSCore.MsoTriState.msoTrue);
-                app.ActivePresentation.ExportAsFixedFormat(outputFile, PpFixedFormatType.ppFixedFormatTypePDF, quality, MSCore.MsoTriState.msoFalse, PpPrintHandoutOrder.ppPrintHandoutVerticalFirst, PpPrintOutputType.ppPrintOutputSlides, MSCore.MsoTriState.msoFalse, null, PpPrintRangeType.ppPrintAll, "", false, true, true, true, false, Type.Missing);
-                app.ActivePresentation.Close();
-                return true;
+                finally
+                {
+                    if (app != null)
+                    {
+                        app.Quit();
+                    }
+                    Converter.releaseCOMObject(app);
+                }
             }
-            catch (Exception e)
+            catch (System.Runtime.InteropServices.COMException e)
             {
                 Console.WriteLine(e.Message);
                 return false;
-            }
-            finally
-            {
-                if (app != null)
-                {
-                    app.Quit();
-                    app = null;
-                }
             }
         }
     }

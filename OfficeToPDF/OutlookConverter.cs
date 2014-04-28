@@ -40,14 +40,14 @@ namespace OfficeToPDF
             try
             {
                 app = new Microsoft.Office.Interop.Outlook.Application();
+                var session = app.Session;
                 FileInfo fi = new FileInfo(inputFile);
                 // Create a temporary doc file from the message
                 tmpDocFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".doc";
                 switch(fi.Extension)
                 {
                     case ".msg":
-                        Microsoft.Office.Interop.Outlook.MailItem message = null;
-                        message = (MailItem) app.Session.OpenSharedItem(inputFile);
+                        var message = (MailItem) session.OpenSharedItem(inputFile);
                         if (message == null)
                         {
                             return false;
@@ -55,8 +55,7 @@ namespace OfficeToPDF
                         message.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
                         break;
                     case ".vcf":
-                        Microsoft.Office.Interop.Outlook.ContactItem contact = null;
-                        contact = (ContactItem)app.Session.OpenSharedItem(inputFile);
+                        var contact = (ContactItem)session.OpenSharedItem(inputFile);
                         if (contact == null)
                         {
                             return false;
@@ -64,8 +63,7 @@ namespace OfficeToPDF
                         contact.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
                         break;
                     case ".ics":
-                        Microsoft.Office.Interop.Outlook.AppointmentItem appointment = null;
-                        appointment = (AppointmentItem)app.Session.OpenSharedItem(inputFile);
+                        var appointment = (AppointmentItem)session.OpenSharedItem(inputFile);
                         if (appointment == null)
                         {
                             return false;
@@ -96,8 +94,8 @@ namespace OfficeToPDF
                 if (app != null)
                 {
                     ((Microsoft.Office.Interop.Outlook._Application)app).Quit();
-                    app = null;
                 }
+                Converter.releaseCOMObject(app);
             }
         }
     }
