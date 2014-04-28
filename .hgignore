@@ -14,3 +14,6 @@ OfficeToPDF/obj/x86/Release/ResolveAssemblyReference.cache
 OfficeToPDF/obj/x86/Release/OfficeToPDF.csprojResolveAssemblyReference.cache
 OfficeToPDF/bin/x86/Release-signed/*
 OfficeToPDF/obj/x86/Release-signed/*.*
+OfficeToPDF/bin/Debug/*
+OfficeToPDF/obj/x86/Debug/*.*
+OfficeToPDF/obj/x86/Release/*.cache

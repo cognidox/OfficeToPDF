@@ -43,7 +43,8 @@ namespace OfficeToPDF
                 app = new Microsoft.Office.Interop.Publisher.Application();
                 if ((Boolean)options["hidden"])
                 {
-                    app.ActiveWindow.Visible = false;
+                    var activeWin = app.ActiveWindow;
+                    activeWin.Visible = false;
                 }
                 app.Open(inputFile, nowrite, false, PbSaveOptions.pbDoNotSaveChanges);
                 PbFixedFormatIntent quality = PbFixedFormatIntent.pbIntentStandard;
@@ -54,9 +55,10 @@ namespace OfficeToPDF
 
                 // Try and avoid dialogs about versions
                 tmpFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".pub";
-                app.ActiveDocument.SaveAs(tmpFile, PbFileFormat.pbFilePublication, false);
-                app.ActiveDocument.ExportAsFixedFormat(PbFixedFormatType.pbFixedFormatTypePDF, outputFile, quality, true);
-                app.ActiveDocument.Close();
+                var activeDocument = app.ActiveDocument;
+                activeDocument.SaveAs(tmpFile, PbFileFormat.pbFilePublication, false);
+                activeDocument.ExportAsFixedFormat(PbFixedFormatType.pbFixedFormatTypePDF, outputFile, quality, true);
+                activeDocument.Close();
                 return true;
             }
             catch (Exception e)
@@ -73,8 +75,8 @@ namespace OfficeToPDF
                 if (app != null)
                 {
                     ((Microsoft.Office.Interop.Publisher._Application)app).Quit();
-                    app = null;
                 }
+                Converter.releaseCOMObject(app);
             }
         }
     }

@@ -63,15 +63,17 @@ namespace OfficeToPDF
                 WdExportCreateBookmarks bookmarks = (Boolean)options["bookmarks"] ? 
                     WdExportCreateBookmarks.wdExportCreateHeadingBookmarks : 
                     WdExportCreateBookmarks.wdExportCreateNoBookmarks;
-                Document doc = word.Documents.Open(ref filename, ref oMissing,
+                var documents = word.Documents;
+                Document doc = documents.Open(ref filename, ref oMissing,
                         nowrite, ref oMissing, ref oMissing, ref oMissing, ref oMissing,
                         ref oMissing, ref oMissing, ref oMissing, ref oMissing, visible,
                         true, ref oMissing, ref oMissing, ref oMissing);
                 doc.Activate();
                 if ((Boolean)options["hidden"])
                 {
-                    word.ActiveWindow.Visible = false;
-                    word.ActiveWindow.WindowState = WdWindowState.wdWindowStateMinimize;
+                    var activeWin = word.ActiveWindow;
+                    activeWin.Visible = false;
+                    activeWin.WindowState = WdWindowState.wdWindowStateMinimize;
                 }
 
                 // Check if we have a template file to apply to this document
@@ -116,8 +118,8 @@ namespace OfficeToPDF
                 if (word != null)
                 {
                     ((_Application)word).Quit(ref oMissing, ref oMissing, ref oMissing);
-                    word = null;
                 }
+                Converter.releaseCOMObject(word);
             }
         }
     }
