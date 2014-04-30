@@ -40,6 +40,7 @@ namespace OfficeToPDF
             try
             {
                 Boolean nowrite = (Boolean)options["readonly"];
+                bool pdfa = (Boolean)options["pdfa"] ? true : false;
                 app = new Microsoft.Office.Interop.Publisher.Application();
                 if ((Boolean)options["hidden"])
                 {
@@ -58,7 +59,7 @@ namespace OfficeToPDF
                 tmpFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".pub";
                 var activeDocument = app.ActiveDocument;
                 activeDocument.SaveAs(tmpFile, PbFileFormat.pbFilePublication, false);
-                activeDocument.ExportAsFixedFormat(PbFixedFormatType.pbFixedFormatTypePDF, outputFile, quality, true);
+                activeDocument.ExportAsFixedFormat(PbFixedFormatType.pbFixedFormatTypePDF, outputFile, quality, true, -1, -1, -1, -1, -1, -1, -1, true, PbPrintStyle.pbPrintStyleDefault, true, true, pdfa);
                 activeDocument.Close();
 
                 Converter.releaseCOMObject(activeDocument);

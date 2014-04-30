@@ -47,6 +47,7 @@ The following optional switches can be used:
   /readonly  - attempts to open the source document in read-only mode
   /hidden    - attempts to minimise the Office application when converting
   /print     - create high-quality PDFs optimised for print
+  /pdfa      - produce ISO 19005-1 (PDF/A) compliant PDFs
   /template <template_path> - use a .dot, .dotx or .dotm template when converting with Word
 
 
