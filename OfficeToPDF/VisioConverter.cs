@@ -40,6 +40,7 @@ namespace OfficeToPDF
             try
             {
                 app = new Microsoft.Office.Interop.Visio.InvisibleApp();
+                bool pdfa = (Boolean)options["pdfa"] ? true : false;
                 short flags = 0;
                 if ((Boolean)options["readonly"])
                 {
@@ -62,7 +63,7 @@ namespace OfficeToPDF
                 tmpFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".vsd";
                 var activeDoc = app.ActiveDocument;
                 activeDoc.SaveAs(tmpFile);
-                activeDoc.ExportAsFixedFormat(VisFixedFormatTypes.visFixedFormatPDF, outputFile, quality, VisPrintOutRange.visPrintAll);
+                activeDoc.ExportAsFixedFormat(VisFixedFormatTypes.visFixedFormatPDF, outputFile, quality, VisPrintOutRange.visPrintAll, 1, -1, false, true, true, true, pdfa);
                 activeDoc.Close();
 
                 Converter.releaseCOMObject(documents);

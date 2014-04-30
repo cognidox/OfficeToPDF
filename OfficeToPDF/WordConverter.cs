@@ -55,6 +55,7 @@ namespace OfficeToPDF
                 Object filename = (Object)inputFile;
                 Boolean visible = !(Boolean)options["hidden"];
                 Boolean nowrite = (Boolean)options["readonly"];
+                bool pdfa = (Boolean)options["pdfa"] ? true : false;
                 WdExportOptimizeFor quality = WdExportOptimizeFor.wdExportOptimizeForOnScreen;
                 if ((Boolean)options["print"])
                 {
@@ -96,7 +97,7 @@ namespace OfficeToPDF
 
                 doc.ExportAsFixedFormat(outputFile, WdExportFormat.wdExportFormatPDF, false, 
                     quality, WdExportRange.wdExportAllDocument, 
-                    1, 1, WdExportItem.wdExportDocumentContent, false, true, bookmarks);
+                    1, 1, WdExportItem.wdExportDocumentContent, false, true, bookmarks, true, true, pdfa);
 
                 if (tmpl != null)
                 {

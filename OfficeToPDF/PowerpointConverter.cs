@@ -42,6 +42,7 @@ namespace OfficeToPDF
                 {
                     MSCore.MsoTriState nowrite = (Boolean)options["readonly"] ? MSCore.MsoTriState.msoTrue : MSCore.MsoTriState.msoFalse;
                     app = new Microsoft.Office.Interop.PowerPoint.Application();
+                    bool pdfa = (Boolean)options["pdfa"] ? true : false;
                     if ((Boolean)options["hidden"])
                     {
                         // Can't really hide the window, so at least minimise it
@@ -59,7 +60,7 @@ namespace OfficeToPDF
                     var presentations = app.Presentations;
                     presentations.Open2007(inputFile, nowrite, MSCore.MsoTriState.msoTrue, MSCore.MsoTriState.msoTrue, MSCore.MsoTriState.msoTrue);
                     var activePresentation = app.ActivePresentation;
-                    activePresentation.ExportAsFixedFormat(outputFile, PpFixedFormatType.ppFixedFormatTypePDF, quality, MSCore.MsoTriState.msoFalse, PpPrintHandoutOrder.ppPrintHandoutVerticalFirst, PpPrintOutputType.ppPrintOutputSlides, MSCore.MsoTriState.msoFalse, null, PpPrintRangeType.ppPrintAll, "", false, true, true, true, false, Type.Missing);
+                    activePresentation.ExportAsFixedFormat(outputFile, PpFixedFormatType.ppFixedFormatTypePDF, quality, MSCore.MsoTriState.msoFalse, PpPrintHandoutOrder.ppPrintHandoutVerticalFirst, PpPrintOutputType.ppPrintOutputSlides, MSCore.MsoTriState.msoFalse, null, PpPrintRangeType.ppPrintAll, "", false, true, true, true, pdfa, Type.Missing);
                     activePresentation.Close();
 
                     Converter.releaseCOMObject(presentations);
