@@ -64,6 +64,9 @@ namespace OfficeToPDF
                 activeDoc.SaveAs(tmpFile);
                 activeDoc.ExportAsFixedFormat(VisFixedFormatTypes.visFixedFormatPDF, outputFile, quality, VisPrintOutRange.visPrintAll);
                 activeDoc.Close();
+
+                Converter.releaseCOMObject(documents);
+                Converter.releaseCOMObject(activeDoc);
                 return true;
             }
             catch (Exception e)

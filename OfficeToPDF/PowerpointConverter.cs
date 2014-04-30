@@ -61,6 +61,9 @@ namespace OfficeToPDF
                     var activePresentation = app.ActivePresentation;
                     activePresentation.ExportAsFixedFormat(outputFile, PpFixedFormatType.ppFixedFormatTypePDF, quality, MSCore.MsoTriState.msoFalse, PpPrintHandoutOrder.ppPrintHandoutVerticalFirst, PpPrintOutputType.ppPrintOutputSlides, MSCore.MsoTriState.msoFalse, null, PpPrintRangeType.ppPrintAll, "", false, true, true, true, false, Type.Missing);
                     activePresentation.Close();
+
+                    Converter.releaseCOMObject(presentations);
+                    Converter.releaseCOMObject(activePresentation);
                     return true;
                 }
                 catch (Exception e)

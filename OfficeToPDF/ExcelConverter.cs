@@ -49,6 +49,7 @@ namespace OfficeToPDF
                 app.AskToUpdateLinks = false;
                 app.AlertBeforeOverwriting = false;
                 app.EnableLargeOperationAlert = false;
+                app.Interactive = false;
                 app.FeatureInstall = Microsoft.Office.Core.MsoFeatureInstall.msoFeatureInstallNone;
                 if ((Boolean)options["hidden"])
                 {
@@ -85,10 +86,12 @@ namespace OfficeToPDF
                 if (wbWin.Count > 0)
                 {
                     wbWin[1].Visible = (Boolean)options["hidden"] ? false : true;
+                    Converter.releaseCOMObject(wbWin);
                 }
                 if (appWin.Count > 0)
                 {
                     appWin[1].Visible = (Boolean)options["hidden"] ? false : true;
+                    Converter.releaseCOMObject(appWin);
                 }
                 workbook.SaveAs(tmpFile, fmt, Type.Missing, Type.Missing, Type.Missing, false, XlSaveAsAccessMode.xlNoChange, Type.Missing, false, Type.Missing, Type.Missing, Type.Missing);
                 workbook.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF,

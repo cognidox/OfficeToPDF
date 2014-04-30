@@ -53,6 +53,8 @@ namespace OfficeToPDF
                             return false;
                         }
                         message.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
+                        Converter.releaseCOMObject(message);
+                        Converter.releaseCOMObject(session);
                         break;
                     case ".vcf":
                         var contact = (ContactItem)session.OpenSharedItem(inputFile);
@@ -61,6 +63,8 @@ namespace OfficeToPDF
                             return false;
                         }
                         contact.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
+                        Converter.releaseCOMObject(contact);
+                        Converter.releaseCOMObject(session);
                         break;
                     case ".ics":
                         var appointment = (AppointmentItem)session.OpenSharedItem(inputFile);
@@ -69,6 +73,8 @@ namespace OfficeToPDF
                             return false;
                         }
                         appointment.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
+                        Converter.releaseCOMObject(appointment);
+                        Converter.releaseCOMObject(session);
                         break;
                 }
 
