@@ -74,6 +74,7 @@ namespace OfficeToPDF
                     var activeWin = word.ActiveWindow;
                     activeWin.Visible = false;
                     activeWin.WindowState = WdWindowState.wdWindowStateMinimize;
+                    Converter.releaseCOMObject(activeWin);
                 }
 
                 // Check if we have a template file to apply to this document
@@ -104,7 +105,9 @@ namespace OfficeToPDF
 
                 object saveChanges = WdSaveOptions.wdDoNotSaveChanges;
                 ((_Document)doc).Close(ref saveChanges, ref oMissing, ref oMissing);
-                doc = null;
+                Converter.releaseCOMObject(documents);
+                Converter.releaseCOMObject(doc);
+                Converter.releaseCOMObject(tmpl);
 
                 return true;
             }

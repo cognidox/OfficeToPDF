@@ -45,6 +45,7 @@ namespace OfficeToPDF
                 {
                     var activeWin = app.ActiveWindow;
                     activeWin.Visible = false;
+                    Converter.releaseCOMObject(activeWin);
                 }
                 app.Open(inputFile, nowrite, false, PbSaveOptions.pbDoNotSaveChanges);
                 PbFixedFormatIntent quality = PbFixedFormatIntent.pbIntentStandard;
@@ -59,6 +60,8 @@ namespace OfficeToPDF
                 activeDocument.SaveAs(tmpFile, PbFileFormat.pbFilePublication, false);
                 activeDocument.ExportAsFixedFormat(PbFixedFormatType.pbFixedFormatTypePDF, outputFile, quality, true);
                 activeDocument.Close();
+
+                Converter.releaseCOMObject(activeDocument);
                 return true;
             }
             catch (Exception e)
