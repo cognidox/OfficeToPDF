@@ -1,5 +1,5 @@
 ﻿/**
- *  OfficeToPDF command line PDF conversion for Office 2007/2010
+ *  OfficeToPDF command line PDF conversion for Office 2007/2010/2013
  *  Copyright (C) 2011-2014 Cognidox Ltd
  *  http://www.cognidox.com/opensource/
  *
@@ -111,17 +111,27 @@ namespace OfficeToPDF
                 Environment.Exit(1);
             }
 
-            String inputFile;
+            String inputFile = "";
             String outputFile;
 
             // Make sure the input file exists and is readable
-            FileInfo info = new FileInfo(files[0]);
-            if (info == null || !info.Exists)
+            FileInfo info;
+            try
             {
-                Console.WriteLine("Input file doesn't exist");
+                info = new FileInfo(files[0]);
+
+                if (info == null || !info.Exists)
+                {
+                    Console.WriteLine("Input file doesn't exist");
+                    Environment.Exit(1);
+                }
+                inputFile = info.FullName;
+            }
+            catch
+            {
+                Console.WriteLine("Unable to open input file");
                 Environment.Exit(1);
             }
-            inputFile = info.FullName;
 
             // Make sure the destination location exists
             FileInfo outputInfo = new FileInfo(files[1]);
@@ -142,7 +152,7 @@ namespace OfficeToPDF
             Match extMatch = fileMatch.Match(inputFile);
             if (extMatch.Success)
             {
-                switch (extMatch.Groups[1].ToString())
+                switch (extMatch.Groups[1].ToString().ToLower())
                 {
                     case "rtf":
                     case "odt":

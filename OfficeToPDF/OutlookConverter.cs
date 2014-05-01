@@ -1,5 +1,5 @@
 ﻿/**
- *  OfficeToPDF command line PDF conversion for Office 2007/2010
+ *  OfficeToPDF command line PDF conversion for Office 2007/2010/2013
  *  Copyright (C) 2011-2014 Cognidox Ltd
  *  http://www.cognidox.com/opensource/
  *
@@ -67,18 +67,26 @@ namespace OfficeToPDF
                         Converter.releaseCOMObject(session);
                         break;
                     case ".ics":
-                        var appointment = (AppointmentItem)session.OpenSharedItem(inputFile);
-                        if (appointment == null)
+                        var item = session.OpenSharedItem(inputFile);
+                        string itemType = (string)(string)item.GetType().InvokeMember("MessageClass", System.Reflection.BindingFlags.GetProperty, null, item, null);
+                        switch (itemType)
                         {
-                            return false;
+                            case "IPM.Appointment":
+                                var appointment = (AppointmentItem)item;
+                                if (appointment != null)
+                                {
+                                    appointment.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
+                                }
+                                break;
+                            default:
+                                Console.WriteLine("Unable to convert ICS type " + itemType);
+                                break;
                         }
-                        appointment.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
-                        Converter.releaseCOMObject(appointment);
+                        Converter.releaseCOMObject(item);
                         Converter.releaseCOMObject(session);
                         break;
                 }
 
-                
                 if (!File.Exists(tmpDocFile))
                 {
                     return false;

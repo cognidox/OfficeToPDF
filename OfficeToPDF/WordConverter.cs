@@ -1,5 +1,5 @@
 ﻿/**
- *  OfficeToPDF command line PDF conversion for Office 2007/2010
+ *  OfficeToPDF command line PDF conversion for Office 2007/2010/2013
  *  Copyright (C) 2011-2014 Cognidox Ltd
  *  http://www.cognidox.com/opensource/
  *
@@ -65,7 +65,7 @@ namespace OfficeToPDF
                     WdExportCreateBookmarks.wdExportCreateHeadingBookmarks : 
                     WdExportCreateBookmarks.wdExportCreateNoBookmarks;
                 var documents = word.Documents;
-                Document doc = documents.Open(ref filename, ref oMissing,
+                Document doc = documents.OpenNoRepairDialog(ref filename, ref oMissing,
                         nowrite, ref oMissing, ref oMissing, ref oMissing, ref oMissing,
                         ref oMissing, ref oMissing, ref oMissing, ref oMissing, visible,
                         true, ref oMissing, ref oMissing, ref oMissing);
@@ -104,7 +104,7 @@ namespace OfficeToPDF
                     tmpl.Saved = true;
                 }
 
-                object saveChanges = WdSaveOptions.wdDoNotSaveChanges;
+                object saveChanges = nowrite ? WdSaveOptions.wdDoNotSaveChanges : WdSaveOptions.wdSaveChanges;
                 ((_Document)doc).Close(ref saveChanges, ref oMissing, ref oMissing);
                 Converter.releaseCOMObject(documents);
                 Converter.releaseCOMObject(doc);
