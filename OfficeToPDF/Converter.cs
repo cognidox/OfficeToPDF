@@ -1,5 +1,5 @@
 ﻿/**
- *  OfficeToPDF command line PDF conversion for Office 2007/2010
+ *  OfficeToPDF command line PDF conversion for Office 2007/2010/2013
  *  Copyright (C) 2011-2014 Cognidox Ltd
  *  http://www.cognidox.com/opensource/
  *
