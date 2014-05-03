@@ -52,6 +52,15 @@ namespace OfficeToPDF
                 word.DisplayRecentFiles = false;
                 word.DisplayDocumentInformationPanel = false;
                 word.FeatureInstall = Microsoft.Office.Core.MsoFeatureInstall.msoFeatureInstallNone;
+                var wdOptions = word.Options;
+                wdOptions.UpdateFieldsAtPrint = false;
+                wdOptions.UpdateLinksAtPrint = false;
+                wdOptions.WarnBeforeSavingPrintingSendingMarkup = false;
+                wdOptions.BackgroundSave = true;
+                wdOptions.SavePropertiesPrompt = false;
+                wdOptions.DoNotPromptForConvert = true;
+                wdOptions.PromptUpdateStyle = false;
+                wdOptions.ConfirmConversions = false;
                 Object filename = (Object)inputFile;
                 Boolean visible = !(Boolean)options["hidden"];
                 Boolean nowrite = (Boolean)options["readonly"];
@@ -163,6 +172,7 @@ namespace OfficeToPDF
                 }
                 ((_Document)doc).Close(ref saveChanges, ref oMissing, ref oMissing);
 
+                Converter.releaseCOMObject(wdOptions);
                 Converter.releaseCOMObject(documents);
                 Converter.releaseCOMObject(doc);
                 Converter.releaseCOMObject(tmpl);
