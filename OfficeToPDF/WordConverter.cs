@@ -95,6 +95,58 @@ namespace OfficeToPDF
                     }
                 }
 
+                // Update some of the field types in the document so the printed
+                // PDF looks correct. Skips some field types (such as ASK) that would
+                // create dialogs
+                var fields = doc.Fields;
+                for (int i = 1; i <= fields.Count; i++)
+                {
+                    switch (fields[i].Type)
+                    {
+                        case WdFieldType.wdFieldAuthor:
+                        case WdFieldType.wdFieldAutoText:
+                        case WdFieldType.wdFieldComments:
+                        case WdFieldType.wdFieldCreateDate:
+                        case WdFieldType.wdFieldDate:
+                        case WdFieldType.wdFieldDocProperty:
+                        case WdFieldType.wdFieldDocVariable:
+                        case WdFieldType.wdFieldEditTime:
+                        case WdFieldType.wdFieldFileName:
+                        case WdFieldType.wdFieldFileSize:
+                        case WdFieldType.wdFieldFootnoteRef:
+                        case WdFieldType.wdFieldGreetingLine:
+                        case WdFieldType.wdFieldIndex:
+                        case WdFieldType.wdFieldInfo:
+                        case WdFieldType.wdFieldKeyWord:
+                        case WdFieldType.wdFieldLastSavedBy:
+                        case WdFieldType.wdFieldNoteRef:
+                        case WdFieldType.wdFieldNumChars:
+                        case WdFieldType.wdFieldNumPages:
+                        case WdFieldType.wdFieldNumWords:
+                        case WdFieldType.wdFieldPage:
+                        case WdFieldType.wdFieldPageRef:
+                        case WdFieldType.wdFieldPrintDate:
+                        case WdFieldType.wdFieldRef:
+                        case WdFieldType.wdFieldRevisionNum:
+                        case WdFieldType.wdFieldSaveDate:
+                        case WdFieldType.wdFieldSection:
+                        case WdFieldType.wdFieldSectionPages:
+                        case WdFieldType.wdFieldSubject:
+                        case WdFieldType.wdFieldTime:
+                        case WdFieldType.wdFieldTitle:
+                        case WdFieldType.wdFieldTOA:
+                        case WdFieldType.wdFieldTOAEntry:
+                        case WdFieldType.wdFieldTOC:
+                        case WdFieldType.wdFieldTOCEntry:
+                        case WdFieldType.wdFieldUserAddress:
+                        case WdFieldType.wdFieldUserInitials:
+                        case WdFieldType.wdFieldUserName:
+                            fields[i].Update();
+                            break;
+                    }
+                }
+                doc.Saved = true;
+                Converter.releaseCOMObject(fields);
                 doc.ExportAsFixedFormat(outputFile, WdExportFormat.wdExportFormatPDF, false, 
                     quality, WdExportRange.wdExportAllDocument, 
                     1, 1, WdExportItem.wdExportDocumentContent, false, true, bookmarks, true, true, pdfa);
@@ -104,8 +156,13 @@ namespace OfficeToPDF
                     tmpl.Saved = true;
                 }
 
-                object saveChanges = nowrite ? WdSaveOptions.wdDoNotSaveChanges : WdSaveOptions.wdSaveChanges;
+                object saveChanges = WdSaveOptions.wdDoNotSaveChanges;
+                if (nowrite)
+                {
+                    doc.Saved = true;
+                }
                 ((_Document)doc).Close(ref saveChanges, ref oMissing, ref oMissing);
+
                 Converter.releaseCOMObject(documents);
                 Converter.releaseCOMObject(doc);
                 Converter.releaseCOMObject(tmpl);
