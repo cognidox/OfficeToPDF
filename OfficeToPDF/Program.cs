@@ -42,8 +42,9 @@ namespace OfficeToPDF
             options["bookmarks"] = false;
             options["print"] = false;
             options["pdfa"] = false;
+            options["verbose"] = false;
             options["template"] = "";
-            Regex switches = new Regex(@"^/(hidden|readonly|bookmarks|print|pdfa|template|help|\?)$", RegexOptions.IgnoreCase);
+            Regex switches = new Regex(@"^/(hidden|readonly|bookmarks|print|pdfa|template|help|verbose|\?)$", RegexOptions.IgnoreCase);
             for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
                 string item = args[argIdx];
@@ -152,6 +153,10 @@ namespace OfficeToPDF
             Match extMatch = fileMatch.Match(inputFile);
             if (extMatch.Success)
             {
+                if ((Boolean)options["verbose"])
+                {
+                    Console.WriteLine("Converting {0} to {1}", inputFile, outputFile);
+                }
                 switch (extMatch.Groups[1].ToString().ToLower())
                 {
                     case "rtf":
@@ -163,6 +168,10 @@ namespace OfficeToPDF
                     case "docm":
                     case "dotm":
                         // Word
+                        if ((Boolean)options["verbose"])
+                        {
+                            Console.WriteLine("Converting with Word converter");
+                        }
                         converted = WordConverter.Convert(inputFile, outputFile, options);
                         break;
                     case "csv":
@@ -171,6 +180,10 @@ namespace OfficeToPDF
                     case "xlsx":
                     case "xlsm":
                         // Excel
+                        if ((Boolean)options["verbose"])
+                        {
+                            Console.WriteLine("Converting with Excel converter");
+                        }
                         converted = ExcelConverter.Convert(inputFile, outputFile, options);
                         break;
                     case "odp":
@@ -181,24 +194,44 @@ namespace OfficeToPDF
                     case "potm":
                     case "potx":
                         // Powerpoint
+                        if ((Boolean)options["verbose"])
+                        {
+                            Console.WriteLine("Converting with Powerpoint converter");
+                        }
                         converted = PowerpointConverter.Convert(inputFile, outputFile, options);
                         break;
                     case "vsd":
                         // Visio
+                        if ((Boolean)options["verbose"])
+                        {
+                            Console.WriteLine("Converting with Visio converter");
+                        }
                         converted = VisioConverter.Convert(inputFile, outputFile, options);
                         break;
                     case "pub":
                         // Publisher
+                        if ((Boolean)options["verbose"])
+                        {
+                            Console.WriteLine("Converting with Publisher converter");
+                        }
                         converted = PublisherConverter.Convert(inputFile, outputFile, options);
                         break;
                     case "msg":
                     case "vcf":
                     case "ics":
                         // Outlook
+                        if ((Boolean)options["verbose"])
+                        {
+                            Console.WriteLine("Converting with Outlook converter");
+                        }
                         converted = OutlookConverter.Convert(inputFile, outputFile, options);
                         break;
                     case "mpp":
                         // Project
+                        if ((Boolean)options["verbose"])
+                        {
+                            Console.WriteLine("Converting with Project converter");
+                        }
                         converted = ProjectConverter.Convert(inputFile, outputFile, options);
                         break;
                 }
@@ -207,6 +240,10 @@ namespace OfficeToPDF
             {
                 Console.WriteLine("Did not convert");
                 Environment.Exit(1);
+            }
+            else if ((Boolean)options["verbose"])
+            {
+                Console.WriteLine("Completed Conversion");
             }
             Environment.Exit(0);
         }
@@ -220,16 +257,18 @@ Handles Office files:
 
 OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file output_file
 
-  /bookmarks  Create bookmarks in the PDF when they are supported by the
-              Office application
-  /hidden     Attempt to hide the Office application window when converting
-  /readonly   Load the input file in read only mode where possible
-  /print      Create high-quality PDFs optimised for print
-  /pdfa       Produce ISO 19005-1 (PDF/A) compliant PDFs
-  /template <template_path> use a .dot, .dotx or .dotm template when converting with Word
-
-  input_file  The filename of the Office document to convert
-  output_file The filename of the PDF to create
+  /bookmarks  - Create bookmarks in the PDF when they are supported by the
+                Office application
+  /hidden     - Attempt to hide the Office application window when converting
+  /readonly   - Load the input file in read only mode where possible
+  /print      - Create high-quality PDFs optimised for print
+  /pdfa       - Produce ISO 19005-1 (PDF/A) compliant PDFs
+  /verbose    - Print out messages as it runs
+  /template <template_path> - Use a .dot, .dotx or .dotm template when
+                              converting with Word
+  
+  input_file  - The filename of the Office document to convert
+  output_file - The filename of the PDF to create
 ");
             Environment.Exit(0);
         }
