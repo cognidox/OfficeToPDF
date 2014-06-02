@@ -57,14 +57,16 @@ namespace OfficeToPDF
                     app.DisplayDocumentInformationPanel = false;
                     app.DisplayAlerts = PpAlertLevel.ppAlertsNone;
                     app.Visible = MSCore.MsoTriState.msoTrue;
+                    app.AutomationSecurity = MSCore.MsoAutomationSecurity.msoAutomationSecurityLow;
                     var presentations = app.Presentations;
                     presentations.Open2007(inputFile, nowrite, MSCore.MsoTriState.msoTrue, MSCore.MsoTriState.msoTrue, MSCore.MsoTriState.msoTrue);
                     var activePresentation = app.ActivePresentation;
                     activePresentation.ExportAsFixedFormat(outputFile, PpFixedFormatType.ppFixedFormatTypePDF, quality, MSCore.MsoTriState.msoFalse, PpPrintHandoutOrder.ppPrintHandoutVerticalFirst, PpPrintOutputType.ppPrintOutputSlides, MSCore.MsoTriState.msoFalse, null, PpPrintRangeType.ppPrintAll, "", false, true, true, true, pdfa, Type.Missing);
+                    activePresentation.Saved = MSCore.MsoTriState.msoTrue;
                     activePresentation.Close();
 
-                    Converter.releaseCOMObject(presentations);
                     Converter.releaseCOMObject(activePresentation);
+                    Converter.releaseCOMObject(presentations);
                     return true;
                 }
                 catch (Exception e)
@@ -79,6 +81,11 @@ namespace OfficeToPDF
                         app.Quit();
                     }
                     Converter.releaseCOMObject(app);
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
+
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
                 }
             }
             catch (System.Runtime.InteropServices.COMException e)

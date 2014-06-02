@@ -48,6 +48,7 @@ The following optional switches can be used:
   /hidden    - attempts to minimise the Office application when converting
   /print     - create high-quality PDFs optimised for print
   /pdfa      - produce ISO 19005-1 (PDF/A) compliant PDFs
+  /verbose   - Print out messages as it runs
   /template <template_path> - use a .dot, .dotx or .dotm template when converting with Word
 
 
