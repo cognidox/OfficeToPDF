@@ -44,7 +44,8 @@ namespace OfficeToPDF
             options["pdfa"] = false;
             options["verbose"] = false;
             options["template"] = "";
-            Regex switches = new Regex(@"^/(hidden|readonly|bookmarks|print|pdfa|template|help|verbose|\?)$", RegexOptions.IgnoreCase);
+            options["excel_max_rows"] = (int) 0;
+            Regex switches = new Regex(@"^/(hidden|readonly|bookmarks|print|pdfa|template|help|verbose|excel_max_rows|\?)$", RegexOptions.IgnoreCase);
             for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
                 string item = args[argIdx];
@@ -77,6 +78,22 @@ namespace OfficeToPDF
                                     }
                                     argIdx++;
 
+                                }
+                                break;
+                            case "excel_max_rows":
+                                // Only accept the next option if there are enough options
+                                if (argIdx + 3 < args.Length)
+                                {
+                                    if (Regex.IsMatch(args[argIdx + 1], @"^\d+$"))
+                                    {
+                                        options[itemMatch.Groups[1].Value.ToLower()] = (int) Convert.ToInt32(args[argIdx + 1]);
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("Maximum number of rows ({0}) is invalid", args[argIdx + 1]);
+                                        Environment.Exit(1);
+                                    }
+                                    argIdx++;
                                 }
                                 break;
                             default:
@@ -266,6 +283,9 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file output_file
   /verbose    - Print out messages as it runs
   /template <template_path> - Use a .dot, .dotx or .dotm template when
                               converting with Word
+  /excel_max_rows - If any worksheet in a spreadsheet document has more
+                    than this number of rows, do not attempt to convert
+                    the file. Applies when converting with Excel.
   
   input_file  - The filename of the Office document to convert
   output_file - The filename of the PDF to create
