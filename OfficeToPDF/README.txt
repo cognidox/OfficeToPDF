@@ -50,6 +50,9 @@ The following optional switches can be used:
   /pdfa      - produce ISO 19005-1 (PDF/A) compliant PDFs
   /verbose   - Print out messages as it runs
   /template <template_path> - use a .dot, .dotx or .dotm template when converting with Word
+  /excel_max_rows - if any worksheet in a spreadsheet document has more
+                    than this number of rows, do not attempt to convert
+                    the file. Applies when converting with Excel.
 
 
   Templates:
