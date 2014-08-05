@@ -38,6 +38,7 @@ namespace OfficeToPDF
 
             // Loop through the input, grabbing switches off the command line
             options["hidden"] = false;
+            options["markup"] = false;
             options["readonly"] = false;
             options["bookmarks"] = false;
             options["print"] = false;
@@ -45,7 +46,7 @@ namespace OfficeToPDF
             options["verbose"] = false;
             options["template"] = "";
             options["excel_max_rows"] = (int) 0;
-            Regex switches = new Regex(@"^/(hidden|readonly|bookmarks|print|pdfa|template|help|verbose|excel_max_rows|\?)$", RegexOptions.IgnoreCase);
+            Regex switches = new Regex(@"^/(hidden|markup|readonly|bookmarks|print|pdfa|template|help|verbose|excel_max_rows|\?)$", RegexOptions.IgnoreCase);
             for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
                 string item = args[argIdx];
@@ -277,6 +278,7 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file output_file
   /bookmarks  - Create bookmarks in the PDF when they are supported by the
                 Office application
   /hidden     - Attempt to hide the Office application window when converting
+  /markup     - Show document markup when creating PDFs with Word
   /readonly   - Load the input file in read only mode where possible
   /print      - Create high-quality PDFs optimised for print
   /pdfa       - Produce ISO 19005-1 (PDF/A) compliant PDFs

@@ -73,6 +73,11 @@ namespace OfficeToPDF
                 WdExportCreateBookmarks bookmarks = (Boolean)options["bookmarks"] ? 
                     WdExportCreateBookmarks.wdExportCreateHeadingBookmarks : 
                     WdExportCreateBookmarks.wdExportCreateNoBookmarks;
+                WdExportItem showMarkup = WdExportItem.wdExportDocumentContent;
+                if ((Boolean)options["markup"])
+                {
+                    showMarkup = WdExportItem.wdExportDocumentWithMarkup;
+                }
                 var documents = word.Documents;
                 Document doc = documents.OpenNoRepairDialog(ref filename, ref oMissing,
                         nowrite, ref oMissing, ref oMissing, ref oMissing, ref oMissing,
@@ -157,8 +162,8 @@ namespace OfficeToPDF
                 doc.Saved = true;
                 Converter.releaseCOMObject(fields);
                 doc.ExportAsFixedFormat(outputFile, WdExportFormat.wdExportFormatPDF, false, 
-                    quality, WdExportRange.wdExportAllDocument, 
-                    1, 1, WdExportItem.wdExportDocumentContent, false, true, bookmarks, true, true, pdfa);
+                    quality, WdExportRange.wdExportAllDocument,
+                    1, 1, showMarkup, false, true, bookmarks, true, true, pdfa);
 
                 if (tmpl != null)
                 {
