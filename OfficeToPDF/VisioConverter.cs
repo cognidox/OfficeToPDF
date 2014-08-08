@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using MSCore = Microsoft.Office.Core;
 using Microsoft.Office.Interop.Visio;
 
@@ -60,7 +61,17 @@ namespace OfficeToPDF
                 documents.OpenEx(inputFile, flags);
 
                 // Try and avoid dialogs about versions
-                tmpFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".vsd";
+                tmpFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".";
+                Regex extReg = new Regex("\\.(\\w+)$");
+                Match match = extReg.Match(inputFile);
+                if (match.Success)
+                {
+                    tmpFile += match.Groups[1].Value;
+                }
+                else
+                {
+                    tmpFile += "vsd";
+                }
                 var activeDoc = app.ActiveDocument;
                 activeDoc.SaveAs(tmpFile);
                 activeDoc.ExportAsFixedFormat(VisFixedFormatTypes.visFixedFormatPDF, outputFile, quality, VisPrintOutRange.visPrintAll, 1, -1, false, true, true, true, pdfa);
