@@ -24,10 +24,10 @@ The following file types can be converted:
  * Word       - .doc, .dot,  .docx, .dotx, .docm, .dotm, .rtf, .odt
  * Excel      - .xls, .xlsx, .xlsm, .csv, .odc
  * Powerpoint - .ppt, .pptx, .pptm, .odp
- * Visio      - .vsd, .vsdm, .vsdx
+ * Visio      - .vsd, .vsdm, .vsdx [.vsdm and .vsdx require Visio >= 2013]
  * Publisher  - .pub
  * Outlook    - .msg, .vcf, .ics
- * Project    - .mpp (Requires Office 2010 or greater)
+ * Project    - .mpp [requires Project >= 2010]
 
 
 Usage:
@@ -49,11 +49,11 @@ The following optional switches can be used:
   /markup    - show document markup when creating PDFs with Word
   /print     - create high-quality PDFs optimised for print
   /pdfa      - produce ISO 19005-1 (PDF/A) compliant PDFs
-  /verbose   - Print out messages as it runs
+  /verbose   - print out messages as it runs
   /template <template_path> - use a .dot, .dotx or .dotm template when converting with Word
-  /excel_max_rows - if any worksheet in a spreadsheet document has more
-                    than this number of rows, do not attempt to convert
-                    the file. Applies when converting with Excel.
+  /excel_max_rows <rows>    - if any worksheet in a spreadsheet document has more
+                              than this number of rows, do not attempt to convert
+                              the file. Applies when converting with Excel.
 
 
   Templates:

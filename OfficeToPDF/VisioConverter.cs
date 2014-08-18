@@ -38,9 +38,26 @@ namespace OfficeToPDF
         {
             Microsoft.Office.Interop.Visio.InvisibleApp app = null;
             String tmpFile = null;
+            String extension = "vsd";
             try
             {
                 app = new Microsoft.Office.Interop.Visio.InvisibleApp();
+                Regex extReg = new Regex("\\.(\\w+)$");
+                Match match = extReg.Match(inputFile);
+                if (match.Success)
+                {
+                    extension = match.Groups[1].Value;
+                }
+
+                // We can only convert vsdx and vsdm files with Visio 2013
+                if (System.Convert.ToDouble(app.Version.ToString()) < 15 &&
+                    ((String.Compare(extension, "vsdx") == 0) ||
+                    (String.Compare(extension, "vsdm") == 0)))
+                {
+                    Console.WriteLine("File type not supported in Visio version {0}", app.Version);
+                    return false;
+                }
+
                 bool pdfa = (Boolean)options["pdfa"] ? true : false;
                 short flags = 0;
                 if ((Boolean)options["readonly"])
@@ -61,17 +78,8 @@ namespace OfficeToPDF
                 documents.OpenEx(inputFile, flags);
 
                 // Try and avoid dialogs about versions
-                tmpFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".";
-                Regex extReg = new Regex("\\.(\\w+)$");
-                Match match = extReg.Match(inputFile);
-                if (match.Success)
-                {
-                    tmpFile += match.Groups[1].Value;
-                }
-                else
-                {
-                    tmpFile += "vsd";
-                }
+                tmpFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + "." + extension;
+                
                 var activeDoc = app.ActiveDocument;
                 activeDoc.SaveAs(tmpFile);
                 activeDoc.ExportAsFixedFormat(VisFixedFormatTypes.visFixedFormatPDF, outputFile, quality, VisPrintOutRange.visPrintAll, 1, -1, false, true, true, true, pdfa);
