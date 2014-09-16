@@ -17,3 +17,8 @@ OfficeToPDF/obj/x86/Release-signed/*.*
 OfficeToPDF/bin/Debug/*
 OfficeToPDF/obj/x86/Debug/*.*
 OfficeToPDF/obj/x86/Release/*.cache
+OfficeToPDF/bin/x64/Debug/OfficeToPDF.vshost.exe.manifest
+OfficeToPDF/bin/x64/Debug/OfficeToPDF.vshost.exe
+OfficeToPDF/obj/x64/Debug/DesignTimeResolveAssemblyReferencesInput.cache
+OfficeToPDF/obj/x64/Debug/OfficeToPDF.csproj.FileListAbsolute.txt
+OfficeToPDF/obj/x64/Debug/OfficeToPDF.csproj.ResolveComReference.cache

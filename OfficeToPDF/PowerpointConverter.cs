@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Runtime.InteropServices;
 using MSCore = Microsoft.Office.Core;
 using Microsoft.Office.Interop.PowerPoint;
 
@@ -35,13 +36,22 @@ namespace OfficeToPDF
     {
         public static new Boolean Convert(String inputFile, String outputFile, Hashtable options)
         {
+            Boolean running = (Boolean)options["noquit"];
             try
             {
                 Microsoft.Office.Interop.PowerPoint.Application app = null;
                 try
                 {
+                    try
+                    {
+                        app = (Microsoft.Office.Interop.PowerPoint.Application)Marshal.GetActiveObject("PowerPoint.Application");
+                    }
+                    catch (System.Exception)
+                    {
+                        app = new Microsoft.Office.Interop.PowerPoint.Application();
+                        running = false;
+                    }
                     MSCore.MsoTriState nowrite = (Boolean)options["readonly"] ? MSCore.MsoTriState.msoTrue : MSCore.MsoTriState.msoFalse;
-                    app = new Microsoft.Office.Interop.PowerPoint.Application();
                     bool pdfa = (Boolean)options["pdfa"] ? true : false;
                     if ((Boolean)options["hidden"])
                     {
@@ -53,6 +63,8 @@ namespace OfficeToPDF
                     {
                         quality = PpFixedFormatIntent.ppFixedFormatIntentPrint;
                     }
+                    Boolean includeProps = !(Boolean)options["excludeprops"];
+                    Boolean includeTags = !(Boolean)options["excludetags"];
                     app.FeatureInstall = MSCore.MsoFeatureInstall.msoFeatureInstallNone;
                     app.DisplayDocumentInformationPanel = false;
                     app.DisplayAlerts = PpAlertLevel.ppAlertsNone;
@@ -61,7 +73,7 @@ namespace OfficeToPDF
                     var presentations = app.Presentations;
                     presentations.Open2007(inputFile, nowrite, MSCore.MsoTriState.msoTrue, MSCore.MsoTriState.msoTrue, MSCore.MsoTriState.msoTrue);
                     var activePresentation = app.ActivePresentation;
-                    activePresentation.ExportAsFixedFormat(outputFile, PpFixedFormatType.ppFixedFormatTypePDF, quality, MSCore.MsoTriState.msoFalse, PpPrintHandoutOrder.ppPrintHandoutVerticalFirst, PpPrintOutputType.ppPrintOutputSlides, MSCore.MsoTriState.msoFalse, null, PpPrintRangeType.ppPrintAll, "", false, true, true, true, pdfa, Type.Missing);
+                    activePresentation.ExportAsFixedFormat(outputFile, PpFixedFormatType.ppFixedFormatTypePDF, quality, MSCore.MsoTriState.msoFalse, PpPrintHandoutOrder.ppPrintHandoutVerticalFirst, PpPrintOutputType.ppPrintOutputSlides, MSCore.MsoTriState.msoFalse, null, PpPrintRangeType.ppPrintAll, "", includeProps, true, includeTags, true, pdfa, Type.Missing);
                     activePresentation.Saved = MSCore.MsoTriState.msoTrue;
                     activePresentation.Close();
 
@@ -76,7 +88,7 @@ namespace OfficeToPDF
                 }
                 finally
                 {
-                    if (app != null)
+                    if (app != null && !running)
                     {
                         app.Quit();
                     }

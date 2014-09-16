@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Runtime.InteropServices;
 using MSCore = Microsoft.Office.Core;
 using Microsoft.Office.Interop.Outlook;
 
@@ -35,11 +36,20 @@ namespace OfficeToPDF
     {
         public static new Boolean Convert(String inputFile, String outputFile, Hashtable options)
         {
+            Boolean running = (Boolean)options["noquit"];
             Microsoft.Office.Interop.Outlook.Application app = null;
             String tmpDocFile = null;
             try
             {
-                app = new Microsoft.Office.Interop.Outlook.Application();
+                try
+                {
+                    app = (Microsoft.Office.Interop.Outlook.Application)Marshal.GetActiveObject("Outlook.Application");
+                }
+                catch(System.Exception)
+                {
+                    app = new Microsoft.Office.Interop.Outlook.Application();
+                    running = false;
+                }
                 var session = app.Session;
                 FileInfo fi = new FileInfo(inputFile);
                 // Create a temporary doc file from the message
@@ -105,7 +115,8 @@ namespace OfficeToPDF
                 {
                     System.IO.File.Delete(tmpDocFile);
                 }
-                if (app != null)
+                // If we were not already running, quit and release the outlook object
+                if (app != null && !running)
                 {
                     ((Microsoft.Office.Interop.Outlook._Application)app).Quit();
                 }

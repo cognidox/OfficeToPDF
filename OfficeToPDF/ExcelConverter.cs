@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Runtime.InteropServices;
 using Microsoft.Office.Interop.Excel;
 
 namespace OfficeToPDF
@@ -34,6 +35,7 @@ namespace OfficeToPDF
     {
         public static new Boolean Convert(String inputFile, String outputFile, Hashtable options)
         {
+            Boolean running = (Boolean)options["noquit"];
             Microsoft.Office.Interop.Excel.Application app = null;
             Microsoft.Office.Interop.Excel.Workbooks workbooks = null;
             Microsoft.Office.Interop.Excel.Workbook workbook = null;
@@ -142,9 +144,11 @@ namespace OfficeToPDF
                     appWin[1].Visible = (Boolean)options["hidden"] ? false : true;
                     Converter.releaseCOMObject(appWin);
                 }
+                Boolean includeProps = !(Boolean)options["excludeprops"];
+
                 workbook.SaveAs(tmpFile, fmt, Type.Missing, Type.Missing, Type.Missing, false, XlSaveAsAccessMode.xlNoChange, Type.Missing, false, Type.Missing, Type.Missing, Type.Missing);
                 workbook.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF,
-                    outputFile, quality, Type.Missing, false, Type.Missing, Type.Missing, false, Type.Missing);
+                    outputFile, quality, includeProps, false, Type.Missing, Type.Missing, false, Type.Missing);
                 return true;
             }
             catch (Exception e)
@@ -159,14 +163,17 @@ namespace OfficeToPDF
                     workbook.Close();
                 }
 
-                if (workbooks != null)
+                if (!running)
                 {
-                    workbooks.Close();
-                }
+                    if (workbooks != null)
+                    {
+                        workbooks.Close();
+                    }
 
-                if (app != null)
-                {
-                    ((Microsoft.Office.Interop.Excel._Application)app).Quit();
+                    if (app != null)
+                    {
+                        ((Microsoft.Office.Interop.Excel._Application)app).Quit();
+                    }
                 }
 
                 // Clean all the COM leftovers
