@@ -43,13 +43,16 @@ Switches:
 
 The following optional switches can be used:
 
-  /bookmarks - create bookmarks in the PDF when they are supported by the Office application
-  /readonly  - attempts to open the source document in read-only mode
-  /hidden    - attempts to minimise the Office application when converting
-  /markup    - show document markup when creating PDFs with Word
-  /print     - create high-quality PDFs optimised for print
-  /pdfa      - produce ISO 19005-1 (PDF/A) compliant PDFs
-  /verbose   - print out messages as it runs
+  /bookmarks    - create bookmarks in the PDF when they are supported by the Office application
+  /readonly     - attempts to open the source document in read-only mode
+  /hidden       - attempts to minimise the Office application when converting
+  /markup       - show document markup when creating PDFs with Word
+  /print        - create high-quality PDFs optimised for print
+  /pdfa         - produce ISO 19005-1 (PDF/A) compliant PDFs
+  /excludeprops - Do not include properties in the PDF
+  /excludetags  - Do not include tags in the PDF
+  /noquit       - Do not quit already running Office applications once the conversion is done
+  /verbose      - print out messages as it runs
   /template <template_path> - use a .dot, .dotx or .dotm template when converting with Word
   /excel_max_rows <rows>    - if any worksheet in a spreadsheet document has more
                               than this number of rows, do not attempt to convert

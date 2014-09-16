@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using System.Runtime.InteropServices;
 using Microsoft.Office.Interop.Word;
 
 
@@ -41,13 +42,22 @@ namespace OfficeToPDF
         /// <returns></returns>
         public static new Boolean Convert(String inputFile, String outputFile, Hashtable options)
         {
+            Boolean running = (Boolean)options["noquit"];
             Microsoft.Office.Interop.Word.Application word = null;
             object oMissing = System.Reflection.Missing.Value;
             Microsoft.Office.Interop.Word.Template tmpl;
             try
             {
                 tmpl = null;
-                word = new Microsoft.Office.Interop.Word.Application();
+                try
+                {
+                    word = (Microsoft.Office.Interop.Word.Application) Marshal.GetActiveObject("Word.Application");
+                }
+                catch (System.Exception)
+                {
+                    word = new Microsoft.Office.Interop.Word.Application();
+                    running = false;
+                }
                 word.DisplayAlerts = WdAlertLevel.wdAlertsNone;
                 word.DisplayRecentFiles = false;
                 word.DisplayDocumentInformationPanel = false;
@@ -64,6 +74,8 @@ namespace OfficeToPDF
                 Object filename = (Object)inputFile;
                 Boolean visible = !(Boolean)options["hidden"];
                 Boolean nowrite = (Boolean)options["readonly"];
+                Boolean includeProps = !(Boolean)options["excludeprops"];
+                Boolean includeTags = !(Boolean)options["excludetags"];
                 bool pdfa = (Boolean)options["pdfa"] ? true : false;
                 WdExportOptimizeFor quality = WdExportOptimizeFor.wdExportOptimizeForOnScreen;
                 if ((Boolean)options["print"])
@@ -163,7 +175,7 @@ namespace OfficeToPDF
                 Converter.releaseCOMObject(fields);
                 doc.ExportAsFixedFormat(outputFile, WdExportFormat.wdExportFormatPDF, false, 
                     quality, WdExportRange.wdExportAllDocument,
-                    1, 1, showMarkup, false, true, bookmarks, true, true, pdfa);
+                    1, 1, showMarkup, includeProps, true, bookmarks, includeTags, true, pdfa);
 
                 if (tmpl != null)
                 {
@@ -191,7 +203,7 @@ namespace OfficeToPDF
             }
             finally
             {
-                if (word != null)
+                if (word != null && !running)
                 {
                     ((_Application)word).Quit(ref oMissing, ref oMissing, ref oMissing);
                 }

@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Runtime.InteropServices;
 using MSCore = Microsoft.Office.Core;
 using MSProject = Microsoft.Office.Interop.MSProject;
 
@@ -36,11 +37,20 @@ namespace OfficeToPDF
     {
         public static new Boolean Convert(String inputFile, String outputFile, Hashtable options)
         {
+            Boolean running = (Boolean)options["noquit"];
             MSProject.Application app = null;
             object missing = System.Reflection.Missing.Value;
             try
             {
-                app = new MSProject.Application();
+                try
+                {
+                    app = (MSProject.Application)Marshal.GetActiveObject("MSProject.Application");
+                }
+                catch (System.Exception)
+                {
+                    app = new MSProject.Application();
+                    running = false;
+                }
                 System.Type type = app.GetType();
                 if (type.GetMethod("DocumentExport") == null || System.Convert.ToDouble(app.Version.ToString()) < 14)
                 {
@@ -52,6 +62,9 @@ namespace OfficeToPDF
                 app.DisplayAlerts = false;
                 app.DisplayPlanningWizard = false;
                 app.DisplayWizardErrors = false;
+
+                Boolean includeProps = !(Boolean)options["excludeprops"];
+                Boolean markup = (Boolean)options["markup"];
                 
                 FileInfo fi = new FileInfo(inputFile);
                 switch(fi.Extension)
@@ -65,7 +78,7 @@ namespace OfficeToPDF
                         {
                             return false;
                         }
-                        app.DocumentExport(outputFile, MSProject.PjDocExportType.pjPDF, true, true, false, missing, missing);
+                        app.DocumentExport(outputFile, MSProject.PjDocExportType.pjPDF, includeProps, markup, false, missing, missing);
                         app.FileCloseEx(MSProject.PjSaveType.pjDoNotSave, missing, missing);
                         break;
                 }
@@ -78,7 +91,7 @@ namespace OfficeToPDF
             }
             finally
             {
-                if (app != null)
+                if (app != null && !running)
                 {
                     ((MSProject.Application)app).Quit();
                 }

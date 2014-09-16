@@ -44,9 +44,12 @@ namespace OfficeToPDF
             options["print"] = false;
             options["pdfa"] = false;
             options["verbose"] = false;
+            options["excludeprops"] = false;
+            options["excludetags"] = false;
+            options["noquit"] = false;
             options["template"] = "";
             options["excel_max_rows"] = (int) 0;
-            Regex switches = new Regex(@"^/(hidden|markup|readonly|bookmarks|print|pdfa|template|help|verbose|excel_max_rows|\?)$", RegexOptions.IgnoreCase);
+            Regex switches = new Regex(@"^/(hidden|markup|readonly|bookmarks|noquit|print|pdfa|template|help|verbose|exclude(props|tags)|excel_max_rows|\?)$", RegexOptions.IgnoreCase);
             for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
                 string item = args[argIdx];
@@ -277,19 +280,22 @@ Handles Office files:
 
 OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file output_file
 
-  /bookmarks  - Create bookmarks in the PDF when they are supported by the
-                Office application
-  /hidden     - Attempt to hide the Office application window when converting
-  /markup     - Show document markup when creating PDFs with Word
-  /readonly   - Load the input file in read only mode where possible
-  /print      - Create high-quality PDFs optimised for print
-  /pdfa       - Produce ISO 19005-1 (PDF/A) compliant PDFs
-  /verbose    - Print out messages as it runs
+  /bookmarks    - Create bookmarks in the PDF when they are supported by the
+                  Office application
+  /hidden       - Attempt to hide the Office application window when converting
+  /markup       - Show document markup when creating PDFs with Word
+  /readonly     - Load the input file in read only mode where possible
+  /print        - Create high-quality PDFs optimised for print
+  /pdfa         - Produce ISO 19005-1 (PDF/A) compliant PDFs
+  /excludeprops - Do not include properties in the PDF
+  /excludetags  - Do not include tags in the PDF
+  /noquit       - Do not quit already running Office applications once the conversion is done
+  /verbose      - Print out messages as it runs
   /template <template_path> - Use a .dot, .dotx or .dotm template when
                               converting with Word
-  /excel_max_rows - If any worksheet in a spreadsheet document has more
-                    than this number of rows, do not attempt to convert
-                    the file. Applies when converting with Excel.
+  /excel_max_rows <rows>    - If any worksheet in a spreadsheet document has more
+                              than this number of rows, do not attempt to convert
+                              the file. Applies when converting with Excel.
   
   input_file  - The filename of the Office document to convert
   output_file - The filename of the PDF to create

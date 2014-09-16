@@ -24,6 +24,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Runtime.InteropServices;
 using MSCore = Microsoft.Office.Core;
 using Microsoft.Office.Interop.Visio;
 
@@ -36,12 +37,21 @@ namespace OfficeToPDF
     {
         public static new Boolean Convert(String inputFile, String outputFile, Hashtable options)
         {
+            Boolean running = (Boolean)options["noquit"];
             Microsoft.Office.Interop.Visio.InvisibleApp app = null;
             String tmpFile = null;
             String extension = "vsd";
             try
             {
-                app = new Microsoft.Office.Interop.Visio.InvisibleApp();
+                try
+                {
+                    app = (Microsoft.Office.Interop.Visio.InvisibleApp)Marshal.GetActiveObject("Visio.Application");
+                }
+                catch (System.Exception)
+                {
+                    app = new Microsoft.Office.Interop.Visio.InvisibleApp();
+                    running = false;
+                }
                 Regex extReg = new Regex("\\.(\\w+)$");
                 Match match = extReg.Match(inputFile);
                 if (match.Success)
@@ -73,6 +83,8 @@ namespace OfficeToPDF
                 {
                     quality = VisDocExIntent.visDocExIntentPrint;
                 }
+                Boolean includeProps = !(Boolean)options["excludeprops"];
+                Boolean includeTags = !(Boolean)options["excludetags"];
 
                 var documents = app.Documents;
                 documents.OpenEx(inputFile, flags);
@@ -82,7 +94,7 @@ namespace OfficeToPDF
                 
                 var activeDoc = app.ActiveDocument;
                 activeDoc.SaveAs(tmpFile);
-                activeDoc.ExportAsFixedFormat(VisFixedFormatTypes.visFixedFormatPDF, outputFile, quality, VisPrintOutRange.visPrintAll, 1, -1, false, true, true, true, pdfa);
+                activeDoc.ExportAsFixedFormat(VisFixedFormatTypes.visFixedFormatPDF, outputFile, quality, VisPrintOutRange.visPrintAll, 1, -1, false, true, includeProps, includeTags, pdfa);
                 activeDoc.Close();
 
                 Converter.releaseCOMObject(documents);
@@ -100,7 +112,7 @@ namespace OfficeToPDF
                 {
                     System.IO.File.Delete(tmpFile);
                 }
-                if (app != null)
+                if (app != null && !running)
                 {
                     app.Quit();
                 }

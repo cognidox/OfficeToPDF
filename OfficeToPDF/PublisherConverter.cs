@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Runtime.InteropServices;
 using MSCore = Microsoft.Office.Core;
 using Microsoft.Office.Interop.Publisher;
 
@@ -35,13 +36,22 @@ namespace OfficeToPDF
     {
         public static new Boolean Convert(String inputFile, String outputFile, Hashtable options)
         {
+            Boolean running = (Boolean)options["noquit"];
             Microsoft.Office.Interop.Publisher.Application app = null;
             String tmpFile = null;
             try
             {
+                try
+                {
+                    app = (Microsoft.Office.Interop.Publisher.Application)Marshal.GetActiveObject("Publisher.Application");
+                }
+                catch (System.Exception)
+                {
+                    app = new Microsoft.Office.Interop.Publisher.Application();
+                    running = false;
+                }
                 Boolean nowrite = (Boolean)options["readonly"];
                 bool pdfa = (Boolean)options["pdfa"] ? true : false;
-                app = new Microsoft.Office.Interop.Publisher.Application();
                 if ((Boolean)options["hidden"])
                 {
                     var activeWin = app.ActiveWindow;
@@ -54,12 +64,14 @@ namespace OfficeToPDF
                 {
                     quality = PbFixedFormatIntent.pbIntentPrinting;
                 }
+                Boolean includeProps = !(Boolean)options["excludeprops"];
+                Boolean includeTags = !(Boolean)options["excludetags"];
 
                 // Try and avoid dialogs about versions
                 tmpFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".pub";
                 var activeDocument = app.ActiveDocument;
                 activeDocument.SaveAs(tmpFile, PbFileFormat.pbFilePublication, false);
-                activeDocument.ExportAsFixedFormat(PbFixedFormatType.pbFixedFormatTypePDF, outputFile, quality, true, -1, -1, -1, -1, -1, -1, -1, true, PbPrintStyle.pbPrintStyleDefault, true, true, pdfa);
+                activeDocument.ExportAsFixedFormat(PbFixedFormatType.pbFixedFormatTypePDF, outputFile, quality, includeProps, -1, -1, -1, -1, -1, -1, -1, true, PbPrintStyle.pbPrintStyleDefault, includeTags, true, pdfa);
                 activeDocument.Close();
 
                 Converter.releaseCOMObject(activeDocument);
