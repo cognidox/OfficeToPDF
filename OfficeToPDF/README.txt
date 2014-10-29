@@ -53,6 +53,8 @@ The following optional switches can be used:
   /excludetags  - Do not include tags in the PDF
   /noquit       - Do not quit already running Office applications once the conversion is done
   /verbose      - print out messages as it runs
+  /password <pass>			- use <pass> as the password to open the document with
+  /writepassword <pass>		- use <pass> as the write password to open the document with
   /template <template_path> - use a .dot, .dotx or .dotm template when converting with Word
   /excel_max_rows <rows>    - if any worksheet in a spreadsheet document has more
                               than this number of rows, do not attempt to convert

@@ -36,6 +36,13 @@ namespace OfficeToPDF
     {
         public static new Boolean Convert(String inputFile, String outputFile, Hashtable options)
         {
+            // Check for password protection
+            if (Converter.IsPasswordProtected(inputFile))
+            {
+                Console.WriteLine("Unable to open password protected file");
+                return false;
+            }
+
             Boolean running = (Boolean)options["noquit"];
             try
             {

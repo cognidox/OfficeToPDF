@@ -91,10 +91,40 @@ namespace OfficeToPDF
                     showMarkup = WdExportItem.wdExportDocumentWithMarkup;
                 }
                 var documents = word.Documents;
-                Document doc = documents.OpenNoRepairDialog(ref filename, ref oMissing,
-                        nowrite, ref oMissing, ref oMissing, ref oMissing, ref oMissing,
-                        ref oMissing, ref oMissing, ref oMissing, ref oMissing, visible,
+
+                String readPassword = "";
+                if (!String.IsNullOrEmpty((String)options["password"]))
+                {
+                    readPassword = (String)options["password"];
+                }
+                Object oReadPass = (Object)readPassword;
+
+                String writePassword = "";
+                if (!String.IsNullOrEmpty((String)options["writepassword"]))
+                {
+                    writePassword = (String)options["writepassword"];
+                }
+                Object oWritePass = (Object)writePassword;
+
+                // Check for password protection and no password
+                if (Converter.IsPasswordProtected(inputFile) && String.IsNullOrEmpty(readPassword))
+                {
+                    Console.WriteLine("Unable to open password protected file");
+                    return false;
+                }
+
+                Document doc = null;
+                try
+                {
+                    doc = documents.OpenNoRepairDialog(ref filename, ref oMissing,
+                        nowrite, ref oMissing, ref oReadPass, ref oMissing, ref oMissing,
+                        ref oWritePass, ref oMissing, ref oMissing, ref oMissing, visible,
                         true, ref oMissing, ref oMissing, ref oMissing);
+                }
+                catch (System.Runtime.InteropServices.COMException ex)
+                {
+                    Console.WriteLine("Unable to open file");
+                }
                 doc.Activate();
                 if ((Boolean)options["hidden"])
                 {
