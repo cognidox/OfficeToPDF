@@ -48,8 +48,9 @@ namespace OfficeToPDF
             options["excludetags"] = false;
             options["noquit"] = false;
             options["template"] = "";
+            options["password"] = "";
             options["excel_max_rows"] = (int) 0;
-            Regex switches = new Regex(@"^/(hidden|markup|readonly|bookmarks|noquit|print|pdfa|template|help|verbose|exclude(props|tags)|excel_max_rows|\?)$", RegexOptions.IgnoreCase);
+            Regex switches = new Regex(@"^/(hidden|markup|readonly|bookmarks|noquit|print|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_max_rows|\?)$", RegexOptions.IgnoreCase);
             for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
                 string item = args[argIdx];
@@ -97,6 +98,15 @@ namespace OfficeToPDF
                                         Console.WriteLine("Maximum number of rows ({0}) is invalid", args[argIdx + 1]);
                                         Environment.Exit(1);
                                     }
+                                    argIdx++;
+                                }
+                                break;
+                            case "password":
+                            case "writepassword":
+                                // Only accept the next option if there are enough options
+                                if (argIdx + 3 < args.Length)
+                                {
+                                    options[itemMatch.Groups[1].Value.ToLower()] = args[argIdx + 1];
                                     argIdx++;
                                 }
                                 break;
@@ -291,6 +301,8 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file output_file
   /excludetags  - Do not include tags in the PDF
   /noquit       - Do not quit already running Office applications once the conversion is done
   /verbose      - Print out messages as it runs
+  /password <pass>			- Use <pass> as the password to open the document with
+  /writepassword <pass>		- Use <pass> as the write password to open the document with
   /template <template_path> - Use a .dot, .dotx or .dotm template when
                               converting with Word
   /excel_max_rows <rows>    - If any worksheet in a spreadsheet document has more
