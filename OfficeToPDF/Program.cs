@@ -27,6 +27,21 @@ using System.Text.RegularExpressions;
 
 namespace OfficeToPDF
 {
+    // Set up the exit codes
+    [Flags]
+    public enum ExitCode : int
+    {
+        Success = 0,
+        Failed = 1,
+        UnknownError = 2,
+        PasswordFailure = 4,
+        InvalidArguments = 8,
+        FileOpenFailure = 16,
+        UnsupportedFileFormat = 32,
+        FileNotFound = 64,
+        DirectoryNotFound = 128
+    }
+
     class Program
     {
         [STAThread]
@@ -96,7 +111,7 @@ namespace OfficeToPDF
                                     else
                                     {
                                         Console.WriteLine("Maximum number of rows ({0}) is invalid", args[argIdx + 1]);
-                                        Environment.Exit(1);
+                                        Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
                                     }
                                     argIdx++;
                                 }
@@ -118,7 +133,7 @@ namespace OfficeToPDF
                     else
                     {
                         Console.WriteLine("Unknown option: {0}", item);
-                        Environment.Exit(1);
+                        Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
                     }
                 }
                 else if (filesSeen < 2)
@@ -140,7 +155,7 @@ namespace OfficeToPDF
             if (fileMatch.Matches(files[0]).Count != 1)
             {
                 Console.WriteLine("Input file can not be handled. Must be Word, PowerPoint, Excel, Outlook, Publisher or Visio");
-                Environment.Exit(1);
+                Environment.Exit((int)(ExitCode.Failed | ExitCode.UnsupportedFileFormat));
             }
 
             String inputFile = "";
@@ -155,14 +170,14 @@ namespace OfficeToPDF
                 if (info == null || !info.Exists)
                 {
                     Console.WriteLine("Input file doesn't exist");
-                    Environment.Exit(1);
+                    Environment.Exit((int)(ExitCode.Failed | ExitCode.FileNotFound));
                 }
                 inputFile = info.FullName;
             }
             catch
             {
                 Console.WriteLine("Unable to open input file");
-                Environment.Exit(1);
+                Environment.Exit((int)(ExitCode.Failed | ExitCode.FileOpenFailure));
             }
 
             // Make sure the destination location exists
@@ -174,13 +189,13 @@ namespace OfficeToPDF
             if (!System.IO.Directory.Exists(outputInfo.DirectoryName))
             {
                 Console.WriteLine("Output directory does not exist");
-                Environment.Exit(1);
+                Environment.Exit((int)(ExitCode.Failed | ExitCode.DirectoryNotFound));
             }
             outputFile = outputInfo.FullName;
 
             // Now, do the cleverness of determining what the extension is, and so, which
             // conversion class to pass it to
-            Boolean converted = false;
+            int converted = (int)ExitCode.UnknownError;
             Match extMatch = fileMatch.Match(inputFile);
             if (extMatch.Success)
             {
@@ -269,16 +284,17 @@ namespace OfficeToPDF
                         break;
                 }
             }
-            if (!converted)
+            if (converted != (int)ExitCode.Success)
             {
                 Console.WriteLine("Did not convert");
-                Environment.Exit(1);
+                // Return the general failure code and the specific failure code
+                Environment.Exit((int)ExitCode.Failed | converted);
             }
             else if ((Boolean)options["verbose"])
             {
                 Console.WriteLine("Completed Conversion");
             }
-            Environment.Exit(0);
+            Environment.Exit((int)ExitCode.Success);
         }
 
         static void showHelp()
@@ -312,7 +328,7 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file output_file
   input_file  - The filename of the Office document to convert
   output_file - The filename of the PDF to create
 ");
-            Environment.Exit(0);
+            Environment.Exit((int)ExitCode.Success);
         }
     } 
 }

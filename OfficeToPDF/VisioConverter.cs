@@ -35,7 +35,7 @@ namespace OfficeToPDF
     /// </summary>
     class VisioConverter: Converter
     {
-        public static new Boolean Convert(String inputFile, String outputFile, Hashtable options)
+        public static new int Convert(String inputFile, String outputFile, Hashtable options)
         {
             Boolean running = (Boolean)options["noquit"];
             Microsoft.Office.Interop.Visio.InvisibleApp app = null;
@@ -65,7 +65,7 @@ namespace OfficeToPDF
                     (String.Compare(extension, "vsdm") == 0)))
                 {
                     Console.WriteLine("File type not supported in Visio version {0}", app.Version);
-                    return false;
+                    return (int)ExitCode.UnsupportedFileFormat;
                 }
 
                 bool pdfa = (Boolean)options["pdfa"] ? true : false;
@@ -99,12 +99,12 @@ namespace OfficeToPDF
 
                 Converter.releaseCOMObject(documents);
                 Converter.releaseCOMObject(activeDoc);
-                return true;
+                return (int)ExitCode.Success;
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
-                return false;
+                return (int)ExitCode.UnknownError;
             }
             finally
             {

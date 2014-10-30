@@ -34,7 +34,7 @@ namespace OfficeToPDF
     /// </summary>
     class OutlookConverter: Converter
     {
-        public static new Boolean Convert(String inputFile, String outputFile, Hashtable options)
+        public static new int Convert(String inputFile, String outputFile, Hashtable options)
         {
             Boolean running = (Boolean)options["noquit"];
             Microsoft.Office.Interop.Outlook.Application app = null;
@@ -60,7 +60,7 @@ namespace OfficeToPDF
                         var message = (MailItem) session.OpenSharedItem(inputFile);
                         if (message == null)
                         {
-                            return false;
+                            return (int)ExitCode.FileOpenFailure;
                         }
                         message.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
                         Converter.releaseCOMObject(message);
@@ -70,7 +70,7 @@ namespace OfficeToPDF
                         var contact = (ContactItem)session.OpenSharedItem(inputFile);
                         if (contact == null)
                         {
-                            return false;
+                            return (int)ExitCode.FileOpenFailure;
                         }
                         contact.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
                         Converter.releaseCOMObject(contact);
@@ -99,7 +99,7 @@ namespace OfficeToPDF
 
                 if (!File.Exists(tmpDocFile))
                 {
-                    return false;
+                    return (int)ExitCode.UnknownError;
                 }
                 // Convert the doc file to a PDF
                 return WordConverter.Convert(tmpDocFile, outputFile, options);
@@ -107,7 +107,7 @@ namespace OfficeToPDF
             catch (System.Exception e)
             {
                 Console.WriteLine(e.Message);
-                return false;
+                return (int)ExitCode.UnknownError;
             }
             finally
             {
