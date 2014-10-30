@@ -33,7 +33,7 @@ namespace OfficeToPDF
     /// </summary>
     class ExcelConverter: Converter
     {
-        public static new Boolean Convert(String inputFile, String outputFile, Hashtable options)
+        public static new int Convert(String inputFile, String outputFile, Hashtable options)
         {
             Boolean running = (Boolean)options["noquit"];
             Microsoft.Office.Interop.Excel.Application app = null;
@@ -78,7 +78,7 @@ namespace OfficeToPDF
                 if (Converter.IsPasswordProtected(inputFile) && String.IsNullOrEmpty(readPassword))
                 {
                     Console.WriteLine("Unable to open password protected file");
-                    return false;
+                    return (int)ExitCode.PasswordFailure;
                 }
 
                 workbooks = app.Workbooks;
@@ -87,7 +87,7 @@ namespace OfficeToPDF
                 // Unable to open workbook
                 if (workbook == null)
                 {
-                    return false;
+                    return (int)ExitCode.FileOpenFailure;
                 }
 
                 // Try and avoid xls files raising a dialog
@@ -171,12 +171,12 @@ namespace OfficeToPDF
                 workbook.SaveAs(tmpFile, fmt, Type.Missing, Type.Missing, Type.Missing, false, XlSaveAsAccessMode.xlNoChange, Type.Missing, false, Type.Missing, Type.Missing, Type.Missing);
                 workbook.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF,
                     outputFile, quality, includeProps, false, Type.Missing, Type.Missing, false, Type.Missing);
-                return true;
+                return (int)ExitCode.Success;
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
-                return false;
+                return (int)ExitCode.UnknownError;
             }
             finally
             {

@@ -73,3 +73,28 @@ The following optional switches can be used:
   
   For more information about Office template paths, see:
   http://office.microsoft.com/en-001/word-help/about-document-template-locations-HP003082725.aspx
+
+
+  Error Codes:
+  ------------
+
+  The following error codes are returned by OfficeToPDF. Note that multiple errors are
+  returned as a bitmask, so bitwise operations can test for multiple errors.
+
+  0		- Success
+  1		- Failure
+  2		- Unknown Error
+  4		- File protected by password
+  8		- Invalid arguments
+  16	- Unable to open the source file
+  32	- Unsupported file format
+  64	- Source file not found
+  128	- Output directory not found
+
+  To check for a specific error code after calling officetopdf.exe, use the batch
+  "SET /A" command. e.g.
+
+		SET /A "PASSWORDFAIL=(%ERRORLEVEL% & 4)"
+		IF %PASSWORDFAIL% NEQ 0 (
+			ECHO Password failed
+		)

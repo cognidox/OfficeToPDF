@@ -40,7 +40,7 @@ namespace OfficeToPDF
         /// <param name="inputFile">Full path of the input Word file</param>
         /// <param name="outputFile">Full path of the output PDF</param>
         /// <returns></returns>
-        public static new Boolean Convert(String inputFile, String outputFile, Hashtable options)
+        public static new int Convert(String inputFile, String outputFile, Hashtable options)
         {
             Boolean running = (Boolean)options["noquit"];
             Microsoft.Office.Interop.Word.Application word = null;
@@ -110,7 +110,7 @@ namespace OfficeToPDF
                 if (Converter.IsPasswordProtected(inputFile) && String.IsNullOrEmpty(readPassword))
                 {
                     Console.WriteLine("Unable to open password protected file");
-                    return false;
+                    return (int)ExitCode.PasswordFailure;
                 }
 
                 Document doc = null;
@@ -224,12 +224,12 @@ namespace OfficeToPDF
                 Converter.releaseCOMObject(doc);
                 Converter.releaseCOMObject(tmpl);
 
-                return true;
+                return (int)ExitCode.Success;
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
-                return false;
+                return (int)ExitCode.UnknownError;
             }
             finally
             {

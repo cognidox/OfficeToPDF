@@ -35,7 +35,7 @@ namespace OfficeToPDF
     /// </summary>
     class ProjectConverter: Converter
     {
-        public static new Boolean Convert(String inputFile, String outputFile, Hashtable options)
+        public static new int Convert(String inputFile, String outputFile, Hashtable options)
         {
             Boolean running = (Boolean)options["noquit"];
             MSProject.Application app = null;
@@ -55,7 +55,7 @@ namespace OfficeToPDF
                 if (type.GetMethod("DocumentExport") == null || System.Convert.ToDouble(app.Version.ToString()) < 14)
                 {
                     Console.WriteLine("Not implemented with Office version {0}", app.Version);
-                    return false;
+                    return (int)ExitCode.UnsupportedFileFormat;
                 }
 
                 app.ShowWelcome = false;
@@ -76,18 +76,18 @@ namespace OfficeToPDF
                         }
                         if (project == null)
                         {
-                            return false;
+                            return (int)ExitCode.UnknownError;
                         }
                         app.DocumentExport(outputFile, MSProject.PjDocExportType.pjPDF, includeProps, markup, false, missing, missing);
                         app.FileCloseEx(MSProject.PjSaveType.pjDoNotSave, missing, missing);
                         break;
                 }
-                return File.Exists(outputFile);
+                return File.Exists(outputFile) ? (int)ExitCode.Success : (int)ExitCode.UnknownError;
             }
             catch (System.Exception e)
             {
                 Console.WriteLine(e.Message);
-                return false;
+                return (int)ExitCode.UnknownError;
             }
             finally
             {

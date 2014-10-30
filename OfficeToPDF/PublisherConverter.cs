@@ -34,7 +34,7 @@ namespace OfficeToPDF
     /// </summary>
     class PublisherConverter: Converter
     {
-        public static new Boolean Convert(String inputFile, String outputFile, Hashtable options)
+        public static new int Convert(String inputFile, String outputFile, Hashtable options)
         {
             Boolean running = (Boolean)options["noquit"];
             Microsoft.Office.Interop.Publisher.Application app = null;
@@ -75,12 +75,12 @@ namespace OfficeToPDF
                 activeDocument.Close();
 
                 Converter.releaseCOMObject(activeDocument);
-                return true;
+                return (int)ExitCode.Success;
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
-                return false;
+                return (int)ExitCode.UnknownError;
             }
             finally
             {
