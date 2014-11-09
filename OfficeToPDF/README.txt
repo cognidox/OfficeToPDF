@@ -53,8 +53,8 @@ The following optional switches can be used:
   /excludetags  - Do not include tags in the PDF
   /noquit       - Do not quit already running Office applications once the conversion is done
   /verbose      - print out messages as it runs
-  /password <pass>			- use <pass> as the password to open the document with
-  /writepassword <pass>		- use <pass> as the write password to open the document with
+  /password <pass>          - use <pass> as the password to open the document with
+  /writepassword <pass>     - use <pass> as the write password to open the document with
   /template <template_path> - use a .dot, .dotx or .dotm template when converting with Word
   /excel_max_rows <rows>    - if any worksheet in a spreadsheet document has more
                               than this number of rows, do not attempt to convert
@@ -81,20 +81,20 @@ The following optional switches can be used:
   The following error codes are returned by OfficeToPDF. Note that multiple errors are
   returned as a bitmask, so bitwise operations can test for multiple errors.
 
-  0		- Success
-  1		- Failure
-  2		- Unknown Error
-  4		- File protected by password
-  8		- Invalid arguments
-  16	- Unable to open the source file
-  32	- Unsupported file format
-  64	- Source file not found
-  128	- Output directory not found
+  0     - Success
+  1     - Failure
+  2     - Unknown Error
+  4     - File protected by password
+  8     - Invalid arguments
+  16    - Unable to open the source file
+  32    - Unsupported file format
+  64    - Source file not found
+  128   - Output directory not found
 
   To check for a specific error code after calling officetopdf.exe, use the batch
   "SET /A" command. e.g.
 
-		SET /A "PASSWORDFAIL=(%ERRORLEVEL% & 4)"
-		IF %PASSWORDFAIL% NEQ 0 (
-			ECHO Password failed
-		)
+      SET /A "PASSWORDFAIL=(%ERRORLEVEL% & 4)"
+      IF %PASSWORDFAIL% NEQ 0 (
+          ECHO Password failed
+      )

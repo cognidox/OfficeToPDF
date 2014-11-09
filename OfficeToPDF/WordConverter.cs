@@ -71,6 +71,15 @@ namespace OfficeToPDF
                 wdOptions.DoNotPromptForConvert = true;
                 wdOptions.PromptUpdateStyle = false;
                 wdOptions.ConfirmConversions = false;
+                wdOptions.CheckGrammarAsYouType = false;
+                wdOptions.CheckGrammarWithSpelling = false;
+                wdOptions.CheckSpellingAsYouType = false;
+                wdOptions.DisplaySmartTagButtons = false;
+                wdOptions.EnableLivePreview = false;
+                wdOptions.ShowReadabilityStatistics = false;
+                wdOptions.SuggestSpellingCorrections = false;
+                wdOptions.AllowDragAndDrop = false;
+                wdOptions.EnableMisusedWordsDictionary = false;
                 Object filename = (Object)inputFile;
                 Boolean visible = !(Boolean)options["hidden"];
                 Boolean nowrite = (Boolean)options["readonly"];
@@ -121,11 +130,17 @@ namespace OfficeToPDF
                         ref oWritePass, ref oMissing, ref oMissing, ref oMissing, visible,
                         true, ref oMissing, ref oMissing, ref oMissing);
                 }
-                catch (System.Runtime.InteropServices.COMException ex)
+                catch (System.Runtime.InteropServices.COMException)
                 {
                     Console.WriteLine("Unable to open file");
+                    return (int)ExitCode.FileOpenFailure;
                 }
                 doc.Activate();
+                doc.SpellingChecked = true;
+                doc.GrammarChecked = true;
+                doc.TrackRevisions = false;
+                doc.TrackMoves = false;
+                doc.TrackFormatting = false;
                 if ((Boolean)options["hidden"])
                 {
                     var activeWin = word.ActiveWindow;
@@ -154,55 +169,39 @@ namespace OfficeToPDF
                 // Update some of the field types in the document so the printed
                 // PDF looks correct. Skips some field types (such as ASK) that would
                 // create dialogs
-                var fields = doc.Fields;
-                for (int i = 1; i <= fields.Count; i++)
+                foreach (Microsoft.Office.Interop.Word.Section section in doc.Sections)
                 {
-                    switch (fields[i].Type)
+                    var sectionRange = section.Range;
+                    var sectionFields = sectionRange.Fields;
+                    foreach (Field sectionField in sectionFields)
                     {
-                        case WdFieldType.wdFieldAuthor:
-                        case WdFieldType.wdFieldAutoText:
-                        case WdFieldType.wdFieldComments:
-                        case WdFieldType.wdFieldCreateDate:
-                        case WdFieldType.wdFieldDate:
-                        case WdFieldType.wdFieldDocProperty:
-                        case WdFieldType.wdFieldDocVariable:
-                        case WdFieldType.wdFieldEditTime:
-                        case WdFieldType.wdFieldFileName:
-                        case WdFieldType.wdFieldFileSize:
-                        case WdFieldType.wdFieldFootnoteRef:
-                        case WdFieldType.wdFieldGreetingLine:
-                        case WdFieldType.wdFieldIndex:
-                        case WdFieldType.wdFieldInfo:
-                        case WdFieldType.wdFieldKeyWord:
-                        case WdFieldType.wdFieldLastSavedBy:
-                        case WdFieldType.wdFieldNoteRef:
-                        case WdFieldType.wdFieldNumChars:
-                        case WdFieldType.wdFieldNumPages:
-                        case WdFieldType.wdFieldNumWords:
-                        case WdFieldType.wdFieldPage:
-                        case WdFieldType.wdFieldPageRef:
-                        case WdFieldType.wdFieldPrintDate:
-                        case WdFieldType.wdFieldRef:
-                        case WdFieldType.wdFieldRevisionNum:
-                        case WdFieldType.wdFieldSaveDate:
-                        case WdFieldType.wdFieldSection:
-                        case WdFieldType.wdFieldSectionPages:
-                        case WdFieldType.wdFieldSubject:
-                        case WdFieldType.wdFieldTime:
-                        case WdFieldType.wdFieldTitle:
-                        case WdFieldType.wdFieldTOA:
-                        case WdFieldType.wdFieldTOAEntry:
-                        case WdFieldType.wdFieldTOC:
-                        case WdFieldType.wdFieldTOCEntry:
-                        case WdFieldType.wdFieldUserAddress:
-                        case WdFieldType.wdFieldUserInitials:
-                        case WdFieldType.wdFieldUserName:
-                            fields[i].Update();
-                            break;
+                        WordConverter.updateField(sectionField, word, inputFile);
                     }
+
+                    var headers = section.Headers;
+                    foreach (Microsoft.Office.Interop.Word.HeaderFooter header in headers)
+                    {
+                        var range = header.Range;
+                        var rangeFields = range.Fields;
+                        foreach (Field rangeField in rangeFields)
+                        {
+                            WordConverter.updateField(rangeField, word, inputFile);
+                        }
+                    }
+                    var footers = section.Footers;
+                    foreach (Microsoft.Office.Interop.Word.HeaderFooter footer in footers)
+                    {
+                        var range = footer.Range;
+                        var rangeFields = range.Fields;
+                        foreach (Field rangeField in rangeFields)
+                        {
+                            WordConverter.updateField(rangeField, word, inputFile);
+                        }
+                    }
+                    
                 }
+
                 doc.Saved = true;
-                Converter.releaseCOMObject(fields);
                 doc.ExportAsFixedFormat(outputFile, WdExportFormat.wdExportFormatPDF, false, 
                     quality, WdExportRange.wdExportAllDocument,
                     1, 1, showMarkup, includeProps, true, bookmarks, includeTags, true, pdfa);
@@ -238,6 +237,61 @@ namespace OfficeToPDF
                     ((_Application)word).Quit(ref oMissing, ref oMissing, ref oMissing);
                 }
                 Converter.releaseCOMObject(word);
+            }
+        }
+        private static void updateField(Field field, Microsoft.Office.Interop.Word.Application word, String filename)
+        {
+
+            switch (field.Type)
+            {
+                case WdFieldType.wdFieldAuthor:
+                case WdFieldType.wdFieldAutoText:
+                case WdFieldType.wdFieldComments:
+                case WdFieldType.wdFieldCreateDate:
+                case WdFieldType.wdFieldDate:
+                case WdFieldType.wdFieldDocProperty:
+                case WdFieldType.wdFieldDocVariable:
+                case WdFieldType.wdFieldEditTime:
+                case WdFieldType.wdFieldFileSize:
+                case WdFieldType.wdFieldFootnoteRef:
+                case WdFieldType.wdFieldGreetingLine:
+                case WdFieldType.wdFieldIndex:
+                case WdFieldType.wdFieldInfo:
+                case WdFieldType.wdFieldKeyWord:
+                case WdFieldType.wdFieldLastSavedBy:
+                case WdFieldType.wdFieldNoteRef:
+                case WdFieldType.wdFieldNumChars:
+                case WdFieldType.wdFieldNumPages:
+                case WdFieldType.wdFieldNumWords:
+                case WdFieldType.wdFieldPage:
+                case WdFieldType.wdFieldPageRef:
+                case WdFieldType.wdFieldPrintDate:
+                case WdFieldType.wdFieldRef:
+                case WdFieldType.wdFieldRevisionNum:
+                case WdFieldType.wdFieldSaveDate:
+                case WdFieldType.wdFieldSection:
+                case WdFieldType.wdFieldSectionPages:
+                case WdFieldType.wdFieldSubject:
+                case WdFieldType.wdFieldTime:
+                case WdFieldType.wdFieldTitle:
+                case WdFieldType.wdFieldTOA:
+                case WdFieldType.wdFieldTOAEntry:
+                case WdFieldType.wdFieldTOC:
+                case WdFieldType.wdFieldTOCEntry:
+                case WdFieldType.wdFieldUserAddress:
+                case WdFieldType.wdFieldUserInitials:
+                case WdFieldType.wdFieldUserName:
+                    field.Update();
+                    break;
+                case WdFieldType.wdFieldFileName:
+                    // Handle the filename as a special situation, since it doesn't seem to
+                    // update correctly (issue #13)
+                    field.Select();
+                    field.Delete();
+                    Selection selection = word.Selection;
+                    selection.TypeText(Path.GetFileName(filename));
+                    Converter.releaseCOMObject(selection);
+                    break;
             }
         }
     }
