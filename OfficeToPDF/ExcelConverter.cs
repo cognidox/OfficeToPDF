@@ -130,13 +130,29 @@ namespace OfficeToPDF
                             // excel_max_rows value. Note that we can't just take the range last
                             // row, as this may return a huge value, rather find the last non-blank
                             // row.
+                            var row_count = 0;
                             var range = ((Microsoft.Office.Interop.Excel.Worksheet)ws).UsedRange;
-                            var cells = range.Cells;
-                            var cellSearch = cells.Find("*", oMissing, oMissing, oMissing, oMissing, Microsoft.Office.Interop.Excel.XlSearchDirection.xlPrevious, false, oMissing, oMissing);
-                            var row_count = cellSearch.Row;
-                            found_worksheet = ((Microsoft.Office.Interop.Excel.Worksheet)ws).Name;
-                            Converter.releaseCOMObject(cellSearch);
-                            Converter.releaseCOMObject(cells);
+                            if (range != null)
+                            {
+                                var rows = range.Rows; 
+                                if (rows != null && rows.Count > max_rows)
+                                {
+                                    var cells = range.Cells;
+                                    if (cells != null)
+                                    {
+                                        var cellSearch = cells.Find("*", oMissing, oMissing, oMissing, oMissing, Microsoft.Office.Interop.Excel.XlSearchDirection.xlPrevious, false, oMissing, oMissing);
+                                        // Make sure we actually get some results, since the worksheet may be totally blank
+                                        if (cellSearch != null)
+                                        {
+                                            row_count = cellSearch.Row;
+                                            found_worksheet = ((Microsoft.Office.Interop.Excel.Worksheet)ws).Name;
+                                            Converter.releaseCOMObject(cellSearch);
+                                        }
+                                        Converter.releaseCOMObject(cells);
+                                    }
+                                    Converter.releaseCOMObject(rows);
+                                }
+                            }
                             Converter.releaseCOMObject(range);
                             Converter.releaseCOMObject(ws);
 
