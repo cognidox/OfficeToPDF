@@ -127,12 +127,16 @@ namespace OfficeToPDF
                         if (string.IsNullOrEmpty(print_area))
                         {
                             // There is no print area, check that the row count is <= to the
-                            // excel_max_rows value
+                            // excel_max_rows value. Note that we can't just take the range last
+                            // row, as this may return a huge value, rather find the last non-blank
+                            // row.
                             var range = ((Microsoft.Office.Interop.Excel.Worksheet)ws).UsedRange;
-                            var rows = range.Rows;
-                            var row_count = rows.Count;
+                            var cells = range.Cells;
+                            var cellSearch = cells.Find("*", oMissing, oMissing, oMissing, oMissing, Microsoft.Office.Interop.Excel.XlSearchDirection.xlPrevious, false, oMissing, oMissing);
+                            var row_count = cellSearch.Row;
                             found_worksheet = ((Microsoft.Office.Interop.Excel.Worksheet)ws).Name;
-                            Converter.releaseCOMObject(rows);
+                            Converter.releaseCOMObject(cellSearch);
+                            Converter.releaseCOMObject(cells);
                             Converter.releaseCOMObject(range);
                             Converter.releaseCOMObject(ws);
 

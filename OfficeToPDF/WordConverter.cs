@@ -100,6 +100,7 @@ namespace OfficeToPDF
                     showMarkup = WdExportItem.wdExportDocumentWithMarkup;
                 }
                 var documents = word.Documents;
+                var normalTemplate = word.NormalTemplate;
 
                 String readPassword = "";
                 if (!String.IsNullOrEmpty((String)options["password"]))
@@ -118,6 +119,7 @@ namespace OfficeToPDF
                 // Check for password protection and no password
                 if (Converter.IsPasswordProtected(inputFile) && String.IsNullOrEmpty(readPassword))
                 {
+                    normalTemplate.Saved = true;
                     Console.WriteLine("Unable to open password protected file");
                     return (int)ExitCode.PasswordFailure;
                 }
@@ -141,6 +143,7 @@ namespace OfficeToPDF
                 doc.TrackRevisions = false;
                 doc.TrackMoves = false;
                 doc.TrackFormatting = false;
+                normalTemplate.Saved = true;
                 if ((Boolean)options["hidden"])
                 {
                     var activeWin = word.ActiveWindow;
@@ -201,6 +204,7 @@ namespace OfficeToPDF
                     
                 }
 
+                normalTemplate.Saved = true;
                 doc.Saved = true;
                 doc.ExportAsFixedFormat(outputFile, WdExportFormat.wdExportFormatPDF, false, 
                     quality, WdExportRange.wdExportAllDocument,
@@ -216,12 +220,14 @@ namespace OfficeToPDF
                 {
                     doc.Saved = true;
                 }
+                normalTemplate.Saved = true;
                 ((_Document)doc).Close(ref saveChanges, ref oMissing, ref oMissing);
 
                 Converter.releaseCOMObject(wdOptions);
                 Converter.releaseCOMObject(documents);
                 Converter.releaseCOMObject(doc);
                 Converter.releaseCOMObject(tmpl);
+                Converter.releaseCOMObject(normalTemplate);
 
                 return (int)ExitCode.Success;
             }
