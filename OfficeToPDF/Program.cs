@@ -1,6 +1,6 @@
 ﻿/**
  *  OfficeToPDF command line PDF conversion for Office 2007/2010/2013
- *  Copyright (C) 2011-2014 Cognidox Ltd
+ *  Copyright (C) 2011-2015 Cognidox Ltd
  *  http://www.cognidox.com/opensource/
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -144,7 +144,7 @@ namespace OfficeToPDF
 
             // Need to error here, as we need input and output files as the
             // arguments to this script
-            if (filesSeen != 2)
+            if (filesSeen != 1 && filesSeen != 2)
             {
                 showHelp();
             }
@@ -156,6 +156,11 @@ namespace OfficeToPDF
             {
                 Console.WriteLine("Input file can not be handled. Must be Word, PowerPoint, Excel, Outlook, Publisher or Visio");
                 Environment.Exit((int)(ExitCode.Failed | ExitCode.UnsupportedFileFormat));
+            }
+
+            if (filesSeen == 1)
+            {
+                files[1] = Path.ChangeExtension(files[0], "pdf");
             }
 
             String inputFile = "";
@@ -304,7 +309,7 @@ Handles Office files:
   doc, dot, docx, dotx, docm, dotm, rtf, odt, ppt, pptx, pptm, odp,
   xls, xlsx, xlsm, csv, odc, vsd, vsdm, vsdx, pub, mpp, ics, vcf, msg
 
-OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file output_file
+OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file [output_file]
 
   /bookmarks    - Create bookmarks in the PDF when they are supported by the
                   Office application
@@ -326,7 +331,8 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file output_file
                               the file. Applies when converting with Excel.
   
   input_file  - The filename of the Office document to convert
-  output_file - The filename of the PDF to create
+  output_file - The filename of the PDF to create. If not given, the input filename
+                will be used with a .pdf extension
 ");
             Environment.Exit((int)ExitCode.Success);
         }

@@ -1,6 +1,6 @@
 ﻿/**
  *  OfficeToPDF command line PDF conversion for Office 2007/2010/2013
- *  Copyright (C) 2011-2014 Cognidox Ltd
+ *  Copyright (C) 2011-2015 Cognidox Ltd
  *  http://www.cognidox.com/opensource/
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -138,12 +138,21 @@ namespace OfficeToPDF
                     return (int)ExitCode.FileOpenFailure;
                 }
                 doc.Activate();
+
+                // Prevent "property not available" errors, see http://blogs.msmvps.com/wordmeister/2013/02/22/word2013bug-not-available-for-reading/
+                var docWin = doc.ActiveWindow;
+                var docWinView = docWin.View;
+                docWinView.Type = WdViewType.wdPrintPreview;
+
+                // Try to avoid Word thinking any changes are happening to the document
                 doc.SpellingChecked = true;
                 doc.GrammarChecked = true;
                 doc.TrackRevisions = false;
                 doc.TrackMoves = false;
                 doc.TrackFormatting = false;
                 normalTemplate.Saved = true;
+
+                // Hide the document window if need be
                 if ((Boolean)options["hidden"])
                 {
                     var activeWin = word.ActiveWindow;
@@ -223,6 +232,8 @@ namespace OfficeToPDF
                 normalTemplate.Saved = true;
                 ((_Document)doc).Close(ref saveChanges, ref oMissing, ref oMissing);
 
+                Converter.releaseCOMObject(docWinView);
+                Converter.releaseCOMObject(docWin);
                 Converter.releaseCOMObject(wdOptions);
                 Converter.releaseCOMObject(documents);
                 Converter.releaseCOMObject(doc);
