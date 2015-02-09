@@ -147,11 +147,16 @@ namespace OfficeToPDF
                 // Try to avoid Word thinking any changes are happening to the document
                 doc.SpellingChecked = true;
                 doc.GrammarChecked = true;
-                doc.TrackRevisions = false;
-                doc.TrackMoves = false;
-                doc.TrackFormatting = false;
-                normalTemplate.Saved = true;
 
+                // Changing these properties may be disallowed if the document is protected
+                if (doc.ProtectionType == WdProtectionType.wdNoProtection)
+                {
+                    doc.TrackMoves = false;
+                    doc.TrackRevisions = false;
+                    doc.TrackFormatting = false;
+                }
+                normalTemplate.Saved = true;
+                
                 // Hide the document window if need be
                 if ((Boolean)options["hidden"])
                 {
