@@ -206,9 +206,9 @@ SET TSS=http://timestamp.globalsign.com/scripts/timstamp.dll
 SET SNAME=Cognidox Limited
 SET ISSUER=GlobalSign CodeSigning CA - G2
 SET APPNAME=OfficeToPDF
-SET APPURL=http://www.cognidox.com/products/opensource/officetopdf
+SET APPURL=https://www.cognidox.com/officetopdf-converter/
 
-"%25SIGNTOOL%25" sign /t %25TSS%25 /n "%25SNAME%25" /i "%25ISSUER%25" /d "%25APPNAME%25" /du "%25APPURL%25" "$(TargetPath)"
+"%25SIGNTOOL%25" sign /fd SHA256 /t %25TSS%25 /n "%25SNAME%25" /i "%25ISSUER%25" /d "%25APPNAME%25" /du "%25APPURL%25" "$(TargetPath)"
 goto :exit
 
 :exit</PostBuildEvent>
