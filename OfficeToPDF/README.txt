@@ -23,7 +23,7 @@ The following file types can be converted:
 
  * Word       - .doc, .dot,  .docx, .dotx, .docm, .dotm, .rtf, .odt
  * Excel      - .xls, .xlsx, .xlsm, .csv, .odc
- * Powerpoint - .ppt, .pptx, .pptm, .odp
+ * Powerpoint - .ppt, .pptx, .pptm, .pps, .ppsx, .ppsm, .odp
  * Visio      - .vsd, .vsdm, .vsdx [.vsdm and .vsdx require Visio >= 2013]
  * Publisher  - .pub
  * Outlook    - .msg, .vcf, .ics
