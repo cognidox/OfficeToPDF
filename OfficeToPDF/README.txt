@@ -56,9 +56,10 @@ The following optional switches can be used:
   /password <pass>          - use <pass> as the password to open the document with
   /writepassword <pass>     - use <pass> as the write password to open the document with
   /template <template_path> - use a .dot, .dotx or .dotm template when converting with Word
+  /excel_show_formulas      - show formulas in the PDF when converting with Excel
   /excel_max_rows <rows>    - if any worksheet in a spreadsheet document has more
                               than this number of rows, do not attempt to convert
-                              the file. Applies when converting with Excel.
+                              the file. Applies when converting with Excel
 
 
   Templates:

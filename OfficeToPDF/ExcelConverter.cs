@@ -164,6 +164,11 @@ namespace OfficeToPDF
                                 break;
                             }
                         }
+                        if ((Boolean)options["excel_show_formulas"])
+                        {
+                            // If showing formulas, make things auto-fit
+                            ((Microsoft.Office.Interop.Excel.Worksheet)ws).Columns.AutoFit();
+                        }
                     }
                     Converter.releaseCOMObject(worksheets);
                     if (!row_count_check_ok)
@@ -176,6 +181,11 @@ namespace OfficeToPDF
                 // Using more than one dot leaves wrapper objects left over
                 var wbWin = workbook.Windows;
                 var appWin = app.Windows;
+                if ((Boolean)options["excel_show_formulas"])
+                {
+                    // Determine whether to show formulas
+                    appWin[1].DisplayFormulas = true;
+                }
                 if (wbWin.Count > 0)
                 {
                     wbWin[1].Visible = (Boolean)options["hidden"] ? false : true;
