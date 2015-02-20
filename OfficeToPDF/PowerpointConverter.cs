@@ -78,8 +78,8 @@ namespace OfficeToPDF
                     app.Visible = MSCore.MsoTriState.msoTrue;
                     app.AutomationSecurity = MSCore.MsoAutomationSecurity.msoAutomationSecurityLow;
                     var presentations = app.Presentations;
-                    presentations.Open2007(inputFile, nowrite, MSCore.MsoTriState.msoTrue, MSCore.MsoTriState.msoTrue, MSCore.MsoTriState.msoTrue);
-                    var activePresentation = app.ActivePresentation;
+                    var activePresentation = presentations.Open2007(inputFile, nowrite, MSCore.MsoTriState.msoTrue, MSCore.MsoTriState.msoTrue, MSCore.MsoTriState.msoTrue);
+                    activePresentation.Final = false;
                     activePresentation.ExportAsFixedFormat(outputFile, PpFixedFormatType.ppFixedFormatTypePDF, quality, MSCore.MsoTriState.msoFalse, PpPrintHandoutOrder.ppPrintHandoutVerticalFirst, PpPrintOutputType.ppPrintOutputSlides, MSCore.MsoTriState.msoFalse, null, PpPrintRangeType.ppPrintAll, "", includeProps, true, includeTags, true, pdfa, Type.Missing);
                     activePresentation.Saved = MSCore.MsoTriState.msoTrue;
                     activePresentation.Close();
