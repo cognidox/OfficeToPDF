@@ -104,79 +104,6 @@ namespace OfficeToPDF
                     tmpFile += "x";
                 }
 
-                // Large excel files may simply not print reliably - if the excel_max_rows
-                // configuration option is set, then we must close up and forget about 
-                // converting the file. However, if a print area is set in one of the worksheets
-                // in the document, then assume the author knew what they were doing and
-                // use the print area.
-                var max_rows = (int)options[@"excel_max_rows"];
-                if (max_rows > 0)
-                {
-                    // Loop through all the worksheets in the workbook looking to any
-                    // that have too many rows
-                    var worksheets = workbook.Worksheets;
-                    var row_count_check_ok = true;
-                    var found_rows = 0;
-                    var found_worksheet = "";
-                    foreach (var ws in worksheets)
-                    {
-                        // Check for a print area
-                        var page_setup = ((Microsoft.Office.Interop.Excel.Worksheet)ws).PageSetup;
-                        var print_area = page_setup.PrintArea;
-                        Converter.releaseCOMObject(page_setup);
-                        if (string.IsNullOrEmpty(print_area))
-                        {
-                            // There is no print area, check that the row count is <= to the
-                            // excel_max_rows value. Note that we can't just take the range last
-                            // row, as this may return a huge value, rather find the last non-blank
-                            // row.
-                            var row_count = 0;
-                            var range = ((Microsoft.Office.Interop.Excel.Worksheet)ws).UsedRange;
-                            if (range != null)
-                            {
-                                var rows = range.Rows; 
-                                if (rows != null && rows.Count > max_rows)
-                                {
-                                    var cells = range.Cells;
-                                    if (cells != null)
-                                    {
-                                        var cellSearch = cells.Find("*", oMissing, oMissing, oMissing, oMissing, Microsoft.Office.Interop.Excel.XlSearchDirection.xlPrevious, false, oMissing, oMissing);
-                                        // Make sure we actually get some results, since the worksheet may be totally blank
-                                        if (cellSearch != null)
-                                        {
-                                            row_count = cellSearch.Row;
-                                            found_worksheet = ((Microsoft.Office.Interop.Excel.Worksheet)ws).Name;
-                                            Converter.releaseCOMObject(cellSearch);
-                                        }
-                                        Converter.releaseCOMObject(cells);
-                                    }
-                                    Converter.releaseCOMObject(rows);
-                                }
-                            }
-                            Converter.releaseCOMObject(range);
-                            Converter.releaseCOMObject(ws);
-
-                            if (row_count > max_rows)
-                            {
-                                // Too many rows on this worksheet - mark the workbook as unprintable
-                                row_count_check_ok = false;
-                                found_rows = row_count;
-                                break;
-                            }
-                        }
-                        if ((Boolean)options["excel_show_formulas"])
-                        {
-                            // If showing formulas, make things auto-fit
-                            ((Microsoft.Office.Interop.Excel.Worksheet)ws).Columns.AutoFit();
-                        }
-                    }
-                    Converter.releaseCOMObject(worksheets);
-                    if (!row_count_check_ok)
-                    {
-                        throw new Exception(String.Format("Too many rows to process ({0}) on worksheet {1}", found_rows, found_worksheet));
-                    }
-                }
-
                 // Remember - Never use 2 dots with COM objects!
                 // Using more than one dot leaves wrapper objects left over
                 var wbWin = workbook.Windows;
@@ -196,6 +123,93 @@ namespace OfficeToPDF
                     appWin[1].Visible = (Boolean)options["hidden"] ? false : true;
                     Converter.releaseCOMObject(appWin);
                 }
+
+                // Large excel files may simply not print reliably - if the excel_max_rows
+                // configuration option is set, then we must close up and forget about 
+                // converting the file. However, if a print area is set in one of the worksheets
+                // in the document, then assume the author knew what they were doing and
+                // use the print area.
+                var max_rows = (int)options[@"excel_max_rows"];
+
+                // We may need to loop through all the worksheets in the document
+                // depending on the options given. If there are maximum row restrictions
+                // or formulas are being shown, then we need to loop through all the
+                // worksheets
+                if (max_rows > 0 || (Boolean)options["excel_show_formulas"])
+                {
+                    var row_count_check_ok = true;
+                    var found_rows = 0;
+                    var found_worksheet = "";
+                    var worksheets = workbook.Worksheets;
+                    foreach (var ws in worksheets)
+                    {
+                        // If showing formulas, make things auto-fit
+                        if ((Boolean)options["excel_show_formulas"])
+                        {
+                            var cols = ((Microsoft.Office.Interop.Excel.Worksheet)ws).Columns;
+                            cols.AutoFit();
+                            Converter.releaseCOMObject(cols);
+                        }
+
+                        // If there is a maximum row count, make sure we check each worksheet
+                        if (max_rows > 0)
+                        {
+                            // Check for a print area
+                            var page_setup = ((Microsoft.Office.Interop.Excel.Worksheet)ws).PageSetup;
+                            var print_area = page_setup.PrintArea;
+                            Converter.releaseCOMObject(page_setup);
+                            if (string.IsNullOrEmpty(print_area))
+                            {
+                                // There is no print area, check that the row count is <= to the
+                                // excel_max_rows value. Note that we can't just take the range last
+                                // row, as this may return a huge value, rather find the last non-blank
+                                // row.
+                                var row_count = 0;
+                                var range = ((Microsoft.Office.Interop.Excel.Worksheet)ws).UsedRange;
+                                if (range != null)
+                                {
+                                    var rows = range.Rows;
+                                    if (rows != null && rows.Count > max_rows)
+                                    {
+                                        var cells = range.Cells;
+                                        if (cells != null)
+                                        {
+                                            var cellSearch = cells.Find("*", oMissing, oMissing, oMissing, oMissing, Microsoft.Office.Interop.Excel.XlSearchDirection.xlPrevious, false, oMissing, oMissing);
+                                            // Make sure we actually get some results, since the worksheet may be totally blank
+                                            if (cellSearch != null)
+                                            {
+                                                row_count = cellSearch.Row;
+                                                found_worksheet = ((Microsoft.Office.Interop.Excel.Worksheet)ws).Name;
+                                                Converter.releaseCOMObject(cellSearch);
+                                            }
+                                            Converter.releaseCOMObject(cells);
+                                        }
+                                        Converter.releaseCOMObject(rows);
+                                    }
+                                }
+                                Converter.releaseCOMObject(range);
+
+                                if (row_count > max_rows)
+                                {
+                                    // Too many rows on this worksheet - mark the workbook as unprintable
+                                    row_count_check_ok = false;
+                                    found_rows = row_count;
+                                    Converter.releaseCOMObject(ws);
+                                    break;
+                                }
+                            }
+                        } // End of row check
+                        Converter.releaseCOMObject(ws);
+                    }
+                    Converter.releaseCOMObject(worksheets);
+
+                    // Make sure we are not converting a document with too many rows
+                    if (row_count_check_ok == false)
+                    {
+                        throw new Exception(String.Format("Too many rows to process ({0}) on worksheet {1}", found_rows, found_worksheet));
+                    }
+                }
+
                 Boolean includeProps = !(Boolean)options["excludeprops"];
 
                 workbook.SaveAs(tmpFile, fmt, Type.Missing, Type.Missing, Type.Missing, false, XlSaveAsAccessMode.xlNoChange, Type.Missing, false, Type.Missing, Type.Missing, Type.Missing);
