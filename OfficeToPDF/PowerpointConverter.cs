@@ -47,6 +47,8 @@ namespace OfficeToPDF
             try
             {
                 Microsoft.Office.Interop.PowerPoint.Application app = null;
+                Microsoft.Office.Interop.PowerPoint.Presentation activePresentation = null;
+                Microsoft.Office.Interop.PowerPoint.Presentations presentations = null;
                 try
                 {
                     try
@@ -77,15 +79,36 @@ namespace OfficeToPDF
                     app.DisplayAlerts = PpAlertLevel.ppAlertsNone;
                     app.Visible = MSCore.MsoTriState.msoTrue;
                     app.AutomationSecurity = MSCore.MsoAutomationSecurity.msoAutomationSecurityLow;
-                    var presentations = app.Presentations;
-                    var activePresentation = presentations.Open2007(inputFile, nowrite, MSCore.MsoTriState.msoTrue, MSCore.MsoTriState.msoTrue, MSCore.MsoTriState.msoTrue);
+                    presentations = app.Presentations;
+                    activePresentation = presentations.Open2007(inputFile, nowrite, MSCore.MsoTriState.msoTrue, MSCore.MsoTriState.msoTrue, MSCore.MsoTriState.msoTrue);
                     activePresentation.Final = false;
+
+                    // Sometimes, presentations can have restrictions on them that block
+                    // access to the object model (e.g. fonts containing restrictions).
+                    // If we attempt to access the object model and fail, then try a more
+                    // sneaky method of getting the presentation - create an empty presentation
+                    // and insert the slides from the original file.
+                    var fonts = activePresentation.Fonts;
+                    try
+                    {
+                        var fontCount = fonts.Count;
+                    }
+                    catch (System.Runtime.InteropServices.COMException)
+                    {
+                        Converter.releaseCOMObject(fonts);
+                        // This presentation looked read-only
+                        activePresentation.Close();
+                        Converter.releaseCOMObject(activePresentation);
+                        // Create a new blank presentation and insert slides from the original
+                        activePresentation = presentations.Add(MSCore.MsoTriState.msoFalse);
+                        // This is only a band-aid - backgrounds won't come through
+                        activePresentation.Slides.InsertFromFile(inputFile, 0);
+                    }
+                    Converter.releaseCOMObject(fonts);
                     activePresentation.ExportAsFixedFormat(outputFile, PpFixedFormatType.ppFixedFormatTypePDF, quality, MSCore.MsoTriState.msoFalse, PpPrintHandoutOrder.ppPrintHandoutVerticalFirst, PpPrintOutputType.ppPrintOutputSlides, MSCore.MsoTriState.msoFalse, null, PpPrintRangeType.ppPrintAll, "", includeProps, true, includeTags, true, pdfa, Type.Missing);
                     activePresentation.Saved = MSCore.MsoTriState.msoTrue;
                     activePresentation.Close();
 
-                    Converter.releaseCOMObject(activePresentation);
-                    Converter.releaseCOMObject(presentations);
                     return (int)ExitCode.Success;
                 }
                 catch (Exception e)
@@ -95,6 +118,9 @@ namespace OfficeToPDF
                 }
                 finally
                 {
+                    Converter.releaseCOMObject(activePresentation);
+                    Converter.releaseCOMObject(presentations);
+
                     if (app != null && !running)
                     {
                         app.Quit();
