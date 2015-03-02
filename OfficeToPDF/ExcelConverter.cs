@@ -135,7 +135,7 @@ namespace OfficeToPDF
                 // depending on the options given. If there are maximum row restrictions
                 // or formulas are being shown, then we need to loop through all the
                 // worksheets
-                if (max_rows > 0 || (Boolean)options["excel_show_formulas"])
+                if (max_rows > 0 || (Boolean)options["excel_show_formulas"] || (Boolean)options["excel_show_headings"])
                 {
                     var row_count_check_ok = true;
                     var found_rows = 0;
@@ -143,9 +143,18 @@ namespace OfficeToPDF
                     var worksheets = workbook.Worksheets;
                     foreach (var ws in worksheets)
                     {
+                        if ((Boolean)options["excel_show_headings"])
+                        {
+                            var pageSetup = ((Microsoft.Office.Interop.Excel.Worksheet)ws).PageSetup;
+                            pageSetup.PrintHeadings = true;
+                            Converter.releaseCOMObject(pageSetup);
+                        }
+
                         // If showing formulas, make things auto-fit
                         if ((Boolean)options["excel_show_formulas"])
                         {
+                            ((Microsoft.Office.Interop.Excel.Worksheet)ws).Activate();
+                            app.ActiveWindow.DisplayFormulas = true;
                             var cols = ((Microsoft.Office.Interop.Excel.Worksheet)ws).Columns;
                             cols.AutoFit();
                             Converter.releaseCOMObject(cols);

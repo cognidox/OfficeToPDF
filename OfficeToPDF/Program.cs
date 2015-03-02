@@ -65,8 +65,9 @@ namespace OfficeToPDF
             options["template"] = "";
             options["password"] = "";
             options["excel_show_formulas"] = false;
+            options["excel_show_headings"] = false;
             options["excel_max_rows"] = (int) 0;
-            Regex switches = new Regex(@"^/(hidden|markup|readonly|bookmarks|noquit|print|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_max_rows|excel_show_formulas|\?)$", RegexOptions.IgnoreCase);
+            Regex switches = new Regex(@"^/(hidden|markup|readonly|bookmarks|noquit|print|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_max_rows|excel_show_formulas|excel_show_headings|\?)$", RegexOptions.IgnoreCase);
             for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
                 string item = args[argIdx];
@@ -331,6 +332,7 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file [output_file]
   /template <template_path> - Use a .dot, .dotx or .dotm template when
                               converting with Word
   /excel_show_formulas      - Show formulas in the generated PDF
+  /excel_show_headings      - Show row and column headings
   /excel_max_rows <rows>    - If any worksheet in a spreadsheet document has more
                               than this number of rows, do not attempt to convert
                               the file. Applies when converting with Excel.
