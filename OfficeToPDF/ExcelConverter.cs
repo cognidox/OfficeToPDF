@@ -94,6 +94,10 @@ namespace OfficeToPDF
                 tmpFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".xls";
                 XlFileFormat fmt = XlFileFormat.xlOpenXMLWorkbook;
                 XlFixedFormatQuality quality = XlFixedFormatQuality.xlQualityStandard;
+                if ((Boolean)options["screen"])
+                {
+                    quality = XlFixedFormatQuality.xlQualityMinimum;
+                }
                 if (workbook.HasVBProject)
                 {
                     fmt = XlFileFormat.xlOpenXMLWorkbookMacroEnabled;

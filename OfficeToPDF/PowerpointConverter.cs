@@ -72,6 +72,10 @@ namespace OfficeToPDF
                     {
                         quality = PpFixedFormatIntent.ppFixedFormatIntentPrint;
                     }
+                    if ((Boolean)options["screen"])
+                    {
+                        quality = PpFixedFormatIntent.ppFixedFormatIntentScreen;
+                    }
                     Boolean includeProps = !(Boolean)options["excludeprops"];
                     Boolean includeTags = !(Boolean)options["excludetags"];
                     app.FeatureInstall = MSCore.MsoFeatureInstall.msoFeatureInstallNone;

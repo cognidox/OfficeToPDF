@@ -21,7 +21,7 @@ Supported file types:
 
 The following file types can be converted:
 
- * Word       - .doc, .dot,  .docx, .dotx, .docm, .dotm, .rtf, .odt
+ * Word       - .doc, .dot,  .docx, .dotx, .docm, .dotm, .rtf, .odt, .txt, .htm, .html
  * Excel      - .xls, .xlsx, .xlsm, .csv, .odc
  * Powerpoint - .ppt, .pptx, .pptm, .pps, .ppsx, .ppsm, .odp
  * Visio      - .vsd, .vsdm, .vsdx [.vsdm and .vsdx require Visio >= 2013]
@@ -55,6 +55,8 @@ The following optional switches can be used:
   /verbose      - print out messages as it runs
   /password <pass>          - use <pass> as the password to open the document with
   /writepassword <pass>     - use <pass> as the write password to open the document with
+  /merge					- when using a template, create a new file from the template and merge
+							  the text from the document to convert into the new file
   /template <template_path> - use a .dot, .dotx or .dotm template when converting with Word
   /excel_show_formulas      - show formulas in the PDF when converting with Excel
   /excel_show_headings		- show row and column headings

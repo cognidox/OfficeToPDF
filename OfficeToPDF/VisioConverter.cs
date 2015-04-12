@@ -59,10 +59,11 @@ namespace OfficeToPDF
                     extension = match.Groups[1].Value;
                 }
 
-                // We can only convert vsdx and vsdm files with Visio 2013
+                // We can only convert svg, vsdx and vsdm files with Visio 2013
                 if (System.Convert.ToDouble(app.Version.ToString()) < 15 &&
                     ((String.Compare(extension, "vsdx") == 0) ||
-                    (String.Compare(extension, "vsdm") == 0)))
+                    (String.Compare(extension, "vsdm") == 0) ||
+                    (String.Compare(extension, "svg") == 0)))
                 {
                     Console.WriteLine("File type not supported in Visio version {0}", app.Version);
                     return (int)ExitCode.UnsupportedFileFormat;
@@ -78,18 +79,28 @@ namespace OfficeToPDF
                 {
                     app.Visible = true;
                 }
-                VisDocExIntent quality = VisDocExIntent.visDocExIntentScreen;
+                VisDocExIntent quality = VisDocExIntent.visDocExIntentPrint;
                 if ((Boolean)options["print"])
                 {
                     quality = VisDocExIntent.visDocExIntentPrint;
+                }
+                if ((Boolean)options["screen"])
+                {
+                    quality = VisDocExIntent.visDocExIntentScreen;
                 }
                 Boolean includeProps = !(Boolean)options["excludeprops"];
                 Boolean includeTags = !(Boolean)options["excludetags"];
 
                 var documents = app.Documents;
+                Console.WriteLine("Opening file");
                 documents.OpenEx(inputFile, flags);
 
-                // Try and avoid dialogs about versions
+                // Try and avoid dialogs about versions and convert SVG files to
+                // visio to get ready for printing
+                if (String.Compare(extension, "svg") == 0)
+                {
+                    extension = "vsd";
+                }
                 tmpFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + "." + extension;
                 
                 var activeDoc = app.ActiveDocument;

@@ -64,6 +64,10 @@ namespace OfficeToPDF
                 {
                     quality = PbFixedFormatIntent.pbIntentPrinting;
                 }
+                if ((Boolean)options["screen"])
+                {
+                    quality = PbFixedFormatIntent.pbIntentMinimum;
+                }
                 Boolean includeProps = !(Boolean)options["excludeprops"];
                 Boolean includeTags = !(Boolean)options["excludetags"];
 
