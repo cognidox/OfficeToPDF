@@ -46,6 +46,7 @@ namespace OfficeToPDF
             Microsoft.Office.Interop.Word.Application word = null;
             object oMissing = System.Reflection.Missing.Value;
             Microsoft.Office.Interop.Word.Template tmpl;
+            String temporaryStorageDir = null;
             try
             {
                 tmpl = null;
@@ -63,33 +64,43 @@ namespace OfficeToPDF
                 word.DisplayDocumentInformationPanel = false;
                 word.FeatureInstall = Microsoft.Office.Core.MsoFeatureInstall.msoFeatureInstallNone;
                 var wdOptions = word.Options;
-                wdOptions.UpdateFieldsAtPrint = false;
-                wdOptions.UpdateLinksAtPrint = false;
-                wdOptions.WarnBeforeSavingPrintingSendingMarkup = false;
-                wdOptions.BackgroundSave = true;
-                wdOptions.SavePropertiesPrompt = false;
-                wdOptions.DoNotPromptForConvert = true;
-                wdOptions.PromptUpdateStyle = false;
-                wdOptions.ConfirmConversions = false;
-                wdOptions.CheckGrammarAsYouType = false;
-                wdOptions.CheckGrammarWithSpelling = false;
-                wdOptions.CheckSpellingAsYouType = false;
-                wdOptions.DisplaySmartTagButtons = false;
-                wdOptions.EnableLivePreview = false;
-                wdOptions.ShowReadabilityStatistics = false;
-                wdOptions.SuggestSpellingCorrections = false;
-                wdOptions.AllowDragAndDrop = false;
-                wdOptions.EnableMisusedWordsDictionary = false;
+                try
+                {
+                    wdOptions.UpdateFieldsAtPrint = false;
+                    wdOptions.UpdateLinksAtPrint = false;
+                    wdOptions.WarnBeforeSavingPrintingSendingMarkup = false;
+                    wdOptions.BackgroundSave = true;
+                    wdOptions.SavePropertiesPrompt = false;
+                    wdOptions.DoNotPromptForConvert = true;
+                    wdOptions.PromptUpdateStyle = false;
+                    wdOptions.ConfirmConversions = false;
+                    wdOptions.CheckGrammarAsYouType = false;
+                    wdOptions.CheckGrammarWithSpelling = false;
+                    wdOptions.CheckSpellingAsYouType = false;
+                    wdOptions.DisplaySmartTagButtons = false;
+                    wdOptions.EnableLivePreview = false;
+                    wdOptions.ShowReadabilityStatistics = false;
+                    wdOptions.SuggestSpellingCorrections = false;
+                    wdOptions.AllowDragAndDrop = false;
+                    wdOptions.EnableMisusedWordsDictionary = false;
+                }
+                catch (SystemException)
+                {
+                }
                 Object filename = (Object)inputFile;
                 Boolean visible = !(Boolean)options["hidden"];
                 Boolean nowrite = (Boolean)options["readonly"];
                 Boolean includeProps = !(Boolean)options["excludeprops"];
                 Boolean includeTags = !(Boolean)options["excludetags"];
                 bool pdfa = (Boolean)options["pdfa"] ? true : false;
-                WdExportOptimizeFor quality = WdExportOptimizeFor.wdExportOptimizeForOnScreen;
+                WdExportOptimizeFor quality = WdExportOptimizeFor.wdExportOptimizeForPrint;
                 if ((Boolean)options["print"])
                 {
                     quality = WdExportOptimizeFor.wdExportOptimizeForPrint;
+                }
+                if ((Boolean)options["screen"])
+                {
+                    quality = WdExportOptimizeFor.wdExportOptimizeForOnScreen;
                 }
                 WdExportCreateBookmarks bookmarks = (Boolean)options["bookmarks"] ? 
                     WdExportCreateBookmarks.wdExportCreateHeadingBookmarks : 
@@ -127,10 +138,32 @@ namespace OfficeToPDF
                 Document doc = null;
                 try
                 {
-                    doc = documents.OpenNoRepairDialog(ref filename, ref oMissing,
-                        nowrite, ref oMissing, ref oReadPass, ref oMissing, ref oMissing,
-                        ref oWritePass, ref oMissing, ref oMissing, ref oMissing, visible,
-                        true, ref oMissing, ref oMissing, ref oMissing);
+                    if ((bool)options["merge"] && !String.IsNullOrEmpty((string)options["template"]) &&
+                        File.Exists((string)options["template"]) &&
+                        System.Text.RegularExpressions.Regex.IsMatch((string)options["template"], @"^.*\.dot[mx]?$"))
+                    {
+                        // Create a new document based on a template
+                        doc = documents.Add((string)options["template"]);
+                        Object rStart = 0;
+                        Object rEnd = 0;
+                        Range range = doc.Range(rStart, rEnd);
+                        range.InsertFile(inputFile);
+                        Converter.releaseCOMObject(range);
+                        // Make sure we save the file with the original filename so 
+                        // filename fields update correctly
+                        temporaryStorageDir = Path.GetTempFileName();
+                        File.Delete(temporaryStorageDir);
+                        Directory.CreateDirectory(temporaryStorageDir);
+                        doc.SaveAs(Path.Combine(temporaryStorageDir, Path.GetFileName(inputFile)));
+                    }
+                    else
+                    {
+                        // Open the source document
+                        doc = documents.OpenNoRepairDialog(ref filename, ref oMissing,
+                            nowrite, ref oMissing, ref oReadPass, ref oMissing, ref oMissing,
+                            ref oWritePass, ref oMissing, ref oMissing, ref oMissing, visible,
+                            true, ref oMissing, ref oMissing, ref oMissing);
+                    }
                 }
                 catch (System.Runtime.InteropServices.COMException)
                 {
@@ -168,7 +201,7 @@ namespace OfficeToPDF
 
                 // Check if we have a template file to apply to this document
                 // The template must be a file and must end in .dot, .dotx or .dotm
-                if (!String.IsNullOrEmpty((String)options["template"]))
+                if (!String.IsNullOrEmpty((String)options["template"]) && !(bool)options["merge"])
                 {
                     string template = (string)options["template"];
                     if (File.Exists(template) && System.Text.RegularExpressions.Regex.IsMatch(template, @"^.*\.dot[mx]?$"))
@@ -205,6 +238,7 @@ namespace OfficeToPDF
                             WordConverter.updateField(rangeField, word, inputFile);
                         }
                     }
+
                     var footers = section.Footers;
                     foreach (Microsoft.Office.Interop.Word.HeaderFooter footer in footers)
                     {
@@ -215,7 +249,21 @@ namespace OfficeToPDF
                             WordConverter.updateField(rangeField, word, inputFile);
                         }
                     }
-                    
+                }
+
+                var docFields = doc.Fields;
+                foreach (Field docField in docFields)
+                {
+                    WordConverter.updateField(docField, word, inputFile);
+                }
+                var storyRanges = doc.StoryRanges;
+                foreach (Range range in storyRanges)
+                {
+                    var rangeFields = range.Fields;
+                    foreach (Field field in rangeFields)
+                    {
+                        WordConverter.updateField(field, word, inputFile);
+                    }
                 }
 
                 normalTemplate.Saved = true;
@@ -254,6 +302,14 @@ namespace OfficeToPDF
             }
             finally
             {
+                if (temporaryStorageDir != null && Directory.Exists(temporaryStorageDir))
+                {
+                    if (File.Exists(Path.Combine(temporaryStorageDir, Path.GetFileName(inputFile))))
+                    {
+                        File.Delete(Path.Combine(temporaryStorageDir, Path.GetFileName(inputFile)));
+                    }
+                    Directory.Delete(temporaryStorageDir);
+                }
                 if (word != null && !running)
                 {
                     ((_Application)word).Quit(ref oMissing, ref oMissing, ref oMissing);
@@ -263,7 +319,6 @@ namespace OfficeToPDF
         }
         private static void updateField(Field field, Microsoft.Office.Interop.Word.Application word, String filename)
         {
-
             switch (field.Type)
             {
                 case WdFieldType.wdFieldAuthor:

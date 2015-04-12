@@ -56,18 +56,20 @@ namespace OfficeToPDF
             options["markup"] = false;
             options["readonly"] = false;
             options["bookmarks"] = false;
-            options["print"] = false;
+            options["print"] = true;
+            options["screen"] = false;
             options["pdfa"] = false;
             options["verbose"] = false;
             options["excludeprops"] = false;
             options["excludetags"] = false;
             options["noquit"] = false;
+            options["merge"] = false;
             options["template"] = "";
             options["password"] = "";
             options["excel_show_formulas"] = false;
             options["excel_show_headings"] = false;
             options["excel_max_rows"] = (int) 0;
-            Regex switches = new Regex(@"^/(hidden|markup|readonly|bookmarks|noquit|print|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_max_rows|excel_show_formulas|excel_show_headings|\?)$", RegexOptions.IgnoreCase);
+            Regex switches = new Regex(@"^/(hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_max_rows|excel_show_formulas|excel_show_headings|\?)$", RegexOptions.IgnoreCase);
             for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
                 string item = args[argIdx];
@@ -92,7 +94,8 @@ namespace OfficeToPDF
                                 {
                                     if (File.Exists(args[argIdx + 1]))
                                     {
-                                        options[itemMatch.Groups[1].Value.ToLower()] = args[argIdx + 1];
+                                        FileInfo templateInfo = new FileInfo(args[argIdx + 1]);
+                                        options[itemMatch.Groups[1].Value.ToLower()] = templateInfo.FullName;
                                     }
                                     else
                                     {
@@ -127,6 +130,14 @@ namespace OfficeToPDF
                                     argIdx++;
                                 }
                                 break;
+                            case "screen":
+                                options["print"] = false;
+                                options[itemMatch.Groups[1].Value.ToLower()] = true;
+                                break;
+                            case "print":
+                                options["screen"] = false;
+                                options[itemMatch.Groups[1].Value.ToLower()] = true;
+                                break;
                             default:
                                 options[itemMatch.Groups[1].Value.ToLower()] = true;
                                 break;
@@ -151,9 +162,16 @@ namespace OfficeToPDF
                 showHelp();
             }
 
+            // Make sure we only choose one of /screen or /print options
+            if ((Boolean)options["screen"] && (Boolean)options["print"])
+            {
+                Console.WriteLine("You can only use one of /screen or /print - not both");
+                Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
+            }
+
             // Make sure the input file looks like something we can handle (i.e. has an office
             // filename extension)
-            Regex fileMatch = new Regex(@"\.(((ppt|pps|pot|do[ct]|xls)[xm]?)|od[cpt]|rtf|csv|vsd[xm]?|pub|msg|vcf|ics|mpp)$", RegexOptions.IgnoreCase);
+            Regex fileMatch = new Regex(@"\.(((ppt|pps|pot|do[ct]|xls)[xm]?)|od[cpt]|rtf|csv|vsd[xm]?|pub|msg|vcf|ics|mpp|svg|txt|html?)$", RegexOptions.IgnoreCase);
             if (fileMatch.Matches(files[0]).Count != 1)
             {
                 Console.WriteLine("Input file can not be handled. Must be Word, PowerPoint, Excel, Outlook, Publisher or Visio");
@@ -220,6 +238,9 @@ namespace OfficeToPDF
                     case "dotx":
                     case "docm":
                     case "dotm":
+                    case "txt":
+                    case "html":
+                    case "htm":
                         // Word
                         if ((Boolean)options["verbose"])
                         {
@@ -259,6 +280,7 @@ namespace OfficeToPDF
                     case "vsd":
                     case "vsdm":
                     case "vsdx":
+                    case "svg":
                         // Visio
                         if ((Boolean)options["verbose"])
                         {
@@ -312,7 +334,7 @@ namespace OfficeToPDF
             Console.Write(@"Converts Office documents to PDF from the command line.
 Handles Office files:
   doc, dot, docx, dotx, docm, dotm, rtf, odt, ppt, pptx, pptm, pps, ppsx, ppsm, odp,
-  xls, xlsx, xlsm, csv, odc, vsd, vsdm, vsdx, pub, mpp, ics, vcf, msg
+  xls, xlsx, xlsm, csv, odc, vsd, vsdm, vsdx, svg, pub, mpp, ics, vcf, msg
 
 OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file [output_file]
 
@@ -321,7 +343,8 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file [output_file]
   /hidden       - Attempt to hide the Office application window when converting
   /markup       - Show document markup when creating PDFs with Word
   /readonly     - Load the input file in read only mode where possible
-  /print        - Create high-quality PDFs optimised for print
+  /print        - Create high-quality PDFs optimised for print (default)
+  /screen       - Create PDFs optimised for screen display
   /pdfa         - Produce ISO 19005-1 (PDF/A) compliant PDFs
   /excludeprops - Do not include properties in the PDF
   /excludetags  - Do not include tags in the PDF
