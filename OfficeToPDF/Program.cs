@@ -68,8 +68,9 @@ namespace OfficeToPDF
             options["password"] = "";
             options["excel_show_formulas"] = false;
             options["excel_show_headings"] = false;
+            options["excel_auto_macros"] = false;
             options["excel_max_rows"] = (int) 0;
-            Regex switches = new Regex(@"^/(hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_max_rows|excel_show_formulas|excel_show_headings|\?)$", RegexOptions.IgnoreCase);
+            Regex switches = new Regex(@"^/(hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_max_rows|excel_show_formulas|excel_show_headings|excel_auto_macros|\?)$", RegexOptions.IgnoreCase);
             for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
                 string item = args[argIdx];
@@ -333,8 +334,9 @@ namespace OfficeToPDF
         {
             Console.Write(@"Converts Office documents to PDF from the command line.
 Handles Office files:
-  doc, dot, docx, dotx, docm, dotm, rtf, odt, ppt, pptx, pptm, pps, ppsx, ppsm, odp,
-  xls, xlsx, xlsm, csv, odc, vsd, vsdm, vsdx, svg, pub, mpp, ics, vcf, msg
+  doc, dot, docx, dotx, docm, dotm, rtf, odt, txt, htm, html, ppt, pptx,
+  pptm, pps, ppsx, ppsm, pot, potm, potx, odp, xls, xlsx, xlsm, csv, odc,
+  vsd, vsdm, vsdx, svg, pub, mpp, ics, vcf, msg
 
 OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file [output_file]
 
@@ -350,10 +352,11 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file [output_file]
   /excludetags  - Do not include tags in the PDF
   /noquit       - Do not quit already running Office applications once the conversion is done
   /verbose      - Print out messages as it runs
-  /password <pass>			- Use <pass> as the password to open the document with
-  /writepassword <pass>		- Use <pass> as the write password to open the document with
+  /password <pass>          - Use <pass> as the password to open the document with
+  /writepassword <pass>     - Use <pass> as the write password to open the document with
   /template <template_path> - Use a .dot, .dotx or .dotm template when
                               converting with Word
+  /excel_auto_macros        - Run Auto_Open macros in Excel files before conversion
   /excel_show_formulas      - Show formulas in the generated PDF
   /excel_show_headings      - Show row and column headings
   /excel_max_rows <rows>    - If any worksheet in a spreadsheet document has more
