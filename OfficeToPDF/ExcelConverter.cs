@@ -81,6 +81,7 @@ namespace OfficeToPDF
                     return (int)ExitCode.PasswordFailure;
                 }
 
+                app.EnableEvents = (bool)options["excel_auto_macros"];
                 workbooks = app.Workbooks;
                 workbook = workbooks.Open(inputFile, true, nowrite, oMissing, oReadPass, oWritePass, true, oMissing, oMissing, oMissing, oMissing, oMissing, false, oMissing, oMissing);
 
@@ -88,6 +89,11 @@ namespace OfficeToPDF
                 if (workbook == null)
                 {
                     return (int)ExitCode.FileOpenFailure;
+                }
+
+                if (app.EnableEvents)
+                {
+                    workbook.RunAutoMacros(XlRunAutoMacro.xlAutoOpen);
                 }
 
                 // Try and avoid xls files raising a dialog

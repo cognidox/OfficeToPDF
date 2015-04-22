@@ -58,6 +58,7 @@ The following optional switches can be used:
   /merge					- when using a template, create a new file from the template and merge
 							  the text from the document to convert into the new file
   /template <template_path> - use a .dot, .dotx or .dotm template when converting with Word
+  /excel_auto_macros        - run Auto_Open macros in Excel files before conversion
   /excel_show_formulas      - show formulas in the PDF when converting with Excel
   /excel_show_headings		- show row and column headings
   /excel_max_rows <rows>    - if any worksheet in a spreadsheet document has more
