@@ -13,7 +13,7 @@ http://opensource.org/licenses/apache2.0
 
 More information about installation and usage can be found on the Cognidox
 project page: 
-http://www.cognidox.com/opensource/officetopdf
+https://www.cognidox.com/officetopdf-converter/
 
 
 Supported file types:

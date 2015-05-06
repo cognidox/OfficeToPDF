@@ -97,13 +97,13 @@ namespace OfficeToPDF
                 }
 
                 // Try and avoid xls files raising a dialog
-                tmpFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".xls";
+                var temporaryStorageDir = Path.GetTempFileName();
+                File.Delete(temporaryStorageDir);
+                Directory.CreateDirectory(temporaryStorageDir);
+                tmpFile = Path.Combine(temporaryStorageDir, Path.GetFileNameWithoutExtension(inputFile) + ".xls");
+
+                // Set up the file save format
                 XlFileFormat fmt = XlFileFormat.xlOpenXMLWorkbook;
-                XlFixedFormatQuality quality = XlFixedFormatQuality.xlQualityStandard;
-                if ((Boolean)options["screen"])
-                {
-                    quality = XlFixedFormatQuality.xlQualityMinimum;
-                }
                 if (workbook.HasVBProject)
                 {
                     fmt = XlFileFormat.xlOpenXMLWorkbookMacroEnabled;
@@ -112,6 +112,13 @@ namespace OfficeToPDF
                 else
                 {
                     tmpFile += "x";
+                }
+
+                // Set up the print quality
+                XlFixedFormatQuality quality = XlFixedFormatQuality.xlQualityStandard;
+                if ((Boolean)options["screen"])
+                {
+                    quality = XlFixedFormatQuality.xlQualityMinimum;
                 }
 
                 // Remember - Never use 2 dots with COM objects!
@@ -266,9 +273,11 @@ namespace OfficeToPDF
                 Converter.releaseCOMObject(workbooks);
                 Converter.releaseCOMObject(app);
 
-                if (tmpFile != null)
+                if (tmpFile != null && File.Exists(tmpFile))
                 {
                     System.IO.File.Delete(tmpFile);
+                    // Remove the temporary path to the temp file
+                    Directory.Delete(Path.GetDirectoryName(tmpFile));
                 }
             }
         }
