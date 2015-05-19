@@ -266,6 +266,16 @@ namespace OfficeToPDF
                     }
                 }
 
+                var pageSetup = doc.PageSetup;
+                if ((float)options["word_header_dist"] >= 0)
+                {
+                    pageSetup.HeaderDistance = (float)options["word_header_dist"];
+                }
+                if ((float)options["word_footer_dist"] >= 0)
+                {
+                    pageSetup.FooterDistance = (float)options["word_footer_dist"];
+                }
+
                 normalTemplate.Saved = true;
                 doc.Saved = true;
                 doc.ExportAsFixedFormat(outputFile, WdExportFormat.wdExportFormatPDF, false, 
@@ -285,6 +295,7 @@ namespace OfficeToPDF
                 normalTemplate.Saved = true;
                 ((_Document)doc).Close(ref saveChanges, ref oMissing, ref oMissing);
 
+                Converter.releaseCOMObject(pageSetup);
                 Converter.releaseCOMObject(docWinView);
                 Converter.releaseCOMObject(docWin);
                 Converter.releaseCOMObject(wdOptions);

@@ -70,7 +70,9 @@ namespace OfficeToPDF
             options["excel_show_headings"] = false;
             options["excel_auto_macros"] = false;
             options["excel_max_rows"] = (int) 0;
-            Regex switches = new Regex(@"^/(hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_max_rows|excel_show_formulas|excel_show_headings|excel_auto_macros|\?)$", RegexOptions.IgnoreCase);
+            options["word_header_dist"] = (float) -1;
+            options["word_footer_dist"] = (float) -1;
+            Regex switches = new Regex(@"^/(hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_max_rows|excel_show_formulas|excel_show_headings|excel_auto_macros|word_header_dist|word_footer_dist|\?)$", RegexOptions.IgnoreCase);
             for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
                 string item = args[argIdx];
@@ -91,7 +93,7 @@ namespace OfficeToPDF
                         {
                             case "template":
                                 // Only accept the next option if there are enough options
-                                if (argIdx + 3 < args.Length)
+                                if (argIdx + 2 < args.Length)
                                 {
                                     if (File.Exists(args[argIdx + 1]))
                                     {
@@ -103,12 +105,11 @@ namespace OfficeToPDF
                                         Console.WriteLine("Unable to find {0} {1}", itemMatch.Groups[1].Value.ToLower(), args[argIdx + 1]);
                                     }
                                     argIdx++;
-
                                 }
                                 break;
                             case "excel_max_rows":
                                 // Only accept the next option if there are enough options
-                                if (argIdx + 3 < args.Length)
+                                if (argIdx + 2 < args.Length)
                                 {
                                     if (Regex.IsMatch(args[argIdx + 1], @"^\d+$"))
                                     {
@@ -122,10 +123,36 @@ namespace OfficeToPDF
                                     argIdx++;
                                 }
                                 break;
+                            case "word_header_dist":
+                            case "word_footer_dist":
+                                // Only accept the next option if there are enough options
+                                if (argIdx + 2 < args.Length)
+                                {
+                                    if (Regex.IsMatch(args[argIdx + 1], @"^[\d\.]+$"))
+                                    {
+                                        try
+                                        {
+
+                                            options[itemMatch.Groups[1].Value.ToLower()] = (float)Convert.ToDouble(args[argIdx + 1]);
+                                        }
+                                        catch (Exception)
+                                        {
+                                            Console.WriteLine("Header/Footer distance ({0}) is invalid", args[argIdx + 1]);
+                                            Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
+                                        }
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("Header/Footer distance ({0}) is invalid", args[argIdx + 1]);
+                                        Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
+                                    }
+                                    argIdx++;
+                                }
+                                break;
                             case "password":
                             case "writepassword":
                                 // Only accept the next option if there are enough options
-                                if (argIdx + 3 < args.Length)
+                                if (argIdx + 2 < args.Length)
                                 {
                                     options[itemMatch.Groups[1].Value.ToLower()] = args[argIdx + 1];
                                     argIdx++;
@@ -362,6 +389,10 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file [output_file]
   /excel_max_rows <rows>    - If any worksheet in a spreadsheet document has more
                               than this number of rows, do not attempt to convert
                               the file. Applies when converting with Excel.
+  /word_header_dist <pts>   - The distance (in points) from the header to the top of
+                              the page.
+  /word_footer_dist <pts>   - The distance (in points) from the footer to the bottom
+                              of the page.
   
   input_file  - The filename of the Office document to convert
   output_file - The filename of the PDF to create. If not given, the input filename
