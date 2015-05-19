@@ -64,7 +64,10 @@ The following optional switches can be used:
   /excel_max_rows <rows>    - if any worksheet in a spreadsheet document has more
                               than this number of rows, do not attempt to convert
                               the file. Applies when converting with Excel
-
+  /word_header_dist <pts>   - the distance (in points) from the header to the top of
+                              the page
+  /word_footer_dist <pts>   - the distance (in points) from the footer to the bottom
+                              of the page
 
   Templates:
   ----------
