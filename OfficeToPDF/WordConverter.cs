@@ -83,6 +83,9 @@ namespace OfficeToPDF
                     wdOptions.SuggestSpellingCorrections = false;
                     wdOptions.AllowDragAndDrop = false;
                     wdOptions.EnableMisusedWordsDictionary = false;
+                    wdOptions.ShowFormatError = false;
+                    wdOptions.StoreRSIDOnSave = false;
+                    wdOptions.SaveNormalPrompt = false;
                 }
                 catch (SystemException)
                 {
@@ -176,6 +179,14 @@ namespace OfficeToPDF
                 var docWin = doc.ActiveWindow;
                 var docWinView = docWin.View;
                 docWinView.Type = WdViewType.wdPrintPreview;
+
+                // Hide comments
+                try
+                {
+                    docWinView.RevisionsView = WdRevisionsView.wdRevisionsViewFinal;
+                    docWinView.ShowRevisionsAndComments = false;
+                }
+                catch(SystemException){}
 
                 // Try to avoid Word thinking any changes are happening to the document
                 doc.SpellingChecked = true;
