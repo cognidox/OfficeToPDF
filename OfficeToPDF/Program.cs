@@ -199,7 +199,7 @@ namespace OfficeToPDF
 
             // Make sure the input file looks like something we can handle (i.e. has an office
             // filename extension)
-            Regex fileMatch = new Regex(@"\.(((ppt|pps|pot|do[ct]|xls|xlt)[xm]?)|od[cpt]|rtf|csv|vsd[xm]?|pub|msg|vcf|ics|mpp|svg|txt|html?)$", RegexOptions.IgnoreCase);
+            Regex fileMatch = new Regex(@"\.(((ppt|pps|pot|do[ct]|xls|xlt)[xm]?)|xlsb|od[spt]|rtf|csv|vsd[xm]?|pub|msg|vcf|ics|mpp|svg|txt|html?)$", RegexOptions.IgnoreCase);
             if (fileMatch.Matches(files[0]).Count != 1)
             {
                 Console.WriteLine("Input file can not be handled. Must be Word, PowerPoint, Excel, Outlook, Publisher or Visio");
@@ -277,13 +277,14 @@ namespace OfficeToPDF
                         converted = WordConverter.Convert(inputFile, outputFile, options);
                         break;
                     case "csv":
-                    case "odc":
+                    case "ods":
                     case "xls":
                     case "xlsx":
                     case "xlt":
                     case "xltx":
                     case "xlsm":
                     case "xltm":
+                    case "xlsb":
                         // Excel
                         if ((Boolean)options["verbose"])
                         {
@@ -366,7 +367,7 @@ namespace OfficeToPDF
 Handles Office files:
   doc, dot, docx, dotx, docm, dotm, rtf, odt, txt, htm, html, ppt, pptx,
   pptm, pps, ppsx, ppsm, pot, potm, potx, odp, xls, xlsx, xlsm, xlt, xltm,
-  xltx, csv, odc, vsd, vsdm, vsdx, svg, pub, mpp, ics, vcf, msg
+  xltx, xlsb, csv, ods, vsd, vsdm, vsdx, svg, pub, mpp, ics, vcf, msg
 
 OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file [output_file]
 
