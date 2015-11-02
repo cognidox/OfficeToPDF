@@ -72,7 +72,8 @@ namespace OfficeToPDF
             options["excel_max_rows"] = (int) 0;
             options["word_header_dist"] = (float) -1;
             options["word_footer_dist"] = (float) -1;
-            Regex switches = new Regex(@"^/(hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_max_rows|excel_show_formulas|excel_show_headings|excel_auto_macros|word_header_dist|word_footer_dist|\?)$", RegexOptions.IgnoreCase);
+            options["powerpoint_run_macro"] = "";
+            Regex switches = new Regex(@"^/(hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_max_rows|excel_show_formulas|excel_show_headings|excel_auto_macros|powerpoint_run_macro|word_header_dist|word_footer_dist|\?)$", RegexOptions.IgnoreCase);
             for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
                 string item = args[argIdx];
@@ -151,6 +152,7 @@ namespace OfficeToPDF
                                 break;
                             case "password":
                             case "writepassword":
+                            case "powerpoint_run_macro":
                                 // Only accept the next option if there are enough options
                                 if (argIdx + 2 < args.Length)
                                 {
@@ -393,6 +395,7 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file [output_file]
   /excel_max_rows <rows>    - If any worksheet in a spreadsheet document has more
                               than this number of rows, do not attempt to convert
                               the file. Applies when converting with Excel.
+  /powerpoint_run_macro <macro> - Run the macro named <macro> when a PowerPoint file is opened.
   /word_header_dist <pts>   - The distance (in points) from the header to the top of
                               the page.
   /word_footer_dist <pts>   - The distance (in points) from the footer to the bottom
