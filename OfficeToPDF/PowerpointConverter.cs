@@ -23,7 +23,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using MSCore = Microsoft.Office.Core;
 using Microsoft.Office.Interop.PowerPoint;
@@ -110,27 +109,6 @@ namespace OfficeToPDF
                         activePresentation.Slides.InsertFromFile(inputFile, 0);
                     }
                     Converter.releaseCOMObject(fonts);
-
-                    // See if there is a macro to run
-                    if (!String.IsNullOrWhiteSpace((String)options["powerpoint_run_macro"]))
-                    {
-                        Console.WriteLine("Running macro " + (String)options["powerpoint_run_macro"]);
-                        try
-                        {
-                            System.Threading.Thread.Sleep(2000);
-                            using (new ChangeLocalHelper("en-us"))
-                            {
-                                app.Run((String)options["powerpoint_run_macro"], null);
-                            }
-                            //PowerpointConverter.RunMacro((Microsoft.Office.Interop.PowerPoint._Application)app, new Object[] { (String)options["powerpoint_run_macro"] });
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine("Failed to run macro");
-                            Console.WriteLine(e.Message);
-                        }
-                    }
-
                     activePresentation.ExportAsFixedFormat(outputFile, PpFixedFormatType.ppFixedFormatTypePDF, quality, MSCore.MsoTriState.msoFalse, PpPrintHandoutOrder.ppPrintHandoutVerticalFirst, PpPrintOutputType.ppPrintOutputSlides, MSCore.MsoTriState.msoFalse, null, PpPrintRangeType.ppPrintAll, "", includeProps, true, includeTags, true, pdfa, Type.Missing);
                     activePresentation.Saved = MSCore.MsoTriState.msoTrue;
                     activePresentation.Close();
@@ -165,41 +143,5 @@ namespace OfficeToPDF
                 return (int)ExitCode.UnknownError;
             }
         }
-
-        private static void RunMacro(object oApp, object[] oRunArgs)
-        {
-            try
-            {
-                using (new ChangeLocalHelper("en-us")) {
-                    oApp.GetType().InvokeMember("Run",
-                        System.Reflection.BindingFlags.Default |
-                        System.Reflection.BindingFlags.InvokeMethod,
-                        null, oApp, oRunArgs);
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Fail macro " + e.Message);
-            }
-        }
     }
-    class ChangeLocalHelper : IDisposable
-    {
-        private string _localeName;
-        private string _originalLocale;
-        public ChangeLocalHelper(string localeName)
-        {
-            this._localeName = localeName;
-            _originalLocale = System.Threading.Thread.CurrentThread.CurrentCulture.Name;
-            System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo(this._localeName);
-        }
-
-        #region IDisposable Members
-        public void Dispose()
-        {
-            System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo(this._originalLocale);
-        }
-        #endregion
-    }
-
 }
