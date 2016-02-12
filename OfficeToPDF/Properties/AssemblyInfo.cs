@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Cognidox Ltd")]
 [assembly: AssemblyProduct("OfficeToPDF")]
-[assembly: AssemblyCopyright("Copyright © Cognidox Ltd 2015")]
+[assembly: AssemblyCopyright("Copyright © Cognidox Ltd 2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

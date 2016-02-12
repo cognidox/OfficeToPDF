@@ -170,7 +170,7 @@ namespace OfficeToPDF
                         // If showing formulas, make things auto-fit
                         if ((Boolean)options["excel_show_formulas"])
                         {
-                            ((Microsoft.Office.Interop.Excel.Worksheet)ws).Activate();
+                            ((Microsoft.Office.Interop.Excel._Worksheet)ws).Activate();
                             app.ActiveWindow.DisplayFormulas = true;
                             var cols = ((Microsoft.Office.Interop.Excel.Worksheet)ws).Columns;
                             cols.AutoFit();
