@@ -92,7 +92,6 @@ namespace OfficeToPDF
                 Boolean includeTags = !(Boolean)options["excludetags"];
 
                 var documents = app.Documents;
-                Console.WriteLine("Opening file");
                 documents.OpenEx(inputFile, flags);
 
                 // Try and avoid dialogs about versions and convert SVG files to
