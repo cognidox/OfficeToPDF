@@ -60,9 +60,12 @@ namespace OfficeToPDF
                         var message = (MailItem) session.OpenSharedItem(inputFile);
                         if (message == null)
                         {
+                            Converter.releaseCOMObject(message);
+                            Converter.releaseCOMObject(session);
                             return (int)ExitCode.FileOpenFailure;
                         }
                         message.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
+                        ((_MailItem)message).Close(OlInspectorClose.olDiscard);
                         Converter.releaseCOMObject(message);
                         Converter.releaseCOMObject(session);
                         break;
@@ -70,6 +73,8 @@ namespace OfficeToPDF
                         var contact = (ContactItem)session.OpenSharedItem(inputFile);
                         if (contact == null)
                         {
+                            Converter.releaseCOMObject(contact);
+                            Converter.releaseCOMObject(session);
                             return (int)ExitCode.FileOpenFailure;
                         }
                         contact.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
@@ -102,6 +107,7 @@ namespace OfficeToPDF
                     return (int)ExitCode.UnknownError;
                 }
                 // Convert the doc file to a PDF
+                options["IsTempWord"] = true;
                 return WordConverter.Convert(tmpDocFile, outputFile, options);
             }
             catch (System.Exception e)

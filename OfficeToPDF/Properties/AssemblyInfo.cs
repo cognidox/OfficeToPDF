@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("OfficeToPDF")]
-[assembly: AssemblyDescription("Converts MSOffice 2003/2007/2010/2013 documents to PDF")]
+[assembly: AssemblyDescription("Converts MSOffice 2003/2007/2010/2013/2016 documents to PDF")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Cognidox Ltd")]
 [assembly: AssemblyProduct("OfficeToPDF")]
@@ -32,5 +32,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.5.0.11")]
-[assembly: AssemblyFileVersion("1.5.0.11")]
+[assembly: AssemblyVersion("1.5.0.12")]
+[assembly: AssemblyFileVersion("1.5.0.12")]
