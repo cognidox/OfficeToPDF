@@ -95,6 +95,7 @@ namespace OfficeToPDF
                 Boolean nowrite = (Boolean)options["readonly"];
                 Boolean includeProps = !(Boolean)options["excludeprops"];
                 Boolean includeTags = !(Boolean)options["excludetags"];
+                Boolean autosave = options.ContainsKey("IsTempWord") && (Boolean)options["IsTempWord"];
                 bool pdfa = (Boolean)options["pdfa"] ? true : false;
                 WdExportOptimizeFor quality = WdExportOptimizeFor.wdExportOptimizeForPrint;
                 if ((Boolean)options["print"])
@@ -195,12 +196,13 @@ namespace OfficeToPDF
                 // Changing these properties may be disallowed if the document is protected
                 if (doc.ProtectionType == WdProtectionType.wdNoProtection)
                 {
+                    if (autosave) { doc.Save(); doc.Saved = true; }
                     doc.TrackMoves = false;
                     doc.TrackRevisions = false;
                     doc.TrackFormatting = false;
                 }
                 normalTemplate.Saved = true;
-                
+
                 // Hide the document window if need be
                 if ((Boolean)options["hidden"])
                 {
@@ -329,6 +331,10 @@ namespace OfficeToPDF
                 }
 
                 normalTemplate.Saved = true;
+                if (autosave)
+                {
+                    doc.Save();
+                }
                 doc.Saved = true;
                 doc.ExportAsFixedFormat(outputFile, WdExportFormat.wdExportFormatPDF, false, 
                     quality, WdExportRange.wdExportAllDocument,
@@ -339,7 +345,7 @@ namespace OfficeToPDF
                     tmpl.Saved = true;
                 }
 
-                object saveChanges = WdSaveOptions.wdDoNotSaveChanges;
+                object saveChanges = autosave? WdSaveOptions.wdSaveChanges : WdSaveOptions.wdDoNotSaveChanges;
                 if (nowrite)
                 {
                     doc.Saved = true;
