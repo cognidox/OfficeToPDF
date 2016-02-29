@@ -2,11 +2,11 @@
 =============
 
 This is the Cognidox Ltd Office To PDF tool. It can be used to convert
-Microsoft Office 2003, 2007, 2010 & 2013 documents to PDF from the
+Microsoft Office 2003, 2007, 2010, 2013 or 2016 documents to PDF from the
 command line.
 
-In order to run the tool, .net 4 and one of MS Office 2007, 2010 or 2013
-must be installed.
+In order to run the tool, .net 4 and one of MS Office 2007, 2010, 2013
+or 2016 must be installed.
 
 It is distributed under the Apache License v2.0:
 http://opensource.org/licenses/apache2.0
@@ -21,7 +21,7 @@ Supported file types:
 
 The following file types can be converted:
 
- * Word       - .doc, .dot,  .docx, .dotx, .docm, .dotm, .rtf, .odt, .txt, .htm, .html
+ * Word       - .doc, .dot,  .docx, .dotx, .docm, .dotm, .rtf, .odt, .txt, .htm, .html, .wpd
  * Excel      - .xls, .xlsx, .xlsm, .xlt, .xltm, .xltx, .xlsb, .csv, .ods
  * Powerpoint - .ppt, .pptx, .pptm, .pot, .potm, .potx, .pps, .ppsx, .ppsm, .odp
  * Visio      - .vsd, .vsdm, .vsdx, .svg [.vsdm, .vsdx & .svg require Visio >= 2013]
