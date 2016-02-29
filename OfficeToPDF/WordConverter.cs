@@ -1,6 +1,6 @@
 ﻿/**
- *  OfficeToPDF command line PDF conversion for Office 2007/2010/2013
- *  Copyright (C) 2011-2015 Cognidox Ltd
+ *  OfficeToPDF command line PDF conversion for Office 2007/2010/2013/2016
+ *  Copyright (C) 2011-2016 Cognidox Ltd
  *  http://www.cognidox.com/opensource/
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -47,6 +47,7 @@ namespace OfficeToPDF
             object oMissing = System.Reflection.Missing.Value;
             Microsoft.Office.Interop.Word.Template tmpl;
             String temporaryStorageDir = null;
+            float wordVersion = 0;
             try
             {
                 tmpl = null;
@@ -63,9 +64,12 @@ namespace OfficeToPDF
                 word.DisplayRecentFiles = false;
                 word.DisplayDocumentInformationPanel = false;
                 word.FeatureInstall = Microsoft.Office.Core.MsoFeatureInstall.msoFeatureInstallNone;
+                wordVersion = (float)System.Convert.ToDecimal(word.Version);
                 var wdOptions = word.Options;
                 try
                 {
+                    wdOptions.AllowReadingMode = false;
+                    wdOptions.PrecisePositioning = true;
                     wdOptions.UpdateFieldsAtPrint = false;
                     wdOptions.UpdateLinksAtPrint = false;
                     wdOptions.WarnBeforeSavingPrintingSendingMarkup = false;
@@ -90,6 +94,7 @@ namespace OfficeToPDF
                 catch (SystemException)
                 {
                 }
+
                 Object filename = (Object)inputFile;
                 Boolean visible = !(Boolean)options["hidden"];
                 Boolean nowrite = (Boolean)options["readonly"];
@@ -179,6 +184,10 @@ namespace OfficeToPDF
                 // Prevent "property not available" errors, see http://blogs.msmvps.com/wordmeister/2013/02/22/word2013bug-not-available-for-reading/
                 var docWin = doc.ActiveWindow;
                 var docWinView = docWin.View;
+                if (wordVersion >= 15)
+                {
+                    docWinView.ReadingLayout = false;
+                }
                 docWinView.Type = WdViewType.wdPrintPreview;
 
                 // Hide comments

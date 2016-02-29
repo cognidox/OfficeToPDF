@@ -1,6 +1,6 @@
 ﻿/**
- *  OfficeToPDF command line PDF conversion for Office 2007/2010/2013
- *  Copyright (C) 2011-2015 Cognidox Ltd
+ *  OfficeToPDF command line PDF conversion for Office 2007/2010/2013/2016
+ *  Copyright (C) 2011-2016 Cognidox Ltd
  *  http://www.cognidox.com/opensource/
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -199,7 +199,7 @@ namespace OfficeToPDF
 
             // Make sure the input file looks like something we can handle (i.e. has an office
             // filename extension)
-            Regex fileMatch = new Regex(@"\.(((ppt|pps|pot|do[ct]|xls|xlt)[xm]?)|xlsb|od[spt]|rtf|csv|vsd[xm]?|pub|msg|vcf|ics|mpp|svg|txt|html?)$", RegexOptions.IgnoreCase);
+            Regex fileMatch = new Regex(@"\.(((ppt|pps|pot|do[ct]|xls|xlt)[xm]?)|xlsb|od[spt]|rtf|csv|vsd[xm]?|pub|msg|vcf|ics|mpp|svg|txt|html?|wpd)$", RegexOptions.IgnoreCase);
             if (fileMatch.Matches(files[0]).Count != 1)
             {
                 Console.WriteLine("Input file can not be handled. Must be Word, PowerPoint, Excel, Outlook, Publisher or Visio");
@@ -269,6 +269,7 @@ namespace OfficeToPDF
                     case "txt":
                     case "html":
                     case "htm":
+                    case "wpd":
                         // Word
                         if ((Boolean)options["verbose"])
                         {
@@ -365,7 +366,7 @@ namespace OfficeToPDF
         {
             Console.Write(@"Converts Office documents to PDF from the command line.
 Handles Office files:
-  doc, dot, docx, dotx, docm, dotm, rtf, odt, txt, htm, html, ppt, pptx,
+  doc, dot, docx, dotx, docm, dotm, rtf, odt, txt, htm, html, wpd, ppt, pptx,
   pptm, pps, ppsx, ppsm, pot, potm, potx, odp, xls, xlsx, xlsm, xlt, xltm,
   xltx, xlsb, csv, ods, vsd, vsdm, vsdx, svg, pub, mpp, ics, vcf, msg
 
