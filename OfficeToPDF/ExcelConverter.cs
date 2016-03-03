@@ -233,9 +233,7 @@ namespace OfficeToPDF
                                 }
                             }
                         } // End of row check
-                        Converter.releaseCOMObject(ws);
                     }
-                    Converter.releaseCOMObject(worksheets);
 
                     // Make sure we are not converting a document with too many rows
                     if (row_count_check_ok == false)
