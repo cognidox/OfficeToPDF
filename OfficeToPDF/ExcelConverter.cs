@@ -39,6 +39,7 @@ namespace OfficeToPDF
             Microsoft.Office.Interop.Excel.Application app = null;
             Microsoft.Office.Interop.Excel.Workbooks workbooks = null;
             Microsoft.Office.Interop.Excel.Workbook workbook = null;
+            Microsoft.Office.Interop.Excel.Worksheet activeSheet = null;
 
             String tmpFile = null;
             object oMissing = System.Reflection.Missing.Value;
@@ -147,6 +148,8 @@ namespace OfficeToPDF
                 // in the document, then assume the author knew what they were doing and
                 // use the print area.
                 var max_rows = (int)options[@"excel_max_rows"];
+                var onlyActiveSheet = (Boolean)options["excel_active_sheet"];
+                activeSheet = workbook.ActiveSheet;
 
                 // We may need to loop through all the worksheets in the document
                 // depending on the options given. If there are maximum row restrictions
@@ -160,6 +163,11 @@ namespace OfficeToPDF
                     var worksheets = workbook.Worksheets;
                     foreach (var ws in worksheets)
                     {
+                        // Skip anything that is not the active sheet
+                        if (onlyActiveSheet && ((Microsoft.Office.Interop.Excel.Worksheet)ws).Index != activeSheet.Index)
+                        {
+                            continue;
+                        }
                         if ((Boolean)options["excel_show_headings"])
                         {
                             var pageSetup = ((Microsoft.Office.Interop.Excel.Worksheet)ws).PageSetup;
@@ -239,8 +247,17 @@ namespace OfficeToPDF
                 Boolean includeProps = !(Boolean)options["excludeprops"];
 
                 workbook.SaveAs(tmpFile, fmt, Type.Missing, Type.Missing, Type.Missing, false, XlSaveAsAccessMode.xlNoChange, Type.Missing, false, Type.Missing, Type.Missing, Type.Missing);
-                workbook.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF,
-                    outputFile, quality, includeProps, false, Type.Missing, Type.Missing, false, Type.Missing);
+
+                if (onlyActiveSheet)
+                {
+                    activeSheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF,
+                        outputFile, quality, includeProps, false, Type.Missing, Type.Missing, false, Type.Missing);
+                }
+                else
+                {
+                    workbook.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF,
+                        outputFile, quality, includeProps, false, Type.Missing, Type.Missing, false, Type.Missing);
+                }
                 return (int)ExitCode.Success;
             }
             catch (Exception e)
@@ -269,6 +286,7 @@ namespace OfficeToPDF
                 }
 
                 // Clean all the COM leftovers
+                Converter.releaseCOMObject(activeSheet);
                 Converter.releaseCOMObject(workbook);
                 Converter.releaseCOMObject(workbooks);
                 Converter.releaseCOMObject(app);
