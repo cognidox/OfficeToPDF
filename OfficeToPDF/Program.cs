@@ -69,10 +69,11 @@ namespace OfficeToPDF
             options["excel_show_formulas"] = false;
             options["excel_show_headings"] = false;
             options["excel_auto_macros"] = false;
+            options["excel_active_sheet"] = false;
             options["excel_max_rows"] = (int) 0;
             options["word_header_dist"] = (float) -1;
             options["word_footer_dist"] = (float) -1;
-            Regex switches = new Regex(@"^/(hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_max_rows|excel_show_formulas|excel_show_headings|excel_auto_macros|word_header_dist|word_footer_dist|\?)$", RegexOptions.IgnoreCase);
+            Regex switches = new Regex(@"^/(hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_max_rows|excel_show_formulas|excel_show_headings|excel_auto_macros|excel_active_sheet|word_header_dist|word_footer_dist|\?)$", RegexOptions.IgnoreCase);
             for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
                 string item = args[argIdx];
@@ -388,6 +389,7 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file [output_file]
   /writepassword <pass>     - Use <pass> as the write password to open the document with
   /template <template_path> - Use a .dot, .dotx or .dotm template when
                               converting with Word
+  /excel_active_sheet       - Only convert the active worksheet
   /excel_auto_macros        - Run Auto_Open macros in Excel files before conversion
   /excel_show_formulas      - Show formulas in the generated PDF
   /excel_show_headings      - Show row and column headings
