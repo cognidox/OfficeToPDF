@@ -206,9 +206,9 @@ goto :exit
 
 :sign
 SET SIGNTOOL=C:\Program Files\Microsoft SDKs\Windows\v7.0A\bin\signtool.exe
-SET TSS=http://timestamp.globalsign.com/scripts/timstamp.dll
+SET TSS=http://timestamp.globalsign.com/?signature=sha2
 SET SNAME=Cognidox Limited
-SET ISSUER=GlobalSign CodeSigning CA - G2
+SET ISSUER=GlobalSign CodeSigning CA - SHA256 - G2
 SET APPNAME=OfficeToPDF
 SET APPURL=https://www.cognidox.com/officetopdf-converter/
 
