@@ -39,7 +39,7 @@ namespace OfficeToPDF
             Microsoft.Office.Interop.Excel.Application app = null;
             Microsoft.Office.Interop.Excel.Workbooks workbooks = null;
             Microsoft.Office.Interop.Excel.Workbook workbook = null;
-            Microsoft.Office.Interop.Excel.Worksheet activeSheet = null;
+            System.Object activeSheet = null;
 
             String tmpFile = null;
             object oMissing = System.Reflection.Missing.Value;
@@ -129,7 +129,11 @@ namespace OfficeToPDF
                 if ((Boolean)options["excel_show_formulas"])
                 {
                     // Determine whether to show formulas
-                    appWin[1].DisplayFormulas = true;
+                    try
+                    {
+                        appWin[1].DisplayFormulas = true;
+                    }
+                    catch (Exception) { }
                 }
                 if (wbWin.Count > 0)
                 {
@@ -141,15 +145,18 @@ namespace OfficeToPDF
                     appWin[1].Visible = (Boolean)options["hidden"] ? false : true;
                     Converter.releaseCOMObject(appWin);
                 }
-
                 // Large excel files may simply not print reliably - if the excel_max_rows
                 // configuration option is set, then we must close up and forget about 
                 // converting the file. However, if a print area is set in one of the worksheets
                 // in the document, then assume the author knew what they were doing and
                 // use the print area.
                 var max_rows = (int)options[@"excel_max_rows"];
+
                 var onlyActiveSheet = (Boolean)options["excel_active_sheet"];
-                activeSheet = workbook.ActiveSheet;
+                if (workbook.ActiveSheet != null)
+                {
+                    activeSheet = workbook.ActiveSheet;
+                }
 
                 // We may need to loop through all the worksheets in the document
                 // depending on the options given. If there are maximum row restrictions
@@ -164,25 +171,57 @@ namespace OfficeToPDF
                     foreach (var ws in worksheets)
                     {
                         // Skip anything that is not the active sheet
-                        if (onlyActiveSheet && ((Microsoft.Office.Interop.Excel.Worksheet)ws).Index != activeSheet.Index)
+                        if (onlyActiveSheet)
                         {
-                            continue;
+                            // Ugly work-around for not knowing if we'll get a chart or a worksheet from the
+                            // worksheets list
+                            try
+                            {
+                                if (((Microsoft.Office.Interop.Excel.Worksheet)ws).Index != ((Microsoft.Office.Interop.Excel.Worksheet)activeSheet).Index)
+                                {
+                                    continue;
+                                }
+                            }
+                            catch (Exception)
+                            {
+                                try
+                                {
+
+                                    if (((Microsoft.Office.Interop.Excel.Chart)ws).Index != ((Microsoft.Office.Interop.Excel.Chart)activeSheet).Index)
+                                    {
+                                        continue;
+                                    }
+                                }
+                                catch (Exception)
+                                {
+                                    continue;
+                                }
+                            }
                         }
+
                         if ((Boolean)options["excel_show_headings"])
                         {
-                            var pageSetup = ((Microsoft.Office.Interop.Excel.Worksheet)ws).PageSetup;
-                            pageSetup.PrintHeadings = true;
-                            Converter.releaseCOMObject(pageSetup);
+                            try
+                            {
+
+                                var pageSetup = ((Microsoft.Office.Interop.Excel.Worksheet)ws).PageSetup;
+                                pageSetup.PrintHeadings = true;
+                                Converter.releaseCOMObject(pageSetup);
+                            } catch(Exception){}
                         }
 
                         // If showing formulas, make things auto-fit
                         if ((Boolean)options["excel_show_formulas"])
                         {
-                            ((Microsoft.Office.Interop.Excel._Worksheet)ws).Activate();
-                            app.ActiveWindow.DisplayFormulas = true;
-                            var cols = ((Microsoft.Office.Interop.Excel.Worksheet)ws).Columns;
-                            cols.AutoFit();
-                            Converter.releaseCOMObject(cols);
+                            try
+                            {
+                                ((Microsoft.Office.Interop.Excel._Worksheet)ws).Activate();
+                                app.ActiveWindow.DisplayFormulas = true;
+                                var cols = ((Microsoft.Office.Interop.Excel.Worksheet)ws).Columns;
+                                cols.AutoFit();
+                                Converter.releaseCOMObject(cols);
+                            }
+                            catch (Exception) { }
                         }
 
                         // If there is a maximum row count, make sure we check each worksheet
@@ -248,8 +287,16 @@ namespace OfficeToPDF
 
                 if (onlyActiveSheet)
                 {
-                    activeSheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF,
-                        outputFile, quality, includeProps, false, Type.Missing, Type.Missing, false, Type.Missing);
+                    try
+                    {
+                        ((Microsoft.Office.Interop.Excel.Worksheet)activeSheet).ExportAsFixedFormat(XlFixedFormatType.xlTypePDF,
+                            outputFile, quality, includeProps, false, Type.Missing, Type.Missing, false, Type.Missing);
+                    }
+                    catch (InvalidCastException)
+                    {
+                        ((Microsoft.Office.Interop.Excel.Chart)activeSheet).ExportAsFixedFormat(XlFixedFormatType.xlTypePDF,
+                            outputFile, quality, includeProps, false, Type.Missing, Type.Missing, false, Type.Missing);
+                    }
                 }
                 else
                 {
