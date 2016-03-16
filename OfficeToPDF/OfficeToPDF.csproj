@@ -212,7 +212,7 @@ SET ISSUER=GlobalSign CodeSigning CA - SHA256 - G2
 SET APPNAME=OfficeToPDF
 SET APPURL=https://www.cognidox.com/officetopdf-converter/
 
-"%25SIGNTOOL%25" sign /fd SHA256 /t %25TSS%25 /n "%25SNAME%25" /i "%25ISSUER%25" /d "%25APPNAME%25" /du "%25APPURL%25" "$(TargetPath)"
+"%25SIGNTOOL%25" sign /fd SHA256 /tr %25TSS%25 /td SHA256 /n "%25SNAME%25" /i "%25ISSUER%25" /d "%25APPNAME%25" /du "%25APPURL%25" "$(TargetPath)"
 goto :exit
 
 :exit</PostBuildEvent>
