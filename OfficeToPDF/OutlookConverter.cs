@@ -119,7 +119,12 @@ namespace OfficeToPDF
             {
                 if (tmpDocFile != null && File.Exists(tmpDocFile))
                 {
-                    System.IO.File.Delete(tmpDocFile);
+                    try
+                    {
+
+                        System.IO.File.Delete(tmpDocFile);
+                    }
+                    catch (System.Exception) { }
                 }
                 // If we were not already running, quit and release the outlook object
                 if (app != null && !running)

@@ -382,11 +382,15 @@ namespace OfficeToPDF
             {
                 if (temporaryStorageDir != null && Directory.Exists(temporaryStorageDir))
                 {
-                    if (File.Exists(Path.Combine(temporaryStorageDir, Path.GetFileName(inputFile))))
+                    try
                     {
-                        File.Delete(Path.Combine(temporaryStorageDir, Path.GetFileName(inputFile)));
+                        if (File.Exists(Path.Combine(temporaryStorageDir, Path.GetFileName(inputFile))))
+                        {
+                            File.Delete(Path.Combine(temporaryStorageDir, Path.GetFileName(inputFile)));
+                        }
+                        Directory.Delete(temporaryStorageDir);
                     }
-                    Directory.Delete(temporaryStorageDir);
+                    catch (Exception) { }
                 }
                 if (word != null && !running)
                 {
