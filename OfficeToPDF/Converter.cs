@@ -195,7 +195,7 @@ namespace OfficeToPDF
                     const int streamScanSize = 0x100;
                     if (sectionOffset + streamScanSize > stream.Length)
                         return false; // invalid document
-                    var workbookStream = new byte[streamScanSize];
+                    var workbookStream = new byte[streamScanSize + sizeof(short)];
                     stream.Seek(sectionOffset, SeekOrigin.Begin);
                     ReadFromStream(stream, workbookStream);
                     short record = BitConverter.ToInt16(workbookStream, 0);
