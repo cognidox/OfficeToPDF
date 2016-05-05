@@ -268,7 +268,7 @@ namespace OfficeToPDF
                             // To counter this for empty footers, we manually set the header
                             // distance to zero here
                             var shapes = header.Shapes;
-                            if (shapes.Count == 0)
+                            if (shapes.Count == 0 && doc.ProtectionType == WdProtectionType.wdNoProtection)
                             {
                                 sectionPageSetup.HeaderDistance = 0;
                             }
@@ -295,7 +295,7 @@ namespace OfficeToPDF
                             // To counter this for empty footers, we manually set the footer
                             // distance to zero here
                             var shapes = footer.Shapes;
-                            if (shapes.Count == 0)
+                            if (shapes.Count == 0 && doc.ProtectionType == WdProtectionType.wdNoProtection)
                             {
                                 sectionPageSetup.FooterDistance = 0;
                             }
