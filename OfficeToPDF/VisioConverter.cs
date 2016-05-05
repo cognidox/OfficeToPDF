@@ -61,9 +61,11 @@ namespace OfficeToPDF
 
                 // We can only convert svg, vsdx and vsdm files with Visio 2013
                 if (System.Convert.ToDouble(app.Version.ToString()) < 15 &&
-                    ((String.Compare(extension, "vsdx") == 0) ||
-                    (String.Compare(extension, "vsdm") == 0) ||
-                    (String.Compare(extension, "svg") == 0)))
+                    ((String.Compare(extension, "vsdx", true) == 0) ||
+                    (String.Compare(extension, "vsdm", true) == 0) ||
+                    (String.Compare(extension, "vdw", true) == 0) ||
+                    (String.Compare(extension, "vdx", true) == 0) ||
+                    (String.Compare(extension, "svg", true) == 0)))
                 {
                     Console.WriteLine("File type not supported in Visio version {0}", app.Version);
                     return (int)ExitCode.UnsupportedFileFormat;
@@ -94,9 +96,14 @@ namespace OfficeToPDF
                 var documents = app.Documents;
                 documents.OpenEx(inputFile, flags);
 
-                // Try and avoid dialogs about versions and convert SVG files to
+                // Try and avoid dialogs about versions and convert non-visio files to
                 // visio to get ready for printing
-                if (String.Compare(extension, "svg") == 0)
+                if ((String.Compare(extension, "svg", true) == 0) ||
+                    (String.Compare(extension, "wmf", true) == 0) ||
+                    (String.Compare(extension, "emf", true) == 0) ||
+                    (String.Compare(extension, "emz", true) == 0) ||
+                    (String.Compare(extension, "dwg", true) == 0) ||
+                    (String.Compare(extension, "dxf", true) == 0))
                 {
                     extension = "vsd";
                 }
