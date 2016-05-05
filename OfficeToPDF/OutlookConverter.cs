@@ -54,7 +54,7 @@ namespace OfficeToPDF
                 FileInfo fi = new FileInfo(inputFile);
                 // Create a temporary doc file from the message
                 tmpDocFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".doc";
-                switch(fi.Extension)
+                switch(fi.Extension.ToLower())
                 {
                     case ".msg":
                         var message = (MailItem) session.OpenSharedItem(inputFile);
