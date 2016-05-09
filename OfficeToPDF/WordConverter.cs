@@ -414,6 +414,7 @@ namespace OfficeToPDF
                 case WdFieldType.wdFieldFileSize:
                 case WdFieldType.wdFieldFootnoteRef:
                 case WdFieldType.wdFieldGreetingLine:
+                case WdFieldType.wdFieldIf:
                 case WdFieldType.wdFieldIndex:
                 case WdFieldType.wdFieldInfo:
                 case WdFieldType.wdFieldKeyWord:
