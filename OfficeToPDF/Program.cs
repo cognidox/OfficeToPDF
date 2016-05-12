@@ -39,7 +39,9 @@ namespace OfficeToPDF
         FileOpenFailure = 16,
         UnsupportedFileFormat = 32,
         FileNotFound = 64,
-        DirectoryNotFound = 128
+        DirectoryNotFound = 128,
+        WorksheetNotFound = 256,
+        EmptyWorksheet = 512
     }
 
     class Program
@@ -71,9 +73,10 @@ namespace OfficeToPDF
             options["excel_auto_macros"] = false;
             options["excel_active_sheet"] = false;
             options["excel_max_rows"] = (int) 0;
+            options["excel_worksheet"] = (int)0;
             options["word_header_dist"] = (float) -1;
             options["word_footer_dist"] = (float) -1;
-            Regex switches = new Regex(@"^/(hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_max_rows|excel_show_formulas|excel_show_headings|excel_auto_macros|excel_active_sheet|word_header_dist|word_footer_dist|\?)$", RegexOptions.IgnoreCase);
+            Regex switches = new Regex(@"^/(hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_max_rows|excel_show_formulas|excel_show_headings|excel_auto_macros|excel_active_sheet|excel_worksheet|word_header_dist|word_footer_dist|\?)$", RegexOptions.IgnoreCase);
             for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
                 string item = args[argIdx];
@@ -119,6 +122,22 @@ namespace OfficeToPDF
                                     else
                                     {
                                         Console.WriteLine("Maximum number of rows ({0}) is invalid", args[argIdx + 1]);
+                                        Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
+                                    }
+                                    argIdx++;
+                                }
+                                break;
+                            case "excel_worksheet":
+                                // Only accept the next option if there are enough options
+                                if (argIdx + 2 < args.Length)
+                                {
+                                    if (Regex.IsMatch(args[argIdx + 1], @"^\d+$"))
+                                    {
+                                        options[itemMatch.Groups[1].Value.ToLower()] = (int)Convert.ToInt32(args[argIdx + 1]);
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("Excel worksheet ({0}) is invalid", args[argIdx + 1]);
                                         Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
                                     }
                                     argIdx++;

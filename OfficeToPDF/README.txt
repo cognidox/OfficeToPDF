@@ -65,6 +65,7 @@ The following optional switches can be used:
   /excel_max_rows <rows>    - if any worksheet in a spreadsheet document has more
                               than this number of rows, do not attempt to convert
                               the file. Applies when converting with Excel
+  /excel_worksheet <num>    - only convert worksheet <num> in the workbook. First sheet is 1
   /word_header_dist <pts>   - the distance (in points) from the header to the top of
                               the page
   /word_footer_dist <pts>   - the distance (in points) from the footer to the bottom
@@ -99,6 +100,8 @@ The following optional switches can be used:
   32    - Unsupported file format
   64    - Source file not found
   128   - Output directory not found
+  256   - The requested worksheet was not found
+  512   - Unable to use an empty worksheet
 
   To check for a specific error code after calling officetopdf.exe, use the batch
   "SET /A" command. e.g.
