@@ -122,6 +122,29 @@ namespace OfficeToPDF
                     quality = XlFixedFormatQuality.xlQualityMinimum;
                 }
 
+                // If a worksheet has been specified, try and use just the one
+                if ((int)options["excel_worksheet"] > 0)
+                {
+                    // Force us just to use the active sheet
+                    options["excel_active_sheet"] = true;
+                    try
+                    {
+                        var worksheetNum = (int)options["excel_worksheet"];
+                        var sheets = workbook.Sheets;
+                        if (worksheetNum > sheets.Count)
+                        {
+                            // Sheet count is too big
+                            Converter.releaseCOMObject(sheets);
+                            return (int)ExitCode.WorksheetNotFound;
+                        }
+                        ((_Worksheet)sheets[worksheetNum]).Activate();
+                    }
+                    catch (Exception e)
+                    {
+                        return (int)ExitCode.WorksheetNotFound;
+                    }
+                }
+
                 // Remember - Never use 2 dots with COM objects!
                 // Using more than one dot leaves wrapper objects left over
                 var wbWin = workbook.Windows;
@@ -207,7 +230,8 @@ namespace OfficeToPDF
                                 var pageSetup = ((Microsoft.Office.Interop.Excel.Worksheet)ws).PageSetup;
                                 pageSetup.PrintHeadings = true;
                                 Converter.releaseCOMObject(pageSetup);
-                            } catch(Exception){}
+                            }
+                            catch (Exception) { }
                         }
 
                         // If showing formulas, make things auto-fit
@@ -304,6 +328,18 @@ namespace OfficeToPDF
                         outputFile, quality, includeProps, false, Type.Missing, Type.Missing, false, Type.Missing);
                 }
                 return (int)ExitCode.Success;
+            }
+            catch (COMException ce)
+            {
+                if ((uint)ce.ErrorCode == 0x800A03EC)
+                {
+                    return (int)ExitCode.EmptyWorksheet;
+                }
+                else
+                {
+                    Console.WriteLine(ce.Message);
+                    return (int)ExitCode.UnknownError;
+                }
             }
             catch (Exception e)
             {
