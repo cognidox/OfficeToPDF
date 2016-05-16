@@ -266,14 +266,16 @@ namespace OfficeToPDF
                             // Simply querying the range of the header will create it.
                             // If the header is empty, this can introduce additional space
                             // between the non-existant header and the top of the page.
-                            // To counter this for empty footers, we manually set the header
+                            // To counter this for empty headers, we manually set the header
                             // distance to zero here
                             var shapes = header.Shapes;
-                            if (shapes.Count == 0 && doc.ProtectionType == WdProtectionType.wdNoProtection)
+                            var rangeShapes = range.ShapeRange;
+                            if (shapes.Count == 0 && (range.End - range.Start) < 2 && rangeShapes.Count == 0 && doc.ProtectionType == WdProtectionType.wdNoProtection)
                             {
                                 sectionPageSetup.HeaderDistance = 0;
                             }
                             Converter.releaseCOMObject(shapes);
+                            Converter.releaseCOMObject(rangeShapes);
                             Converter.releaseCOMObject(rangeFields);
                             Converter.releaseCOMObject(range);
                         }
@@ -296,11 +298,13 @@ namespace OfficeToPDF
                             // To counter this for empty footers, we manually set the footer
                             // distance to zero here
                             var shapes = footer.Shapes;
-                            if (shapes.Count == 0 && doc.ProtectionType == WdProtectionType.wdNoProtection)
+                            var rangeShapes = range.ShapeRange;
+                            if (shapes.Count == 0 && (range.End - range.Start) < 2 && rangeShapes.Count == 0 && doc.ProtectionType == WdProtectionType.wdNoProtection)
                             {
                                 sectionPageSetup.FooterDistance = 0;
                             }
                             Converter.releaseCOMObject(shapes);
+                            Converter.releaseCOMObject(rangeShapes);
                             Converter.releaseCOMObject(rangeFields);
                             Converter.releaseCOMObject(range);
                         }
