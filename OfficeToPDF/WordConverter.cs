@@ -22,6 +22,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using Microsoft.Office.Interop.Word;
@@ -64,7 +65,7 @@ namespace OfficeToPDF
                 word.DisplayRecentFiles = false;
                 word.DisplayDocumentInformationPanel = false;
                 word.FeatureInstall = Microsoft.Office.Core.MsoFeatureInstall.msoFeatureInstallNone;
-                wordVersion = (float)System.Convert.ToDecimal(word.Version);
+                wordVersion = (float)System.Convert.ToDecimal(word.Version, new CultureInfo("en-US"));
                 var wdOptions = word.Options;
                 try
                 {

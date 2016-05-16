@@ -139,7 +139,7 @@ namespace OfficeToPDF
                         }
                         ((_Worksheet)sheets[worksheetNum]).Activate();
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
                         return (int)ExitCode.WorksheetNotFound;
                     }

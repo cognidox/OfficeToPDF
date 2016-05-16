@@ -20,6 +20,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -52,7 +53,7 @@ namespace OfficeToPDF
                     running = false;
                 }
                 System.Type type = app.GetType();
-                if (type.GetMethod("DocumentExport") == null || System.Convert.ToDouble(app.Version.ToString()) < 14)
+                if (type.GetMethod("DocumentExport") == null || System.Convert.ToDouble(app.Version.ToString(), new CultureInfo("en-US")) < 14)
                 {
                     Console.WriteLine("Not implemented with Office version {0}", app.Version);
                     return (int)ExitCode.UnsupportedFileFormat;

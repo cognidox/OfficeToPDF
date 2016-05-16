@@ -20,6 +20,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -60,7 +61,7 @@ namespace OfficeToPDF
                 }
 
                 // We can only convert svg, vsdx and vsdm files with Visio 2013
-                if (System.Convert.ToDouble(app.Version.ToString()) < 15 &&
+                if (System.Convert.ToDouble(app.Version.ToString(), new CultureInfo("en-US")) < 15 &&
                     ((String.Compare(extension, "vsdx", true) == 0) ||
                     (String.Compare(extension, "vsdm", true) == 0) ||
                     (String.Compare(extension, "vdw", true) == 0) ||
