@@ -246,6 +246,9 @@ namespace OfficeToPDF
                 {
                     var sectionRange = section.Range;
                     var sectionFields = sectionRange.Fields;
+                    var zeroHeader = true;
+                    var zeroFooter = true;
+
                     foreach (Field sectionField in sectionFields)
                     {
                         WordConverter.updateField(sectionField, word, inputFile);
@@ -270,9 +273,9 @@ namespace OfficeToPDF
                             // distance to zero here
                             var shapes = header.Shapes;
                             var rangeShapes = range.ShapeRange;
-                            if (shapes.Count == 0 && (range.End - range.Start) < 2 && rangeShapes.Count == 0 && doc.ProtectionType == WdProtectionType.wdNoProtection)
+                            if ((shapes.Count > 0) || !String.IsNullOrWhiteSpace(range.Text) || (rangeShapes.Count > 0))
                             {
-                                sectionPageSetup.HeaderDistance = 0;
+                                zeroHeader = false;
                             }
                             Converter.releaseCOMObject(shapes);
                             Converter.releaseCOMObject(rangeShapes);
@@ -299,14 +302,25 @@ namespace OfficeToPDF
                             // distance to zero here
                             var shapes = footer.Shapes;
                             var rangeShapes = range.ShapeRange;
-                            if (shapes.Count == 0 && (range.End - range.Start) < 2 && rangeShapes.Count == 0 && doc.ProtectionType == WdProtectionType.wdNoProtection)
+                            if (shapes.Count > 0 || !String.IsNullOrWhiteSpace(range.Text) || rangeShapes.Count > 0)
                             {
-                                sectionPageSetup.FooterDistance = 0;
+                                zeroFooter = false;
                             }
                             Converter.releaseCOMObject(shapes);
                             Converter.releaseCOMObject(rangeShapes);
                             Converter.releaseCOMObject(rangeFields);
                             Converter.releaseCOMObject(range);
+                        }
+                    }
+                    if (doc.ProtectionType == WdProtectionType.wdNoProtection)
+                    {
+                        if (zeroHeader)
+                        {
+                            sectionPageSetup.HeaderDistance = 0;
+                        }
+                        if (zeroFooter)
+                        {
+                            sectionPageSetup.FooterDistance = 0;
                         }
                     }
                     Converter.releaseCOMObject(sectionFields);
