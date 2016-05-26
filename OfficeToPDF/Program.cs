@@ -423,6 +423,7 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file [output_file]
   /excel_max_rows <rows>    - If any worksheet in a spreadsheet document has more
                               than this number of rows, do not attempt to convert
                               the file. Applies when converting with Excel.
+  /excel_worksheet <num>    - Only convert worksheet <num> in the workbook. First sheet is 1.
   /word_header_dist <pts>   - The distance (in points) from the header to the top of
                               the page.
   /word_footer_dist <pts>   - The distance (in points) from the footer to the bottom
