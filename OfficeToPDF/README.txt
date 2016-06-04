@@ -70,6 +70,13 @@ The following optional switches can be used:
                               the page
   /word_footer_dist <pts>   - the distance (in points) from the footer to the bottom
                               of the page
+  /pdf_page_mode <mode>     - controls how the PDF will open with Acrobat reader. <mode> can be
+                              one of the following values:
+							    full      - the PDF will open in fullscreen mode
+								bookmarks - the PDF will open with the bookmarks visible
+								thumbs    - the PDF will open with the thumbnail view visible
+  /version                  - print out the version of OfficeToPDF and exit
+
 
   Templates:
   ----------
@@ -110,3 +117,13 @@ The following optional switches can be used:
       IF %PASSWORDFAIL% NEQ 0 (
           ECHO Password failed
       )
+
+
+  Credits:
+  --------
+
+  Cognidox would like to thank all the people who have made suggestions
+  through CodePlex.
+
+  OfficeToPDF use the PDFSharp library: http://pdfsharp.codeplex.com/. This
+  is licensed using the MIT License: http://pdfsharp.codeplex.com/license

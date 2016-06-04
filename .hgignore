@@ -22,3 +22,8 @@ OfficeToPDF/bin/x64/Debug/OfficeToPDF.vshost.exe
 OfficeToPDF/obj/x64/Debug/DesignTimeResolveAssemblyReferencesInput.cache
 OfficeToPDF/obj/x64/Debug/OfficeToPDF.csproj.FileListAbsolute.txt
 OfficeToPDF/obj/x64/Debug/OfficeToPDF.csproj.ResolveComReference.cache
+OfficeToPDF/bin/Release/*
+OfficeToPDF/bin/x64/Release-signed/*
+OfficeToPDF/obj/x64/Release-signed/*
+OfficeToPDF/obj/x86/Release-signed/Costura/*
+packages/*
