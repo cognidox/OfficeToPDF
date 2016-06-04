@@ -20,10 +20,15 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using PdfSharp.Pdf;
+using PdfSharp.Pdf.IO;
+using PdfSharp;
 
 namespace OfficeToPDF
 {
@@ -51,6 +56,7 @@ namespace OfficeToPDF
         {
             string[] files = new string[2];
             int filesSeen = 0;
+            Boolean postProcessPDF = false;
             Hashtable options = new Hashtable();
 
             // Loop through the input, grabbing switches off the command line
@@ -76,7 +82,8 @@ namespace OfficeToPDF
             options["excel_worksheet"] = (int)0;
             options["word_header_dist"] = (float) -1;
             options["word_footer_dist"] = (float) -1;
-            Regex switches = new Regex(@"^/(hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_max_rows|excel_show_formulas|excel_show_headings|excel_auto_macros|excel_active_sheet|excel_worksheet|word_header_dist|word_footer_dist|\?)$", RegexOptions.IgnoreCase);
+            options["pdf_page_mode"] = null;
+            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_max_rows|excel_show_formulas|excel_show_headings|excel_auto_macros|excel_active_sheet|excel_worksheet|word_header_dist|word_footer_dist|pdf_(page_mode)|\?)$", RegexOptions.IgnoreCase);
             for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
                 string item = args[argIdx];
@@ -95,6 +102,34 @@ namespace OfficeToPDF
                         }
                         switch (itemMatch.Groups[1].Value.ToLower())
                         {
+                            case "pdf_page_mode":
+                                if (argIdx + 2 < args.Length)
+                                {
+                                    postProcessPDF = true;
+                                    var pageMode = args[argIdx + 1];
+                                    pageMode = pageMode.ToLower();
+                                    switch (pageMode)
+                                    {
+                                        case "full":
+                                            options["pdf_page_mode"] = PdfPageMode.FullScreen;
+                                            break;
+                                        case "none":
+                                            options["pdf_page_mode"] = PdfPageMode.UseNone;
+                                            break;
+                                        case "bookmarks":
+                                            options["pdf_page_mode"] = PdfPageMode.UseOutlines;
+                                            break;
+                                        case "thumbs":
+                                            options["pdf_page_mode"] = PdfPageMode.UseThumbs;
+                                            break;
+                                        default:
+                                            Console.WriteLine("Invalid PDF page mode ({0}). It must be one of full, none, outline or thumbs", args[argIdx + 1]);
+                                            Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
+                                            break;
+                                    }
+                                    argIdx++;
+                                }
+                                break;
                             case "template":
                                 // Only accept the next option if there are enough options
                                 if (argIdx + 2 < args.Length)
@@ -185,6 +220,12 @@ namespace OfficeToPDF
                             case "print":
                                 options["screen"] = false;
                                 options[itemMatch.Groups[1].Value.ToLower()] = true;
+                                break;
+                            case "version":
+                                Assembly asm = Assembly.GetExecutingAssembly();
+                                FileVersionInfo fv = System.Diagnostics.FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location);
+                                Console.WriteLine(String.Format("{0}", fv.FileVersion));
+                                Environment.Exit((int)ExitCode.Success);
                                 break;
                             default:
                                 options[itemMatch.Groups[1].Value.ToLower()] = true;
@@ -382,11 +423,29 @@ namespace OfficeToPDF
                 // Return the general failure code and the specific failure code
                 Environment.Exit((int)ExitCode.Failed | converted);
             }
-            else if ((Boolean)options["verbose"])
+            else
             {
-                Console.WriteLine("Completed Conversion");
+                if ((Boolean)options["verbose"])
+                {
+                    Console.WriteLine("Completed Conversion");
+                }
+                
+                // Determine if we have to post-process the PDF
+                if (postProcessPDF)
+                {
+                    if (options["pdf_page_mode"] != null)
+                    {
+                        if ((Boolean)options["verbose"])
+                        {
+                            Console.WriteLine("Setting PDF Page mode");
+                        }
+                        PdfDocument pdf = PdfReader.Open(outputFile, PdfDocumentOpenMode.Modify);
+                        pdf.PageMode = (PdfPageMode)options["pdf_page_mode"];
+                        pdf.Save(outputFile);
+                    }
+                }
+                Environment.Exit((int)ExitCode.Success);
             }
-            Environment.Exit((int)ExitCode.Success);
         }
 
         static void showHelp()
@@ -428,6 +487,13 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file [output_file]
                               the page.
   /word_footer_dist <pts>   - The distance (in points) from the footer to the bottom
                               of the page.
+  /pdf_page_mode <mode>     - Controls how the PDF will open with Acrobat reader. <mode> can be
+                              one of the following values:
+							    full      - the PDF will open in fullscreen mode
+								bookmarks - the PDF will open with the bookmarks visible
+								thumbs    - the PDF will open with the thumbnail view visible
+								none      - the PDF will open without the navigation bar visible
+  /version                   - Print out the version of OfficeToPDF and exit.
   
   input_file  - The filename of the Office document to convert
   output_file - The filename of the PDF to create. If not given, the input filename
