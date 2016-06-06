@@ -70,11 +70,21 @@ The following optional switches can be used:
                               the page
   /word_footer_dist <pts>   - the distance (in points) from the footer to the bottom
                               of the page
+  /pdf_layout <layout>      - controls how the pages layout in Acrobat Reader. <layout> can be
+                              one of the following values:
+                                onecol       - show pages as a single scolling column
+                                single       - show pages one at a time
+                                twocolleft   - show pages in two columns, with oddnumbered pages on the left
+                                twocolright  - show pages in two columns, with oddnumbered pages on the right
+                                twopageleft  - show pages two at a time, with odd-numbered pages on the left
+                                twopageright - show pages two at a time, with odd-numbered pages on the right
   /pdf_page_mode <mode>     - controls how the PDF will open with Acrobat reader. <mode> can be
                               one of the following values:
 							    full      - the PDF will open in fullscreen mode
 								bookmarks - the PDF will open with the bookmarks visible
 								thumbs    - the PDF will open with the thumbnail view visible
+  /pdf_append               - append the generated PDF to the end of the PDF destination
+  /pdf_prepend              - prepend the generated PDF to the start of the PDF destination
   /version                  - print out the version of OfficeToPDF and exit
 
 

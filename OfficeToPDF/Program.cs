@@ -49,6 +49,13 @@ namespace OfficeToPDF
         EmptyWorksheet = 512
     }
 
+    public enum MergeMode : int
+    {
+        None = 0,
+        Prepend = 1,
+        Append = 2
+    }
+
     class Program
     {
         [STAThread]
@@ -79,11 +86,13 @@ namespace OfficeToPDF
             options["excel_auto_macros"] = false;
             options["excel_active_sheet"] = false;
             options["excel_max_rows"] = (int) 0;
-            options["excel_worksheet"] = (int)0;
+            options["excel_worksheet"] = (int) 0;
             options["word_header_dist"] = (float) -1;
             options["word_footer_dist"] = (float) -1;
             options["pdf_page_mode"] = null;
-            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_max_rows|excel_show_formulas|excel_show_headings|excel_auto_macros|excel_active_sheet|excel_worksheet|word_header_dist|word_footer_dist|pdf_(page_mode)|\?)$", RegexOptions.IgnoreCase);
+            options["pdf_layout"] = null;
+            options["pdf_merge"] = (int) MergeMode.None;
+            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_max_rows|excel_show_formulas|excel_show_headings|excel_auto_macros|excel_active_sheet|excel_worksheet|word_header_dist|word_footer_dist|pdf_(page_mode|append|prepend|layout)|\?)$", RegexOptions.IgnoreCase);
             for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
                 string item = args[argIdx];
@@ -124,6 +133,40 @@ namespace OfficeToPDF
                                             break;
                                         default:
                                             Console.WriteLine("Invalid PDF page mode ({0}). It must be one of full, none, outline or thumbs", args[argIdx + 1]);
+                                            Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
+                                            break;
+                                    }
+                                    argIdx++;
+                                }
+                                break;
+                            case "pdf_layout":
+                                if (argIdx + 2 < args.Length)
+                                {
+                                    postProcessPDF = true;
+                                    var pdfLayout = args[argIdx + 1];
+                                    pdfLayout = pdfLayout.ToLower();
+                                    switch (pdfLayout)
+                                    {
+                                        case "onecol":
+                                            options["pdf_layout"] = PdfPageLayout.OneColumn;
+                                            break;
+                                        case "single":
+                                            options["pdf_layout"] = PdfPageLayout.SinglePage;
+                                            break;
+                                        case "twocolleft":
+                                            options["pdf_layout"] = PdfPageLayout.TwoColumnLeft;
+                                            break;
+                                        case "twocolright":
+                                            options["pdf_layout"] = PdfPageLayout.TwoColumnRight;
+                                            break;
+                                        case "twopageleft":
+                                            options["pdf_layout"] = PdfPageLayout.TwoPageLeft;
+                                            break;
+                                        case "twopageright":
+                                            options["pdf_layout"] = PdfPageLayout.TwoPageRight;
+                                            break;
+                                        default:
+                                            Console.WriteLine("Invalid PDF layout ({0}). It must be one of onecol, single, twocolleft, twocolright, twopageleft or twopageright", args[argIdx + 1]);
                                             Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
                                             break;
                                     }
@@ -227,6 +270,24 @@ namespace OfficeToPDF
                                 Console.WriteLine(String.Format("{0}", fv.FileVersion));
                                 Environment.Exit((int)ExitCode.Success);
                                 break;
+                            case "pdf_append":
+                                if ((MergeMode)options["pdf_merge"] != MergeMode.None)
+                                {
+                                    Console.WriteLine("Only one of /pdf_append or /pdf_prepend can be used");
+                                    Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
+                                }
+                                postProcessPDF = true;
+                                options["pdf_merge"] = MergeMode.Append;
+                                break;
+                            case "pdf_prepend":
+                                if ((MergeMode)options["pdf_merge"] != MergeMode.None)
+                                {
+                                    Console.WriteLine("Only one of /pdf_append or /pdf_prepend can be used");
+                                    Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
+                                }
+                                postProcessPDF = true;
+                                options["pdf_merge"] = MergeMode.Prepend;
+                                break;
                             default:
                                 options[itemMatch.Groups[1].Value.ToLower()] = true;
                                 break;
@@ -273,7 +334,8 @@ namespace OfficeToPDF
             }
 
             String inputFile = "";
-            String outputFile;
+            String outputFile = "";
+            String finalOutputFile = "";
 
             // Make sure the input file exists and is readable
             FileInfo info;
@@ -296,16 +358,41 @@ namespace OfficeToPDF
 
             // Make sure the destination location exists
             FileInfo outputInfo = new FileInfo(files[1]);
-            if (outputInfo != null && outputInfo.Exists)
+            // Remove the destination unless we're doing a PDF merge
+            if (outputInfo != null)
             {
-                System.IO.File.Delete(outputInfo.FullName);
+                outputFile = finalOutputFile = outputInfo.FullName;
+                if (outputInfo.Exists)
+                {
+                    if ((MergeMode)options["pdf_merge"] == MergeMode.None)
+                    {
+                        // We are not merging, so delete the final destination
+                        System.IO.File.Delete(outputInfo.FullName);
+                    }
+                    else
+                    {
+                        // We are merging, so make a temporary file
+                        outputFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".pdf";
+                    }
+                }
+                else
+                {
+                    // If there is no current output, no need to merge
+                    options["pdf_merge"] = MergeMode.None;
+                }
             }
+            else
+            {
+                Console.WriteLine("Unable to determine output location");
+                Environment.Exit((int)(ExitCode.Failed | ExitCode.DirectoryNotFound));
+            }
+
             if (!System.IO.Directory.Exists(outputInfo.DirectoryName))
             {
                 Console.WriteLine("Output directory does not exist");
                 Environment.Exit((int)(ExitCode.Failed | ExitCode.DirectoryNotFound));
             }
-            outputFile = outputInfo.FullName;
+
 
             // Now, do the cleverness of determining what the extension is, and so, which
             // conversion class to pass it to
@@ -315,7 +402,7 @@ namespace OfficeToPDF
             {
                 if ((Boolean)options["verbose"])
                 {
-                    Console.WriteLine("Converting {0} to {1}", inputFile, outputFile);
+                    Console.WriteLine("Converting {0} to {1}", inputFile, finalOutputFile);
                 }
                 switch (extMatch.Groups[1].ToString().ToLower())
                 {
@@ -433,15 +520,59 @@ namespace OfficeToPDF
                 // Determine if we have to post-process the PDF
                 if (postProcessPDF)
                 {
-                    if (options["pdf_page_mode"] != null)
+                    // Handle PDF merging
+                    if ((MergeMode)options["pdf_merge"] != MergeMode.None)
                     {
                         if ((Boolean)options["verbose"])
                         {
-                            Console.WriteLine("Setting PDF Page mode");
+                            Console.WriteLine("Merging with existing PDF");
                         }
-                        PdfDocument pdf = PdfReader.Open(outputFile, PdfDocumentOpenMode.Modify);
-                        pdf.PageMode = (PdfPageMode)options["pdf_page_mode"];
-                        pdf.Save(outputFile);
+                        PdfDocument srcDoc;
+                        PdfDocument dstDoc;
+                        if ((MergeMode)options["pdf_merge"] == MergeMode.Append)
+                        {
+                            // Open the destination and generated PDFs
+                            srcDoc = PdfReader.Open(outputFile, PdfDocumentOpenMode.Import);
+                            dstDoc = PdfReader.Open(finalOutputFile, PdfDocumentOpenMode.Modify);
+                        }
+                        else
+                        {
+                            srcDoc = PdfReader.Open(finalOutputFile, PdfDocumentOpenMode.Import);
+                            dstDoc = PdfReader.Open(outputFile, PdfDocumentOpenMode.Modify);
+                        }
+                        int pages = srcDoc.PageCount;
+                        for (int pi = 0; pi < pages; pi++)
+                        {
+                            PdfPage page = srcDoc.Pages[pi];
+                            dstDoc.AddPage(page);
+                        }
+                        dstDoc.Save(finalOutputFile);
+                        File.Delete(outputFile);
+                    }
+
+                    if (options["pdf_page_mode"] != null || options["pdf_layout"] != null)
+                    {
+                        
+                        PdfDocument pdf = PdfReader.Open(finalOutputFile, PdfDocumentOpenMode.Modify);
+
+                        if (options["pdf_page_mode"] != null)
+                        {
+                            if ((Boolean)options["verbose"])
+                            {
+                                Console.WriteLine("Setting PDF Page mode");
+                            }
+                            pdf.PageMode = (PdfPageMode)options["pdf_page_mode"];
+                        }
+                        if (options["pdf_layout"] != null)
+                        {
+                            if ((Boolean)options["verbose"])
+                            {
+                                Console.WriteLine("Setting PDF layout");
+                            }
+                            pdf.PageLayout = (PdfPageLayout)options["pdf_layout"];
+                        }
+                        pdf.Save(finalOutputFile);
+                        pdf.Close();
                     }
                 }
                 Environment.Exit((int)ExitCode.Success);
@@ -487,12 +618,22 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file [output_file]
                               the page.
   /word_footer_dist <pts>   - The distance (in points) from the footer to the bottom
                               of the page.
-  /pdf_page_mode <mode>     - Controls how the PDF will open with Acrobat reader. <mode> can be
+  /pdf_layout <layout>      - Controls how the pages layout in Acrobat Reader. <layout> can be
+                              one of the following values:
+                                onecol       - show pages as a single scolling column
+                                single       - show pages one at a time
+                                twocolleft   - show pages in two columns, with oddnumbered pages on the left
+                                twocolright  - show pages in two columns, with oddnumbered pages on the right
+                                twopageleft  - show pages two at a time, with odd-numbered pages on the left
+                                twopageright - show pages two at a time, with odd-numbered pages on the right
+  /pdf_page_mode <mode>     - Controls how the PDF will open with Acrobat Reader. <mode> can be
                               one of the following values:
 							    full      - the PDF will open in fullscreen mode
 								bookmarks - the PDF will open with the bookmarks visible
 								thumbs    - the PDF will open with the thumbnail view visible
 								none      - the PDF will open without the navigation bar visible
+  /pdf_append                - Append the generated PDF to the end of the PDF destination.
+  /pdf_prepend               - Prepend the generated PDF to the start of the PDF destination.
   /version                   - Print out the version of OfficeToPDF and exit.
   
   input_file  - The filename of the Office document to convert
