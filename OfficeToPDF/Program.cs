@@ -56,6 +56,14 @@ namespace OfficeToPDF
         Append = 2
     }
 
+    public enum MetaClean : int
+    {
+        None = 0,
+        Basic = 1,
+        Full = 2
+    }
+
+
     class Program
     {
         [STAThread]
@@ -92,7 +100,9 @@ namespace OfficeToPDF
             options["pdf_page_mode"] = null;
             options["pdf_layout"] = null;
             options["pdf_merge"] = (int) MergeMode.None;
-            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_max_rows|excel_show_formulas|excel_show_headings|excel_auto_macros|excel_active_sheet|excel_worksheet|word_header_dist|word_footer_dist|pdf_(page_mode|append|prepend|layout)|\?)$", RegexOptions.IgnoreCase);
+            options["pdf_clean_meta"] = (int)MetaClean.None;
+
+            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_max_rows|excel_show_formulas|excel_show_headings|excel_auto_macros|excel_active_sheet|excel_worksheet|word_header_dist|word_footer_dist|pdf_(page_mode|append|prepend|layout|clean_meta)|\?)$", RegexOptions.IgnoreCase);
             for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
                 string item = args[argIdx];
@@ -133,6 +143,28 @@ namespace OfficeToPDF
                                             break;
                                         default:
                                             Console.WriteLine("Invalid PDF page mode ({0}). It must be one of full, none, outline or thumbs", args[argIdx + 1]);
+                                            Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
+                                            break;
+                                    }
+                                    argIdx++;
+                                }
+                                break;
+                            case "pdf_clean_meta":
+                                if (argIdx + 2 < args.Length)
+                                {
+                                    postProcessPDF = true;
+                                    var cleanType = args[argIdx + 1];
+                                    cleanType = cleanType.ToLower();
+                                    switch (cleanType)
+                                    {
+                                        case "basic":
+                                            options["pdf_clean_meta"] = MetaClean.Basic;
+                                            break;
+                                        case "full":
+                                            options["pdf_clean_meta"] = MetaClean.Full;
+                                            break;
+                                        default:
+                                            Console.WriteLine("Invalid PDF meta-data clean value ({0}). It must be one of full or basic", args[argIdx + 1]);
                                             Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
                                             break;
                                     }
@@ -520,62 +552,87 @@ namespace OfficeToPDF
                 // Determine if we have to post-process the PDF
                 if (postProcessPDF)
                 {
-                    // Handle PDF merging
-                    if ((MergeMode)options["pdf_merge"] != MergeMode.None)
-                    {
-                        if ((Boolean)options["verbose"])
-                        {
-                            Console.WriteLine("Merging with existing PDF");
-                        }
-                        PdfDocument srcDoc;
-                        PdfDocument dstDoc;
-                        if ((MergeMode)options["pdf_merge"] == MergeMode.Append)
-                        {
-                            // Open the destination and generated PDFs
-                            srcDoc = PdfReader.Open(outputFile, PdfDocumentOpenMode.Import);
-                            dstDoc = PdfReader.Open(finalOutputFile, PdfDocumentOpenMode.Modify);
-                        }
-                        else
-                        {
-                            srcDoc = PdfReader.Open(finalOutputFile, PdfDocumentOpenMode.Import);
-                            dstDoc = PdfReader.Open(outputFile, PdfDocumentOpenMode.Modify);
-                        }
-                        int pages = srcDoc.PageCount;
-                        for (int pi = 0; pi < pages; pi++)
-                        {
-                            PdfPage page = srcDoc.Pages[pi];
-                            dstDoc.AddPage(page);
-                        }
-                        dstDoc.Save(finalOutputFile);
-                        File.Delete(outputFile);
-                    }
-
-                    if (options["pdf_page_mode"] != null || options["pdf_layout"] != null)
-                    {
-                        
-                        PdfDocument pdf = PdfReader.Open(finalOutputFile, PdfDocumentOpenMode.Modify);
-
-                        if (options["pdf_page_mode"] != null)
-                        {
-                            if ((Boolean)options["verbose"])
-                            {
-                                Console.WriteLine("Setting PDF Page mode");
-                            }
-                            pdf.PageMode = (PdfPageMode)options["pdf_page_mode"];
-                        }
-                        if (options["pdf_layout"] != null)
-                        {
-                            if ((Boolean)options["verbose"])
-                            {
-                                Console.WriteLine("Setting PDF layout");
-                            }
-                            pdf.PageLayout = (PdfPageLayout)options["pdf_layout"];
-                        }
-                        pdf.Save(finalOutputFile);
-                        pdf.Close();
-                    }
+                    postProcessPDFFile(outputFile, finalOutputFile, options);
                 }
                 Environment.Exit((int)ExitCode.Success);
+            }
+        }
+
+        private static void postProcessPDFFile(String generatedFile, String finalFile, Hashtable options)
+        {
+            // Handle PDF merging
+            if ((MergeMode)options["pdf_merge"] != MergeMode.None)
+            {
+                if ((Boolean)options["verbose"])
+                {
+                    Console.WriteLine("Merging with existing PDF");
+                }
+                PdfDocument srcDoc;
+                PdfDocument dstDoc;
+                if ((MergeMode)options["pdf_merge"] == MergeMode.Append)
+                {
+                    // Open the destination and generated PDFs
+                    srcDoc = PdfReader.Open(generatedFile, PdfDocumentOpenMode.Import);
+                    dstDoc = PdfReader.Open(finalFile, PdfDocumentOpenMode.Modify);
+                }
+                else
+                {
+                    srcDoc = PdfReader.Open(finalFile, PdfDocumentOpenMode.Import);
+                    dstDoc = PdfReader.Open(generatedFile, PdfDocumentOpenMode.Modify);
+                }
+                int pages = srcDoc.PageCount;
+                for (int pi = 0; pi < pages; pi++)
+                {
+                    PdfPage page = srcDoc.Pages[pi];
+                    dstDoc.AddPage(page);
+                }
+                dstDoc.Save(finalFile);
+                File.Delete(generatedFile);
+            }
+
+            if (options["pdf_page_mode"] != null || options["pdf_layout"] != null ||
+                (MetaClean)options["pdf_clean_meta"] != MetaClean.None)
+            {
+
+                PdfDocument pdf = PdfReader.Open(finalFile, PdfDocumentOpenMode.Modify);
+
+                if (options["pdf_page_mode"] != null)
+                {
+                    if ((Boolean)options["verbose"])
+                    {
+                        Console.WriteLine("Setting PDF Page mode");
+                    }
+                    pdf.PageMode = (PdfPageMode)options["pdf_page_mode"];
+                }
+                if (options["pdf_layout"] != null)
+                {
+                    if ((Boolean)options["verbose"])
+                    {
+                        Console.WriteLine("Setting PDF layout");
+                    }
+                    pdf.PageLayout = (PdfPageLayout)options["pdf_layout"];
+                }
+
+                if ((MetaClean)options["pdf_clean_meta"] != MetaClean.None)
+                {
+                    if ((Boolean)options["verbose"])
+                    {
+                        Console.WriteLine("Cleaning PDF meta-data");
+                    }
+                    pdf.Info.Creator = "";
+                    pdf.Info.Keywords = "";
+                    pdf.Info.Author = "";
+                    pdf.Info.Subject = "";
+                    pdf.Info.Producer = "";
+                    if ((MetaClean)options["pdf_clean_meta"] == MetaClean.Full)
+                    {
+                        pdf.Info.Title = "";
+                        pdf.Info.CreationDate = System.DateTime.Today;
+                        pdf.Info.ModificationDate = System.DateTime.Today;
+                    }
+                }
+                pdf.Save(finalFile);
+                pdf.Close();
             }
         }
 
@@ -618,6 +675,10 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file [output_file]
                               the page.
   /word_footer_dist <pts>   - The distance (in points) from the footer to the bottom
                               of the page.
+  /pdf_clean_meta <type>    - Allows for some meta-data to be removed from the generated PDF.
+                              <type> can be:
+                                basic - removes author, keywords, creator and subject
+                                full  - removes all that basic removes and also the title
   /pdf_layout <layout>      - Controls how the pages layout in Acrobat Reader. <layout> can be
                               one of the following values:
                                 onecol       - show pages as a single scolling column
@@ -628,10 +689,10 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file [output_file]
                                 twopageright - show pages two at a time, with odd-numbered pages on the right
   /pdf_page_mode <mode>     - Controls how the PDF will open with Acrobat Reader. <mode> can be
                               one of the following values:
-							    full      - the PDF will open in fullscreen mode
-								bookmarks - the PDF will open with the bookmarks visible
-								thumbs    - the PDF will open with the thumbnail view visible
-								none      - the PDF will open without the navigation bar visible
+                                full      - the PDF will open in fullscreen mode
+                                bookmarks - the PDF will open with the bookmarks visible
+                                thumbs    - the PDF will open with the thumbnail view visible
+                                none      - the PDF will open without the navigation bar visible
   /pdf_append                - Append the generated PDF to the end of the PDF destination.
   /pdf_prepend               - Prepend the generated PDF to the start of the PDF destination.
   /version                   - Print out the version of OfficeToPDF and exit.

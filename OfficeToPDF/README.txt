@@ -70,6 +70,10 @@ The following optional switches can be used:
                               the page
   /word_footer_dist <pts>   - the distance (in points) from the footer to the bottom
                               of the page
+  /pdf_clean_meta <type>    - Allows for some meta-data to be removed from the generated PDF.
+                              <type> can be:
+                                basic - removes author, keywords, creator and subject
+                                full  - removes all that basic removes and also the title
   /pdf_layout <layout>      - controls how the pages layout in Acrobat Reader. <layout> can be
                               one of the following values:
                                 onecol       - show pages as a single scolling column
@@ -78,11 +82,12 @@ The following optional switches can be used:
                                 twocolright  - show pages in two columns, with oddnumbered pages on the right
                                 twopageleft  - show pages two at a time, with odd-numbered pages on the left
                                 twopageright - show pages two at a time, with odd-numbered pages on the right
-  /pdf_page_mode <mode>     - controls how the PDF will open with Acrobat reader. <mode> can be
+  /pdf_page_mode <mode>     - controls how the PDF will open with Acrobat Reader. <mode> can be
                               one of the following values:
-							    full      - the PDF will open in fullscreen mode
-								bookmarks - the PDF will open with the bookmarks visible
-								thumbs    - the PDF will open with the thumbnail view visible
+                                full      - the PDF will open in fullscreen mode
+                                bookmarks - the PDF will open with the bookmarks visible
+                                thumbs    - the PDF will open with the thumbnail view visible
+                                none      - the PDF will open without the navigation bar visible
   /pdf_append               - append the generated PDF to the end of the PDF destination
   /pdf_prepend              - prepend the generated PDF to the start of the PDF destination
   /version                  - print out the version of OfficeToPDF and exit
