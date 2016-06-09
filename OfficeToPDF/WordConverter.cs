@@ -101,6 +101,7 @@ namespace OfficeToPDF
                 Boolean nowrite = (Boolean)options["readonly"];
                 Boolean includeProps = !(Boolean)options["excludeprops"];
                 Boolean includeTags = !(Boolean)options["excludetags"];
+                Boolean bitmapMissingFonts = !(Boolean)options["word_ref_fonts"];
                 Boolean autosave = options.ContainsKey("IsTempWord") && (Boolean)options["IsTempWord"];
                 bool pdfa = (Boolean)options["pdfa"] ? true : false;
                 WdExportOptimizeFor quality = WdExportOptimizeFor.wdExportOptimizeForPrint;
@@ -366,7 +367,7 @@ namespace OfficeToPDF
                 doc.Saved = true;
                 doc.ExportAsFixedFormat(outputFile, WdExportFormat.wdExportFormatPDF, false, 
                     quality, WdExportRange.wdExportAllDocument,
-                    1, 1, showMarkup, includeProps, true, bookmarks, includeTags, true, pdfa);
+                    1, 1, showMarkup, includeProps, true, bookmarks, includeTags, bitmapMissingFonts, pdfa);
 
                 if (tmpl != null)
                 {

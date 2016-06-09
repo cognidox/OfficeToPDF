@@ -55,13 +55,13 @@ The following optional switches can be used:
   /verbose      - print out messages as it runs
   /password <pass>          - use <pass> as the password to open the document with
   /writepassword <pass>     - use <pass> as the write password to open the document with
-  /merge					- when using a template, create a new file from the template and merge
-							  the text from the document to convert into the new file
+  /merge                    - when using a template, create a new file from the template and merge
+                              the text from the document to convert into the new file
   /template <template_path> - use a .dot, .dotx or .dotm template when converting with Word
   /excel_active_sheet       - only convert the active worksheet
   /excel_auto_macros        - run Auto_Open macros in Excel files before conversion
   /excel_show_formulas      - show formulas in the PDF when converting with Excel
-  /excel_show_headings		- show row and column headings
+  /excel_show_headings      - show row and column headings
   /excel_max_rows <rows>    - if any worksheet in a spreadsheet document has more
                               than this number of rows, do not attempt to convert
                               the file. Applies when converting with Excel
@@ -70,6 +70,9 @@ The following optional switches can be used:
                               the page
   /word_footer_dist <pts>   - the distance (in points) from the footer to the bottom
                               of the page
+  /word_ref_fonts           - when fonts are not available, a reference to the font is used in
+                              the generated PDF rather than a bitmapped version. The default is
+                              for a bitmap of the text to be used
   /pdf_clean_meta <type>    - Allows for some meta-data to be removed from the generated PDF.
                               <type> can be:
                                 basic - removes author, keywords, creator and subject
