@@ -97,12 +97,13 @@ namespace OfficeToPDF
             options["excel_worksheet"] = (int) 0;
             options["word_header_dist"] = (float) -1;
             options["word_footer_dist"] = (float) -1;
+            options["word_ref_fonts"] = false;
             options["pdf_page_mode"] = null;
             options["pdf_layout"] = null;
             options["pdf_merge"] = (int) MergeMode.None;
             options["pdf_clean_meta"] = (int)MetaClean.None;
 
-            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_max_rows|excel_show_formulas|excel_show_headings|excel_auto_macros|excel_active_sheet|excel_worksheet|word_header_dist|word_footer_dist|pdf_(page_mode|append|prepend|layout|clean_meta)|\?)$", RegexOptions.IgnoreCase);
+            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_(max_rows|show_formulas|show_headings|auto_macros|active_sheet|worksheet)|word_(header_dist|footer_dist|ref_fonts)|pdf_(page_mode|append|prepend|layout|clean_meta)|\?)$", RegexOptions.IgnoreCase);
             for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
                 string item = args[argIdx];
@@ -675,6 +676,9 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file [output_file]
                               the page.
   /word_footer_dist <pts>   - The distance (in points) from the footer to the bottom
                               of the page.
+  /word_ref_fonts           - When fonts are not available, a reference to the font is used in
+                              the generated PDF rather than a bitmapped version. The default is
+                              for a bitmap of the text to be used.
   /pdf_clean_meta <type>    - Allows for some meta-data to be removed from the generated PDF.
                               <type> can be:
                                 basic - removes author, keywords, creator and subject
