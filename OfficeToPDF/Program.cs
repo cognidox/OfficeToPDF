@@ -28,6 +28,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
+using PdfSharp.Pdf.Security;
 using PdfSharp;
 
 namespace OfficeToPDF
@@ -46,7 +47,8 @@ namespace OfficeToPDF
         FileNotFound = 64,
         DirectoryNotFound = 128,
         WorksheetNotFound = 256,
-        EmptyWorksheet = 512
+        EmptyWorksheet = 512,
+        PDFProtectedDocument = 1024
     }
 
     public enum MergeMode : int
@@ -72,6 +74,7 @@ namespace OfficeToPDF
             string[] files = new string[2];
             int filesSeen = 0;
             Boolean postProcessPDF = false;
+            Boolean postProcessPDFSecurity = false;
             Hashtable options = new Hashtable();
 
             // Loop through the input, grabbing switches off the command line
@@ -102,8 +105,19 @@ namespace OfficeToPDF
             options["pdf_layout"] = null;
             options["pdf_merge"] = (int) MergeMode.None;
             options["pdf_clean_meta"] = (int)MetaClean.None;
+            options["pdf_owner_pass"] = "";
+            options["pdf_user_pass"] = "";
+            options["pdf_restrict_annotation"] = false;
+            options["pdf_restrict_extraction"] = false;
+            options["pdf_restrict_assembly"] = false;
+            options["pdf_restrict_forms"] = false;
+            options["pdf_restrict_modify"] = false;
+            options["pdf_restrict_print"] = false;
+            options["pdf_restrict_annotation"] = false;
+            options["pdf_restrict_accessibility_extraction"] = false;
+            options["pdf_restrict_full_quality"] = false;
 
-            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_(max_rows|show_formulas|show_headings|auto_macros|active_sheet|worksheet)|word_(header_dist|footer_dist|ref_fonts)|pdf_(page_mode|append|prepend|layout|clean_meta)|\?)$", RegexOptions.IgnoreCase);
+            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_(max_rows|show_formulas|show_headings|auto_macros|active_sheet|worksheet)|word_(header_dist|footer_dist|ref_fonts)|pdf_(page_mode|append|prepend|layout|clean_meta|owner_pass|user_pass|restrict_(annotation|extraction|assembly|forms|modify|print|accessibility_extraction|full_quality))|\?)$", RegexOptions.IgnoreCase);
             for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
                 string item = args[argIdx];
@@ -203,6 +217,18 @@ namespace OfficeToPDF
                                             Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
                                             break;
                                     }
+                                    argIdx++;
+                                }
+                                break;
+                            case "pdf_owner_pass":
+                            case "pdf_user_pass":
+                                if (argIdx + 2 < args.Length)
+                                {
+                                    postProcessPDF = true;
+                                    postProcessPDFSecurity = true;
+                                    var pass = args[argIdx + 1];
+                                    // Set the password
+                                    options[itemMatch.Groups[1].Value.ToLower()] = pass;
                                     argIdx++;
                                 }
                                 break;
@@ -320,6 +346,17 @@ namespace OfficeToPDF
                                 }
                                 postProcessPDF = true;
                                 options["pdf_merge"] = MergeMode.Prepend;
+                                break;
+                            case "pdf_restrict_annotation":
+                            case "pdf_restrict_extraction":
+                            case "pdf_restrict_assembly":
+                            case "pdf_restrict_forms":
+                            case "pdf_restrict_modify":
+                            case "pdf_restrict_print":
+                            case "pdf_restrict_full_quality":
+                            case "pdf_restrict_accessibility_extraction":
+                                postProcessPDFSecurity = true;
+                                options[itemMatch.Groups[1].Value.ToLower()] = true;
                                 break;
                             default:
                                 options[itemMatch.Groups[1].Value.ToLower()] = true;
@@ -553,13 +590,13 @@ namespace OfficeToPDF
                 // Determine if we have to post-process the PDF
                 if (postProcessPDF)
                 {
-                    postProcessPDFFile(outputFile, finalOutputFile, options);
+                    postProcessPDFFile(outputFile, finalOutputFile, options, postProcessPDFSecurity);
                 }
                 Environment.Exit((int)ExitCode.Success);
             }
         }
 
-        private static void postProcessPDFFile(String generatedFile, String finalFile, Hashtable options)
+        private static void postProcessPDFFile(String generatedFile, String finalFile, Hashtable options, Boolean postProcessPDFSecurity)
         {
             // Handle PDF merging
             if ((MergeMode)options["pdf_merge"] != MergeMode.None)
@@ -569,17 +606,16 @@ namespace OfficeToPDF
                     Console.WriteLine("Merging with existing PDF");
                 }
                 PdfDocument srcDoc;
-                PdfDocument dstDoc;
+                PdfDocument dstDoc = null;
                 if ((MergeMode)options["pdf_merge"] == MergeMode.Append)
                 {
-                    // Open the destination and generated PDFs
                     srcDoc = PdfReader.Open(generatedFile, PdfDocumentOpenMode.Import);
-                    dstDoc = PdfReader.Open(finalFile, PdfDocumentOpenMode.Modify);
+                    dstDoc = readExistingPDFDocument(finalFile, generatedFile, ((string)options["pdf_owner_pass"]).Trim(), PdfDocumentOpenMode.Modify);
                 }
                 else
                 {
-                    srcDoc = PdfReader.Open(finalFile, PdfDocumentOpenMode.Import);
                     dstDoc = PdfReader.Open(generatedFile, PdfDocumentOpenMode.Modify);
+                    srcDoc = readExistingPDFDocument(finalFile, generatedFile, ((string)options["pdf_owner_pass"]).Trim(), PdfDocumentOpenMode.Import);
                 }
                 int pages = srcDoc.PageCount;
                 for (int pi = 0; pi < pages; pi++)
@@ -592,7 +628,7 @@ namespace OfficeToPDF
             }
 
             if (options["pdf_page_mode"] != null || options["pdf_layout"] != null ||
-                (MetaClean)options["pdf_clean_meta"] != MetaClean.None)
+                (MetaClean)options["pdf_clean_meta"] != MetaClean.None || postProcessPDFSecurity)
             {
 
                 PdfDocument pdf = PdfReader.Open(finalFile, PdfDocumentOpenMode.Modify);
@@ -632,9 +668,86 @@ namespace OfficeToPDF
                         pdf.Info.ModificationDate = System.DateTime.Today;
                     }
                 }
+
+                // See if there are security changes needed
+                if (postProcessPDFSecurity)
+                {
+                    PdfSecuritySettings secSettings = pdf.SecuritySettings;
+                    if (((string)options["pdf_owner_pass"]).Trim().Length != 0)
+                    {
+                        
+                        // Set the owner password
+                        if ((Boolean)options["verbose"])
+                        {
+                            Console.WriteLine("Setting PDF owner password");
+                        }
+                        secSettings.OwnerPassword = ((string)options["pdf_owner_pass"]).Trim();
+                    }
+                    if (((string)options["pdf_user_pass"]).Trim().Length != 0)
+                    {
+                        // Set the user password
+                        // Set the owner password
+                        if ((Boolean)options["verbose"])
+                        {
+                            Console.WriteLine("Setting PDF user password");
+                        }
+                        secSettings.UserPassword = ((string)options["pdf_user_pass"]).Trim();
+                    }
+
+                    secSettings.PermitAccessibilityExtractContent = !(Boolean)options["pdf_restrict_accessibility_extraction"];
+                    secSettings.PermitAnnotations = !(Boolean)options["pdf_restrict_annotation"];
+                    secSettings.PermitAssembleDocument = !(Boolean)options["pdf_restrict_assembly"];
+                    secSettings.PermitExtractContent = !(Boolean)options["pdf_restrict_extraction"];
+                    secSettings.PermitFormsFill = !(Boolean)options["pdf_restrict_forms"];
+                    secSettings.PermitModifyDocument = !(Boolean)options["pdf_restrict_modify"];
+                    secSettings.PermitPrint = !(Boolean)options["pdf_restrict_print"];
+                    secSettings.PermitFullQualityPrint = !(Boolean)options["pdf_restrict_full_quality"];
+                }
                 pdf.Save(finalFile);
                 pdf.Close();
             }
+        }
+
+        static PdfDocument readExistingPDFDocument(String filename, String generatedFilename, String password, PdfDocumentOpenMode mode)
+        {
+            PdfDocument dstDoc = null;
+            try
+            {
+
+                dstDoc = PdfReader.Open(filename, mode);
+            }
+            catch (PdfReaderException)
+            {
+                if (password.Length != 0)
+                {
+                    try
+                    {
+                        dstDoc = PdfReader.Open(filename, password, mode);
+                    }
+                    catch (PdfReaderException)
+                    {
+                        if (File.Exists(generatedFilename))
+                        {
+                            File.Delete(generatedFilename);
+                        }
+                        Console.WriteLine("Unable to modify a protected PDF. Invalid owner password given.");
+                        // Return the general failure code and the specific failure code
+                        Environment.Exit((int)ExitCode.PDFProtectedDocument);
+                    }
+                }
+                else
+                {
+                    // There is no owner password, we can not open this
+                    if (File.Exists(generatedFilename))
+                    {
+                        File.Delete(generatedFilename);
+                    }
+                    Console.WriteLine("Unable to modify a protected PDF. Use the /pdf_owner_pass option to specify an owner password.");
+                    // Return the general failure code and the specific failure code
+                    Environment.Exit((int)ExitCode.PDFProtectedDocument);
+                }
+            }
+            return dstDoc;
         }
 
         static void showHelp()
@@ -699,6 +812,16 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file [output_file]
                                 none      - the PDF will open without the navigation bar visible
   /pdf_append                - Append the generated PDF to the end of the PDF destination.
   /pdf_prepend               - Prepend the generated PDF to the start of the PDF destination.
+  /pdf_owner_pass            - Set the owner password on the PDF. Needed to make modifications to the PDF.
+  /pdf_user_pass             - Set the user password on the PDF. Needed to open the PDF.
+  /pdf_restrict_accessibility_extraction - Prevent all content extraction without the owner password.
+  /pdf_restrict_annotation   - Prevent annotations on the PDF without the owner password.
+  /pdf_restrict_assembly     - Prevent rotation, removal or insertion of pages without the owner password.
+  /pdf_restrict_extraction   - Prevent content extraction without the owner password.
+  /pdf_restrict_forms        - Prevent form entry without the owner password.
+  /pdf_restrict_full_quality - Prevent full quality printing without the owner password.
+  /pdf_restrict_modify       - Prevent modification without the owner password.
+  /pdf_restrict_print        - Prevent printing without the owner password.
   /version                   - Print out the version of OfficeToPDF and exit.
   
   input_file  - The filename of the Office document to convert
