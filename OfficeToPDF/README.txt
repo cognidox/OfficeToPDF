@@ -53,47 +53,57 @@ The following optional switches can be used:
   /excludetags  - Do not include tags in the PDF
   /noquit       - Do not quit already running Office applications once the conversion is done
   /verbose      - print out messages as it runs
-  /password <pass>          - use <pass> as the password to open the document with
-  /writepassword <pass>     - use <pass> as the write password to open the document with
-  /merge                    - when using a template, create a new file from the template and merge
-                              the text from the document to convert into the new file
-  /template <template_path> - use a .dot, .dotx or .dotm template when converting with Word
-  /excel_active_sheet       - only convert the active worksheet
-  /excel_auto_macros        - run Auto_Open macros in Excel files before conversion
-  /excel_show_formulas      - show formulas in the PDF when converting with Excel
-  /excel_show_headings      - show row and column headings
-  /excel_max_rows <rows>    - if any worksheet in a spreadsheet document has more
-                              than this number of rows, do not attempt to convert
-                              the file. Applies when converting with Excel
-  /excel_worksheet <num>    - only convert worksheet <num> in the workbook. First sheet is 1
-  /word_header_dist <pts>   - the distance (in points) from the header to the top of
-                              the page
-  /word_footer_dist <pts>   - the distance (in points) from the footer to the bottom
-                              of the page
-  /word_ref_fonts           - when fonts are not available, a reference to the font is used in
-                              the generated PDF rather than a bitmapped version. The default is
-                              for a bitmap of the text to be used
-  /pdf_clean_meta <type>    - Allows for some meta-data to be removed from the generated PDF.
-                              <type> can be:
-                                basic - removes author, keywords, creator and subject
-                                full  - removes all that basic removes and also the title
-  /pdf_layout <layout>      - controls how the pages layout in Acrobat Reader. <layout> can be
-                              one of the following values:
-                                onecol       - show pages as a single scolling column
-                                single       - show pages one at a time
-                                twocolleft   - show pages in two columns, with oddnumbered pages on the left
-                                twocolright  - show pages in two columns, with oddnumbered pages on the right
-                                twopageleft  - show pages two at a time, with odd-numbered pages on the left
-                                twopageright - show pages two at a time, with odd-numbered pages on the right
-  /pdf_page_mode <mode>     - controls how the PDF will open with Acrobat Reader. <mode> can be
-                              one of the following values:
-                                full      - the PDF will open in fullscreen mode
-                                bookmarks - the PDF will open with the bookmarks visible
-                                thumbs    - the PDF will open with the thumbnail view visible
-                                none      - the PDF will open without the navigation bar visible
-  /pdf_append               - append the generated PDF to the end of the PDF destination
-  /pdf_prepend              - prepend the generated PDF to the start of the PDF destination
-  /version                  - print out the version of OfficeToPDF and exit
+  /password <pass>           - use <pass> as the password to open the document with
+  /writepassword <pass>      - use <pass> as the write password to open the document with
+  /merge                     - when using a template, create a new file from the template and merge
+                               the text from the document to convert into the new file
+  /template <template_path>  - use a .dot, .dotx or .dotm template when converting with Word
+  /excel_active_sheet        - only convert the active worksheet
+  /excel_auto_macros         - run Auto_Open macros in Excel files before conversion
+  /excel_show_formulas       - show formulas in the PDF when converting with Excel
+  /excel_show_headings       - show row and column headings
+  /excel_max_rows <rows>     - if any worksheet in a spreadsheet document has more
+                               than this number of rows, do not attempt to convert
+                               the file. Applies when converting with Excel
+  /excel_worksheet <num>     - only convert worksheet <num> in the workbook. First sheet is 1
+  /word_header_dist <pts>    - the distance (in points) from the header to the top of
+                               the page
+  /word_footer_dist <pts>    - the distance (in points) from the footer to the bottom
+                               of the page
+  /word_ref_fonts            - when fonts are not available, a reference to the font is used in
+                               the generated PDF rather than a bitmapped version. The default is
+                               for a bitmap of the text to be used
+  /pdf_clean_meta <type>     - Allows for some meta-data to be removed from the generated PDF.
+                               <type> can be:
+                                 basic - removes author, keywords, creator and subject
+                                 full  - removes all that basic removes and also the title
+  /pdf_layout <layout>       - controls how the pages layout in Acrobat Reader. <layout> can be
+                               one of the following values:
+                                 onecol       - show pages as a single scolling column
+                                 single       - show pages one at a time
+                                 twocolleft   - show pages in two columns, with oddnumbered pages on the left
+                                 twocolright  - show pages in two columns, with oddnumbered pages on the right
+                                 twopageleft  - show pages two at a time, with odd-numbered pages on the left
+                                 twopageright - show pages two at a time, with odd-numbered pages on the right
+  /pdf_page_mode <mode>      - controls how the PDF will open with Acrobat Reader. <mode> can be
+                               one of the following values:
+                                 full      - the PDF will open in fullscreen mode
+                                 bookmarks - the PDF will open with the bookmarks visible
+                                 thumbs    - the PDF will open with the thumbnail view visible
+                                 none      - the PDF will open without the navigation bar visible
+  /pdf_append                - append the generated PDF to the end of the PDF destination
+  /pdf_prepend               - prepend the generated PDF to the start of the PDF destination
+  /pdf_owner_pass            - set the owner password on the PDF. Needed to make modifications to the PDF
+  /pdf_user_pass             - set the user password on the PDF. Needed to open the PDF
+  /pdf_restrict_accessibility_extraction - Prevent all content extraction without the owner password
+  /pdf_restrict_annotation   - prevent annotations on the PDF without the owner password
+  /pdf_restrict_assembly     - prevent rotation, removal or insertion of pages without the owner password
+  /pdf_restrict_extraction   - prevent content extraction without the owner password
+  /pdf_restrict_forms        - prevent form entry without the owner password
+  /pdf_restrict_full_quality - prevent full quality printing without the owner password
+  /pdf_restrict_modify       - prevent modification without the owner password
+  /pdf_restrict_print        - prevent printing without the owner password
+  /version                   - print out the version of OfficeToPDF and exit
 
 
   Templates:
