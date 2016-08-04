@@ -148,6 +148,31 @@ The following optional switches can be used:
       )
 
 
+  Handling Dialogs:
+  -----------------
+
+  When converting, the environment variable OFFICE2PDF_AUTO_CONVERT will be set
+  with a value of 1. The existence of this variable can be used by VBA/macro code
+  in Office documents to indicate the document is being processed in an un-attended
+  way.
+
+  For instance, the following AutoOpen Word macro will show a message box whenever
+  a document is opened:
+
+    Sub AutoOpen()
+        MsgBox "You have opened the document"
+    End Sub
+
+  OfficeToPDF will stall until the message box is closed. To avoid this, the macro
+  can be updated to check for the OFFICE2PDF_AUTO_CONVERT environment variable.
+
+    Sub AutoOpen()
+	    If Environ("OFFICE2PDF_AUTO_CONVERT") = "" Then
+            MsgBox "You have opened the document"
+		End If
+    End Sub
+
+
   Credits:
   --------
 
