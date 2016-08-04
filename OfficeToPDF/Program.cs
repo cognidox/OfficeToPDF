@@ -470,6 +470,11 @@ namespace OfficeToPDF
             Match extMatch = fileMatch.Match(inputFile);
             if (extMatch.Success)
             {
+                // Set and environment variable so Office application VBA
+                // code can check for un-attended conversion and avoid showing
+                // blocking dialogs
+                Environment.SetEnvironmentVariable("OFFICE2PDF_AUTO_CONVERT", "1");
+
                 if ((Boolean)options["verbose"])
                 {
                     Console.WriteLine("Converting {0} to {1}", inputFile, finalOutputFile);
