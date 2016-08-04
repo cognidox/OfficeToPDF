@@ -137,6 +137,7 @@ The following optional switches can be used:
   128   - Output directory not found
   256   - The requested worksheet was not found
   512   - Unable to use an empty worksheet
+  1024  - Unable to modify or open a protected PDF
 
   To check for a specific error code after calling officetopdf.exe, use the batch
   "SET /A" command. e.g.
