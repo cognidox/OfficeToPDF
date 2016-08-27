@@ -70,6 +70,7 @@ The following optional switches can be used:
                                the page
   /word_footer_dist <pts>    - the distance (in points) from the footer to the bottom
                                of the page
+  /word_no_field_update      - do not update fields when creating the PDF
   /word_ref_fonts            - when fonts are not available, a reference to the font is used in
                                the generated PDF rather than a bitmapped version. The default is
                                for a bitmap of the text to be used
@@ -167,9 +168,9 @@ The following optional switches can be used:
   can be updated to check for the OFFICE2PDF_AUTO_CONVERT environment variable.
 
     Sub AutoOpen()
-	    If Environ("OFFICE2PDF_AUTO_CONVERT") = "" Then
+        If Environ("OFFICE2PDF_AUTO_CONVERT") = "" Then
             MsgBox "You have opened the document"
-		End If
+        End If
     End Sub
 
 
