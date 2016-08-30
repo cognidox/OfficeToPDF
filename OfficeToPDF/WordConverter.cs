@@ -244,7 +244,7 @@ namespace OfficeToPDF
                 // See if we have to update fields
                 if (!(Boolean)options["word_no_field_update"])
                 {
-                    updateDocumentFields(doc, word, inputFile);
+                    updateDocumentFields(doc, word, inputFile, options);
                 }
 
                 var pageSetup = doc.PageSetup;
@@ -318,8 +318,15 @@ namespace OfficeToPDF
             }
         }
 
-        private static void updateDocumentFields(Document doc, Microsoft.Office.Interop.Word.Application word, String inputFile)
+        private static void updateDocumentFields(Document doc, Microsoft.Office.Interop.Word.Application word, String inputFile, Hashtable options)
         {
+            if ((Boolean)options["word_field_quick_update"])
+            {
+                var fields = doc.Fields;
+                fields.Update();
+                Converter.releaseCOMObject(fields);
+                return;
+            }
             // Update some of the field types in the document so the printed
             // PDF looks correct. Skips some field types (such as ASK) that would
             // create dialogs
