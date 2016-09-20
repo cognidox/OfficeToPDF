@@ -102,6 +102,7 @@ namespace OfficeToPDF
             options["word_no_field_update"] = false;
             options["word_header_dist"] = (float) -1;
             options["word_footer_dist"] = (float) -1;
+            options["word_max_pages"] = (int) 0;
             options["word_ref_fonts"] = false;
             options["pdf_page_mode"] = null;
             options["pdf_layout"] = null;
@@ -119,7 +120,7 @@ namespace OfficeToPDF
             options["pdf_restrict_accessibility_extraction"] = false;
             options["pdf_restrict_full_quality"] = false;
 
-            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_(max_rows|show_formulas|show_headings|auto_macros|active_sheet|worksheet)|word_(header_dist|footer_dist|ref_fonts|no_field_update|field_quick_update)|pdf_(page_mode|append|prepend|layout|clean_meta|owner_pass|user_pass|restrict_(annotation|extraction|assembly|forms|modify|print|accessibility_extraction|full_quality))|\?)$", RegexOptions.IgnoreCase);
+            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_(max_rows|show_formulas|show_headings|auto_macros|active_sheet|worksheet)|word_(header_dist|footer_dist|ref_fonts|no_field_update|field_quick_update|max_pages)|pdf_(page_mode|append|prepend|layout|clean_meta|owner_pass|user_pass|restrict_(annotation|extraction|assembly|forms|modify|print|accessibility_extraction|full_quality))|\?)$", RegexOptions.IgnoreCase);
             for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
                 string item = args[argIdx];
@@ -303,6 +304,22 @@ namespace OfficeToPDF
                                     else
                                     {
                                         Console.WriteLine("Header/Footer distance ({0}) is invalid", args[argIdx + 1]);
+                                        Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
+                                    }
+                                    argIdx++;
+                                }
+                                break;
+                            case "word_max_pages":
+                                // Only accept the next option if there are enough options
+                                if (argIdx + 2 < args.Length)
+                                {
+                                    if (Regex.IsMatch(args[argIdx + 1], @"^\d+$"))
+                                    {
+                                        options[itemMatch.Groups[1].Value.ToLower()] = (int)Convert.ToInt32(args[argIdx + 1]);
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("Maximum number of pages ({0}) is invalid", args[argIdx + 1]);
                                         Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
                                     }
                                     argIdx++;
@@ -797,6 +814,8 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file [output_file]
   /word_footer_dist <pts>   - The distance (in points) from the footer to the bottom
                               of the page.
   /word_field_quick_update  - Perform a fast update of fields in Word before conversion.
+  /word_max_pages <pages>   - Do not attempt conversion of a Word document if it has more than
+                              this number of pages.
   /word_no_field_update     - Do not update fields when creating the PDF.
   /word_ref_fonts           - When fonts are not available, a reference to the font is used in
                               the generated PDF rather than a bitmapped version. The default is

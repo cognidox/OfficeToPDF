@@ -71,6 +71,8 @@ The following optional switches can be used:
   /word_footer_dist <pts>    - the distance (in points) from the footer to the bottom
                                of the page
   /word_field_quick_update   - perform a fast update of fields in Word before conversion
+  /word_max_pages <pages>    - Do not attempt conversion of a Word document if it has more than
+                               this number of pages
   /word_no_field_update      - do not update fields when creating the PDF
   /word_ref_fonts            - when fonts are not available, a reference to the font is used in
                                the generated PDF rather than a bitmapped version. The default is
