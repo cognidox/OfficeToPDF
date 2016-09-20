@@ -121,6 +121,12 @@ namespace OfficeToPDF
                 {
                     showMarkup = WdExportItem.wdExportDocumentWithMarkup;
                 }
+
+                // Large Word files may simply not print reliably - if the word_max_pages
+                // configuration option is set, then we must close up and forget about 
+                // converting the file.
+                var maxPages = (int)options[@"word_max_pages"];
+
                 var documents = word.Documents;
                 var normalTemplate = word.NormalTemplate;
 
@@ -182,6 +188,17 @@ namespace OfficeToPDF
                     return (int)ExitCode.FileOpenFailure;
                 }
                 doc.Activate();
+
+                // Check if there are too many pages
+                if (maxPages > 0)
+                {
+                    var pageCount = doc.ComputeStatistics(WdStatistic.wdStatisticPages, false);
+                    doc.Saved = true;
+                    if (pageCount > maxPages)
+                    {
+                        throw new Exception(String.Format("Too many pages to process ({0}). More than {1}", pageCount, maxPages));
+                    }
+                }
 
                 // Prevent "property not available" errors, see http://blogs.msmvps.com/wordmeister/2013/02/22/word2013bug-not-available-for-reading/
                 var docWin = doc.ActiveWindow;
