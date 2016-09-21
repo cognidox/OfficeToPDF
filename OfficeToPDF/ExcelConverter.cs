@@ -84,7 +84,26 @@ namespace OfficeToPDF
 
                 app.EnableEvents = (bool)options["excel_auto_macros"];
                 workbooks = app.Workbooks;
-                workbook = workbooks.Open(inputFile, true, nowrite, oMissing, oReadPass, oWritePass, true, oMissing, oMissing, oMissing, oMissing, oMissing, false, oMissing, oMissing);
+                // If we have no write password and we're attempting to open for writing, we might be
+                // caught out by an unexpected write password
+                if (writePassword == "" && !nowrite)
+                {
+                    oWritePass = (Object)"FAKEPASSWORD";
+                    try
+                    {
+
+                        workbook = workbooks.Open(inputFile, true, nowrite, oMissing, oReadPass, oWritePass, true, oMissing, oMissing, oMissing, oMissing, oMissing, false, oMissing, oMissing);
+                    }
+                    catch (System.Runtime.InteropServices.COMException)
+                    {
+                        // Attempt to open it in read-only mode
+                        workbook = workbooks.Open(inputFile, true, true, oMissing, oReadPass, oWritePass, true, oMissing, oMissing, oMissing, oMissing, oMissing, false, oMissing, oMissing);
+                    }
+                }
+                else
+                {
+                    workbook = workbooks.Open(inputFile, true, nowrite, oMissing, oReadPass, oWritePass, true, oMissing, oMissing, oMissing, oMissing, oMissing, false, oMissing, oMissing);
+                }
 
                 // Unable to open workbook
                 if (workbook == null)
