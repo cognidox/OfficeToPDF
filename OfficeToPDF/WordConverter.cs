@@ -188,7 +188,7 @@ namespace OfficeToPDF
                     return (int)ExitCode.FileOpenFailure;
                 }
                 doc.Activate();
-
+                
                 // Check if there are too many pages
                 if (maxPages > 0)
                 {
@@ -199,7 +199,7 @@ namespace OfficeToPDF
                         throw new Exception(String.Format("Too many pages to process ({0}). More than {1}", pageCount, maxPages));
                     }
                 }
-
+                
                 // Prevent "property not available" errors, see http://blogs.msmvps.com/wordmeister/2013/02/22/word2013bug-not-available-for-reading/
                 var docWin = doc.ActiveWindow;
                 var docWinView = docWin.View;
@@ -207,7 +207,14 @@ namespace OfficeToPDF
                 {
                     docWinView.ReadingLayout = false;
                 }
-                docWinView.Type = WdViewType.wdPrintPreview;
+                
+                // Sometimes the print view will not be available (e.g. for a blog post)
+                // Try and switch view
+                try
+                {
+                    docWinView.Type = WdViewType.wdPrintPreview;
+                }
+                catch(Exception){}
 
                 // Hide comments
                 try
