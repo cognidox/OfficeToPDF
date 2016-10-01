@@ -369,6 +369,7 @@ namespace OfficeToPDF
             {
                 if (workbook != null)
                 {
+                    workbook.Saved = true;
                     workbook.Close();
                 }
 
