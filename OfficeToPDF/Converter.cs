@@ -47,7 +47,7 @@ namespace OfficeToPDF
         {
             try
             {
-                if (System.Runtime.InteropServices.Marshal.IsComObject(obj))
+                if (null != obj && System.Runtime.InteropServices.Marshal.IsComObject(obj))
                 {
                     System.Runtime.InteropServices.Marshal.FinalReleaseComObject(obj);
                 }
