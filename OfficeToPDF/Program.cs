@@ -48,7 +48,8 @@ namespace OfficeToPDF
         DirectoryNotFound = 128,
         WorksheetNotFound = 256,
         EmptyWorksheet = 512,
-        PDFProtectedDocument = 1024
+        PDFProtectedDocument = 1024,
+        ApplicationError = 2048
     }
 
     public enum MergeMode : int

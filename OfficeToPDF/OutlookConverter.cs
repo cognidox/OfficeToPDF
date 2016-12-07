@@ -50,6 +50,11 @@ namespace OfficeToPDF
                     app = new Microsoft.Office.Interop.Outlook.Application();
                     running = false;
                 }
+                if (app == null)
+                {
+                    Console.WriteLine("Unable to start outlook instance");
+                    return (int)ExitCode.ApplicationError;
+                }
                 var session = app.Session;
                 FileInfo fi = new FileInfo(inputFile);
                 // Create a temporary doc file from the message
@@ -82,22 +87,76 @@ namespace OfficeToPDF
                         Converter.releaseCOMObject(session);
                         break;
                     case ".ics":
-                        var item = session.OpenSharedItem(inputFile);
-                        string itemType = (string)(string)item.GetType().InvokeMember("MessageClass", System.Reflection.BindingFlags.GetProperty, null, item, null);
-                        switch (itemType)
+                        // Issue #47 - there is a problem opening some ics files - looks like the issue is down to
+                        // it trying to open the icalendar format
+                        // See https://msdn.microsoft.com/en-us/library/office/bb644609.aspx
+                        object item = null;
+                        try
                         {
-                            case "IPM.Appointment":
-                                var appointment = (AppointmentItem)item;
-                                if (appointment != null)
-                                {
-                                    appointment.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
-                                }
-                                break;
-                            default:
-                                Console.WriteLine("Unable to convert ICS type " + itemType);
-                                break;
+                            session.GetDefaultFolder(OlDefaultFolders.olFolderCalendar);
+                            item = session.OpenSharedItem(inputFile);
                         }
-                        Converter.releaseCOMObject(item);
+                        catch
+                        {
+                        }
+                        if (item != null)
+                        {
+                            // We were able to read in the item
+                            // See if it is an item that can be converted to an intermediate Word document
+                            string itemType = (string)(string)item.GetType().InvokeMember("MessageClass", System.Reflection.BindingFlags.GetProperty, null, item, null);
+                            switch (itemType)
+                            {
+                                case "IPM.Appointment":
+                                    var appointment = (AppointmentItem)item;
+                                    if (appointment != null)
+                                    {
+                                        appointment.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
+                                        Converter.releaseCOMObject(appointment);
+                                    }
+                                    break;
+                                case "IPM.Schedule.Meeting.Request":
+                                    var meeting = (MeetingItem)item;
+                                    if (meeting != null)
+                                    {
+                                        meeting.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
+                                        Converter.releaseCOMObject(meeting);
+                                    }
+                                    break;
+                                case "IPM.Task":
+                                    var task = (TaskItem)item;
+                                    if (task != null)
+                                    {
+                                        task.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
+                                        Converter.releaseCOMObject(task);
+                                    }
+                                    break;
+                                default:
+                                    Console.WriteLine("Unable to convert ICS type " + itemType);
+                                    break;
+                            }
+                            Converter.releaseCOMObject(item);
+                        }
+                        else
+                        {
+                            // TODO - handle multiple items
+                            // Try and open this as a folder
+                            /*Folder importedFolder = null;
+                            try
+                            {
+                                importedFolder = session.OpenSharedFolder(inputFile, Type.Missing, Type.Missing, Type.Missing) as Folder;
+                            }
+                            catch { }
+
+                            if (importedFolder != null)
+                            {
+                                Console.WriteLine("imported calendar folder");
+                                Converter.releaseCOMObject(importedFolder);
+                            }
+                            else
+                            {*/
+                                Console.WriteLine("Unable to convert this type of ICS file");
+                            /* } */
+                        }
                         Converter.releaseCOMObject(session);
                         break;
                 }
