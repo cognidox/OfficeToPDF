@@ -138,24 +138,7 @@ namespace OfficeToPDF
                         }
                         else
                         {
-                            // TODO - handle multiple items
-                            // Try and open this as a folder
-                            /*Folder importedFolder = null;
-                            try
-                            {
-                                importedFolder = session.OpenSharedFolder(inputFile, Type.Missing, Type.Missing, Type.Missing) as Folder;
-                            }
-                            catch { }
-
-                            if (importedFolder != null)
-                            {
-                                Console.WriteLine("imported calendar folder");
-                                Converter.releaseCOMObject(importedFolder);
-                            }
-                            else
-                            {*/
-                                Console.WriteLine("Unable to convert this type of ICS file");
-                            /* } */
+                            Console.WriteLine("Unable to convert this type of ICS file");
                         }
                         Converter.releaseCOMObject(session);
                         break;
