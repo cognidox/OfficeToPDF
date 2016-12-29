@@ -72,13 +72,14 @@ The following optional switches can be used:
   /word_footer_dist <pts>    - the distance (in points) from the footer to the bottom
                                of the page
   /word_field_quick_update   - perform a fast update of fields in Word before conversion
-  /word_max_pages <pages>    - Do not attempt conversion of a Word document if it has more than
+  /word_keep_history         - do not clear Word's recent files list
+  /word_max_pages <pages>    - do not attempt conversion of a Word document if it has more than
                                this number of pages
   /word_no_field_update      - do not update fields when creating the PDF
   /word_ref_fonts            - when fonts are not available, a reference to the font is used in
                                the generated PDF rather than a bitmapped version. The default is
                                for a bitmap of the text to be used
-  /pdf_clean_meta <type>     - Allows for some meta-data to be removed from the generated PDF.
+  /pdf_clean_meta <type>     - allows for some meta-data to be removed from the generated PDF.
                                <type> can be:
                                  basic - removes author, keywords, creator and subject
                                  full  - removes all that basic removes and also the title

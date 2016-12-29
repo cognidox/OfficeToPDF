@@ -62,7 +62,11 @@ namespace OfficeToPDF
                     running = false;
                 }
                 word.DisplayAlerts = WdAlertLevel.wdAlertsNone;
-                word.DisplayRecentFiles = false;
+                // Issue #48 - we should allow control over whether the history is lost
+                if (!(Boolean)options["word_keep_history"])
+                {
+                    word.DisplayRecentFiles = false;
+                }
                 word.DisplayDocumentInformationPanel = false;
                 word.FeatureInstall = Microsoft.Office.Core.MsoFeatureInstall.msoFeatureInstallNone;
                 wordVersion = (float)System.Convert.ToDecimal(word.Version, new CultureInfo("en-US"));
