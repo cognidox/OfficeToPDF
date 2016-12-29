@@ -106,6 +106,7 @@ namespace OfficeToPDF
             options["word_footer_dist"] = (float) -1;
             options["word_max_pages"] = (int) 0;
             options["word_ref_fonts"] = false;
+            options["word_keep_history"] = false;
             options["pdf_page_mode"] = null;
             options["pdf_layout"] = null;
             options["pdf_merge"] = (int) MergeMode.None;
@@ -122,7 +123,7 @@ namespace OfficeToPDF
             options["pdf_restrict_accessibility_extraction"] = false;
             options["pdf_restrict_full_quality"] = false;
 
-            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_(max_rows|show_formulas|show_headings|auto_macros|active_sheet|worksheet|no_recalculate)|word_(header_dist|footer_dist|ref_fonts|no_field_update|field_quick_update|max_pages)|pdf_(page_mode|append|prepend|layout|clean_meta|owner_pass|user_pass|restrict_(annotation|extraction|assembly|forms|modify|print|accessibility_extraction|full_quality))|\?)$", RegexOptions.IgnoreCase);
+            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_(max_rows|show_formulas|show_headings|auto_macros|active_sheet|worksheet|no_recalculate)|word_(header_dist|footer_dist|ref_fonts|no_field_update|field_quick_update|max_pages|keep_history)|pdf_(page_mode|append|prepend|layout|clean_meta|owner_pass|user_pass|restrict_(annotation|extraction|assembly|forms|modify|print|accessibility_extraction|full_quality))|\?)$", RegexOptions.IgnoreCase);
             for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
                 string item = args[argIdx];
@@ -817,6 +818,7 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file [output_file]
   /word_footer_dist <pts>   - The distance (in points) from the footer to the bottom
                               of the page.
   /word_field_quick_update  - Perform a fast update of fields in Word before conversion.
+  /word_keep_history        - Do not clear Word's recent files list.
   /word_max_pages <pages>   - Do not attempt conversion of a Word document if it has more than
                               this number of pages.
   /word_no_field_update     - Do not update fields when creating the PDF.
