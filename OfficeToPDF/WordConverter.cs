@@ -24,6 +24,7 @@ using System.Linq;
 using System.Text;
 using System.Globalization;
 using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using Microsoft.Office.Interop.Word;
 
@@ -49,6 +50,7 @@ namespace OfficeToPDF
             Microsoft.Office.Interop.Word.Template tmpl;
             String temporaryStorageDir = null;
             float wordVersion = 0;
+            List<AppOption> wordOptionList = new List<AppOption>();
             try
             {
                 tmpl = null;
@@ -73,28 +75,29 @@ namespace OfficeToPDF
                 var wdOptions = word.Options;
                 try
                 {
-                    wdOptions.AllowReadingMode = false;
-                    wdOptions.PrecisePositioning = true;
-                    wdOptions.UpdateFieldsAtPrint = false;
-                    wdOptions.UpdateLinksAtPrint = false;
-                    wdOptions.WarnBeforeSavingPrintingSendingMarkup = false;
-                    wdOptions.BackgroundSave = true;
-                    wdOptions.SavePropertiesPrompt = false;
-                    wdOptions.DoNotPromptForConvert = true;
-                    wdOptions.PromptUpdateStyle = false;
-                    wdOptions.ConfirmConversions = false;
-                    wdOptions.CheckGrammarAsYouType = false;
-                    wdOptions.CheckGrammarWithSpelling = false;
-                    wdOptions.CheckSpellingAsYouType = false;
-                    wdOptions.DisplaySmartTagButtons = false;
-                    wdOptions.EnableLivePreview = false;
-                    wdOptions.ShowReadabilityStatistics = false;
-                    wdOptions.SuggestSpellingCorrections = false;
-                    wdOptions.AllowDragAndDrop = false;
-                    wdOptions.EnableMisusedWordsDictionary = false;
-                    wdOptions.ShowFormatError = false;
-                    wdOptions.StoreRSIDOnSave = false;
-                    wdOptions.SaveNormalPrompt = false;
+                    // Set the Word options in a way that allows us to reset the options when we finish
+                    wordOptionList.Add(new AppOption("AllowReadingMode", false, ref wdOptions));
+                    wordOptionList.Add(new AppOption("PrecisePositioning", true, ref wdOptions));
+                    wordOptionList.Add(new AppOption("UpdateFieldsAtPrint", false, ref wdOptions));
+                    wordOptionList.Add(new AppOption("UpdateLinksAtPrint", false, ref wdOptions));
+                    wordOptionList.Add(new AppOption("WarnBeforeSavingPrintingSendingMarkup", false, ref wdOptions));
+                    wordOptionList.Add(new AppOption("BackgroundSave", true, ref wdOptions));
+                    wordOptionList.Add(new AppOption("SavePropertiesPrompt", false, ref wdOptions));
+                    wordOptionList.Add(new AppOption("DoNotPromptForConvert", true, ref wdOptions));
+                    wordOptionList.Add(new AppOption("PromptUpdateStyle", false, ref wdOptions));
+                    wordOptionList.Add(new AppOption("ConfirmConversions", false, ref wdOptions));
+                    wordOptionList.Add(new AppOption("CheckGrammarAsYouType", false, ref wdOptions));
+                    wordOptionList.Add(new AppOption("CheckGrammarWithSpelling", false, ref wdOptions));
+                    wordOptionList.Add(new AppOption("CheckSpellingAsYouType", false, ref wdOptions));
+                    wordOptionList.Add(new AppOption("DisplaySmartTagButtons", false, ref wdOptions));
+                    wordOptionList.Add(new AppOption("EnableLivePreview", false, ref wdOptions));
+                    wordOptionList.Add(new AppOption("ShowReadabilityStatistics", false, ref wdOptions));
+                    wordOptionList.Add(new AppOption("SuggestSpellingCorrections", false, ref wdOptions));
+                    wordOptionList.Add(new AppOption("AllowDragAndDrop", false, ref wdOptions));
+                    wordOptionList.Add(new AppOption("EnableMisusedWordsDictionary", false, ref wdOptions));
+                    wordOptionList.Add(new AppOption("ShowFormatError", false, ref wdOptions));
+                    wordOptionList.Add(new AppOption("StoreRSIDOnSave", false, ref wdOptions));
+                    wordOptionList.Add(new AppOption("SaveNormalPrompt", false, ref wdOptions));
                 }
                 catch (SystemException)
                 {
@@ -308,6 +311,12 @@ namespace OfficeToPDF
                 normalTemplate.Saved = true;
                 ((_Document)doc).Close(ref saveChanges, ref oMissing, ref oMissing);
 
+                // Reset options
+                foreach (AppOption opt in wordOptionList)
+                {
+                    opt.resetValue(ref wdOptions);
+                }
+
                 Converter.releaseCOMObject(pageSetup);
                 Converter.releaseCOMObject(docWinView);
                 Converter.releaseCOMObject(docWin);
@@ -343,6 +352,41 @@ namespace OfficeToPDF
                     ((_Application)word).Quit(ref oMissing, ref oMissing, ref oMissing);
                 }
                 Converter.releaseCOMObject(word);
+            }
+        }
+
+        // We want to be able to reset the options in Word so it doesn't affect subsequent
+        // usage
+        private class AppOption
+        {
+            public string name { get; set; }
+            public Boolean value { get; set; }
+            public Boolean originalValue { get; set; }
+            public AppOption(string name, Boolean value, ref Options wdOptions)
+            {
+                try
+                {
+                    this.name = name;
+                    this.value = value;
+                    this.originalValue = (Boolean)wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.GetProperty, null, wdOptions, null);
+
+                    if (this.originalValue != value)
+                    {
+                        wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.SetProperty, null, wdOptions, new Object[] {value});
+                    }
+                }
+                catch
+                {
+                }
+            }
+
+            // Allow the value on the options to be reset
+            public void resetValue(ref Options wdOptions)
+            {
+                if (this.value != this.originalValue)
+                {
+                    wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.SetProperty, null, wdOptions, new Object[] { this.originalValue });
+                }
             }
         }
 
