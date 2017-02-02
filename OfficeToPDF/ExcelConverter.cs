@@ -65,6 +65,7 @@ namespace OfficeToPDF
                 Boolean showFormulas = (Boolean)options["excel_show_formulas"];
                 Boolean isHidden = (Boolean)options["hidden"];
                 Boolean screenQuality = (Boolean)options["screen"];
+                Boolean updateLinks = !(Boolean)options["excel_no_link_update"];
                 int maxRows = (int)options[@"excel_max_rows"];
                 int worksheetNum = (int)options["excel_worksheet"];
                 int sheetForConversionIdx = 0;
@@ -110,17 +111,17 @@ namespace OfficeToPDF
                     try
                     {
 
-                        workbook = workbooks.Open(inputFile, true, nowrite, oMissing, oReadPass, oWritePass, true, oMissing, oMissing, oMissing, oMissing, oMissing, false, oMissing, oMissing);
+                        workbook = workbooks.Open(inputFile, updateLinks, nowrite, oMissing, oReadPass, oWritePass, true, oMissing, oMissing, oMissing, oMissing, oMissing, false, oMissing, oMissing);
                     }
                     catch (System.Runtime.InteropServices.COMException)
                     {
                         // Attempt to open it in read-only mode
-                        workbook = workbooks.Open(inputFile, true, true, oMissing, oReadPass, oWritePass, true, oMissing, oMissing, oMissing, oMissing, oMissing, false, oMissing, oMissing);
+                        workbook = workbooks.Open(inputFile, updateLinks, true, oMissing, oReadPass, oWritePass, true, oMissing, oMissing, oMissing, oMissing, oMissing, false, oMissing, oMissing);
                     }
                 }
                 else
                 {
-                    workbook = workbooks.Open(inputFile, true, nowrite, oMissing, oReadPass, oWritePass, true, oMissing, oMissing, oMissing, oMissing, oMissing, false, oMissing, oMissing);
+                    workbook = workbooks.Open(inputFile, updateLinks, nowrite, oMissing, oReadPass, oWritePass, true, oMissing, oMissing, oMissing, oMissing, oMissing, false, oMissing, oMissing);
                 }
 
                 // Unable to open workbook

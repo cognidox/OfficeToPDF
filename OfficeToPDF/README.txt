@@ -65,6 +65,7 @@ The following optional switches can be used:
   /excel_max_rows <rows>     - if any worksheet in a spreadsheet document has more
                                than this number of rows, do not attempt to convert
                                the file. Applies when converting with Excel
+  /excel_no_link_update      - do not update links when opening Excel files
   /excel_no_recalculate      - skip automatic re-calculation of formulas in the workbook
   /excel_worksheet <num>     - only convert worksheet <num> in the workbook. First sheet is 1
   /word_header_dist <pts>    - the distance (in points) from the header to the top of
