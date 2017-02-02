@@ -97,6 +97,7 @@ namespace OfficeToPDF
             options["excel_show_headings"] = false;
             options["excel_auto_macros"] = false;
             options["excel_active_sheet"] = false;
+            options["excel_no_link_update"] = false;
             options["excel_no_recalculate"] = false;
             options["excel_max_rows"] = (int) 0;
             options["excel_worksheet"] = (int) 0;
@@ -123,7 +124,7 @@ namespace OfficeToPDF
             options["pdf_restrict_accessibility_extraction"] = false;
             options["pdf_restrict_full_quality"] = false;
 
-            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_(max_rows|show_formulas|show_headings|auto_macros|active_sheet|worksheet|no_recalculate)|word_(header_dist|footer_dist|ref_fonts|no_field_update|field_quick_update|max_pages|keep_history)|pdf_(page_mode|append|prepend|layout|clean_meta|owner_pass|user_pass|restrict_(annotation|extraction|assembly|forms|modify|print|accessibility_extraction|full_quality))|\?)$", RegexOptions.IgnoreCase);
+            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_(max_rows|show_formulas|show_headings|auto_macros|active_sheet|worksheet|no_recalculate|no_link_update)|word_(header_dist|footer_dist|ref_fonts|no_field_update|field_quick_update|max_pages|keep_history)|pdf_(page_mode|append|prepend|layout|clean_meta|owner_pass|user_pass|restrict_(annotation|extraction|assembly|forms|modify|print|accessibility_extraction|full_quality))|\?)$", RegexOptions.IgnoreCase);
             for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
                 string item = args[argIdx];
@@ -811,6 +812,7 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file [output_file]
   /excel_max_rows <rows>    - If any worksheet in a spreadsheet document has more
                               than this number of rows, do not attempt to convert
                               the file. Applies when converting with Excel.
+  /excel_no_link_update     - Do not update links when opening Excel files.
   /excel_no_recalculate     - Skip automatic re-calculation of formulas in the workbook.
   /excel_worksheet <num>    - Only convert worksheet <num> in the workbook. First sheet is 1.
   /word_header_dist <pts>   - The distance (in points) from the header to the top of
