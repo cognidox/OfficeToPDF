@@ -423,7 +423,18 @@ namespace OfficeToPDF
 
             if (filesSeen == 1)
             {
+                // If only one file is seen, we just swap the extension
                 files[1] = Path.ChangeExtension(files[0], "pdf");
+            }
+            else
+            {
+                // If the second file is a directory, then we want to create the PDF
+                // with the same name as the original (changing the extension to pdf),
+                // but in the directory given by the path
+                if (Directory.Exists(files[1]))
+                {
+                    files[1] = Path.Combine(files[1], Path.GetFileNameWithoutExtension(files[0]) + ".pdf");
+                }
             }
 
             String inputFile = "";
