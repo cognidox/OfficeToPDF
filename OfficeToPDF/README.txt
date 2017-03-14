@@ -86,10 +86,10 @@ The following optional switches can be used:
                                  full  - removes all that basic removes and also the title
   /pdf_layout <layout>       - controls how the pages layout in Acrobat Reader. <layout> can be
                                one of the following values:
-                                 onecol       - show pages as a single scolling column
+                                 onecol       - show pages as a single scrolling column
                                  single       - show pages one at a time
-                                 twocolleft   - show pages in two columns, with oddnumbered pages on the left
-                                 twocolright  - show pages in two columns, with oddnumbered pages on the right
+                                 twocolleft   - show pages in two columns, with odd-numbered pages on the left
+                                 twocolright  - show pages in two columns, with odd-numbered pages on the right
                                  twopageleft  - show pages two at a time, with odd-numbered pages on the left
                                  twopageright - show pages two at a time, with odd-numbered pages on the right
   /pdf_page_mode <mode>      - controls how the PDF will open with Acrobat Reader. <mode> can be
@@ -100,8 +100,8 @@ The following optional switches can be used:
                                  none      - the PDF will open without the navigation bar visible
   /pdf_append                - append the generated PDF to the end of the PDF destination
   /pdf_prepend               - prepend the generated PDF to the start of the PDF destination
-  /pdf_owner_pass            - set the owner password on the PDF. Needed to make modifications to the PDF
-  /pdf_user_pass             - set the user password on the PDF. Needed to open the PDF
+  /pdf_owner_pass <password> - set the owner password on the PDF. Needed to make modifications to the PDF
+  /pdf_user_pass <password>  - set the user password on the PDF. Needed to open the PDF
   /pdf_restrict_accessibility_extraction - Prevent all content extraction without the owner password
   /pdf_restrict_annotation   - prevent annotations on the PDF without the owner password
   /pdf_restrict_assembly     - prevent rotation, removal or insertion of pages without the owner password
