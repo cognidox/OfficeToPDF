@@ -73,6 +73,7 @@ The following optional switches can be used:
   /word_footer_dist <pts>    - the distance (in points) from the footer to the bottom
                                of the page
   /word_field_quick_update   - perform a fast update of fields in Word before conversion
+  /word_field_quick_update_safe - perform a fast update of fields only if there are no un-available linked files.
   /word_keep_history         - do not clear Word's recent files list
   /word_max_pages <pages>    - do not attempt conversion of a Word document if it has more than
                                this number of pages

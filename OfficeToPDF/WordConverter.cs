@@ -392,13 +392,17 @@ namespace OfficeToPDF
 
         private static void updateDocumentFields(Document doc, Microsoft.Office.Interop.Word.Application word, String inputFile, Hashtable options)
         {
-            if ((Boolean)options["word_field_quick_update"])
+            // Update fields quickly if it is safe to do so. We have
+            // to check for broken links as they may raise Word dialogs
+            if ((Boolean)options["word_field_quick_update"] ||
+                ((Boolean)options["word_field_quick_update_safe"] && !hasBrokenLinks(doc)))
             {
                 var fields = doc.Fields;
                 fields.Update();
                 Converter.releaseCOMObject(fields);
                 return;
             }
+
             // Update some of the field types in the document so the printed
             // PDF looks correct. Skips some field types (such as ASK) that would
             // create dialogs
@@ -509,6 +513,7 @@ namespace OfficeToPDF
             Converter.releaseCOMObject(docFields);
         }
 
+        // Update a specific field
         private static void updateField(Field field, Microsoft.Office.Interop.Word.Application word, String filename)
         {
             switch (field.Type)
@@ -563,6 +568,42 @@ namespace OfficeToPDF
                     Converter.releaseCOMObject(selection);
                     break;
             }
+        }
+
+        // Check if the document has any broken links from inline shapes
+        // We need to know this to determine if it is safe to perform
+        // an update on all fields
+        private static bool hasBrokenLinks(Document doc)
+        {
+            var hasBrokenLinks = false;
+            var inlineShapes = doc.InlineShapes;
+            if (inlineShapes.Count > 0)
+            {
+                for (var idx = 1; idx <= inlineShapes.Count; idx++)
+                {
+                    var shapeThing = (InlineShape)inlineShapes[idx];
+                    var linkFormat = (LinkFormat)shapeThing.LinkFormat;
+                    if (linkFormat != null)
+                    {
+                        // See if the linked file exists (if it is a local path and not a URL)
+                        var linkPath = (String)linkFormat.SourceFullName;
+                        if (linkPath.ToLower().IndexOf("http://") != 0 &&
+                            linkPath.ToLower().IndexOf("https://") != 0 && !File.Exists(linkPath))
+                        {
+                            hasBrokenLinks = true;
+                        }
+                        Converter.releaseCOMObject(linkFormat);
+                    }
+                    Converter.releaseCOMObject(shapeThing);
+                    if (hasBrokenLinks)
+                    {
+                        // If there are broken links, we can break out now
+                        break;
+                    }
+                }
+            }
+            Converter.releaseCOMObject(inlineShapes);
+            return hasBrokenLinks;
         }
     }
 }
