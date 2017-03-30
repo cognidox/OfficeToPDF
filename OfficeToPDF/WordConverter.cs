@@ -570,39 +570,54 @@ namespace OfficeToPDF
             }
         }
 
-        // Check if the document has any broken links from inline shapes
+        // Check if the document has any broken links from shapes and inline shapes.
         // We need to know this to determine if it is safe to perform
         // an update on all fields
         private static bool hasBrokenLinks(Document doc)
         {
             var hasBrokenLinks = false;
-            var inlineShapes = doc.InlineShapes;
-            if (inlineShapes.Count > 0)
+            var docShapes = doc.Shapes;
+            hasBrokenLinks = hasBrokenLinksInShapeList<Shapes>(ref docShapes);
+            if (!hasBrokenLinks)
             {
-                for (var idx = 1; idx <= inlineShapes.Count; idx++)
+                // If there are no broken Shapes, then try the inline shapes list
+                var inlineShapes = doc.InlineShapes;
+                hasBrokenLinks = hasBrokenLinksInShapeList<InlineShapes>(ref inlineShapes);
+                Converter.releaseCOMObject(inlineShapes);
+            }
+            Converter.releaseCOMObject(docShapes);
+            return hasBrokenLinks;
+        }
+
+        // Loop through a list of shapes or inline shapes finding out if
+        // any one has a broken reference
+        private static bool hasBrokenLinksInShapeList<T>(ref T shapeList) 
+            where T : IEnumerable
+        {
+            var hasBrokenLinks = false;
+            var items = shapeList.GetEnumerator();
+            while (items.MoveNext()) {
+                var shapeThing = items.Current;
+                var linkFormat = (typeof(T) == typeof(Shapes) ? ((Shape)shapeThing).LinkFormat : ((InlineShape)shapeThing).LinkFormat);
+                if (linkFormat != null)
                 {
-                    var shapeThing = (InlineShape)inlineShapes[idx];
-                    var linkFormat = (LinkFormat)shapeThing.LinkFormat;
-                    if (linkFormat != null)
+                    // See if the linked file exists (if it is a local path and not a URL)
+                    var linkPath = (String)linkFormat.SourceFullName;
+                    if (linkPath.ToLower().IndexOf("http://") != 0 &&
+                        linkPath.ToLower().IndexOf("https://") != 0 && !File.Exists(linkPath))
                     {
-                        // See if the linked file exists (if it is a local path and not a URL)
-                        var linkPath = (String)linkFormat.SourceFullName;
-                        if (linkPath.ToLower().IndexOf("http://") != 0 &&
-                            linkPath.ToLower().IndexOf("https://") != 0 && !File.Exists(linkPath))
-                        {
-                            hasBrokenLinks = true;
-                        }
-                        Converter.releaseCOMObject(linkFormat);
-                    }
-                    Converter.releaseCOMObject(shapeThing);
-                    if (hasBrokenLinks)
-                    {
-                        // If there are broken links, we can break out now
-                        break;
-                    }
+                        hasBrokenLinks = true;
+                    } 
+                }
+                Converter.releaseCOMObject(linkFormat);
+                Converter.releaseCOMObject(shapeThing);
+                if (hasBrokenLinks)
+                {
+                    // If there are broken links, we can break out now since we
+                    // don't care about anything else
+                    break;
                 }
             }
-            Converter.releaseCOMObject(inlineShapes);
             return hasBrokenLinks;
         }
     }
