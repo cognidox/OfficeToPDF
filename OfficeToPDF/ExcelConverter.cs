@@ -33,6 +33,20 @@ namespace OfficeToPDF
     /// </summary>
     class ExcelConverter: Converter
     {
+        // These are the properties we will extract from the first worksheet of any template document
+        private static string[] templateProperties = 
+        {
+            "BlackAndWhite", "BottomMargin", "CenterFooter", "CenterHeader",
+            "CenterHorizontally", "CenterVertically", "DifferentFirstPageHeaderFooter",
+            "Draft", "FirstPageNumber", "FitToPagesTall", "FitToPagesWide",
+            "FooterMargin", "HeaderMargin", "LeftFooter", "LeftHeader",
+            "LeftMargin", "OddAndEvenPagesHeaderFooter", "Order", "Orientation", "PaperSize", "PrintArea",
+            "PrintGridlines", "PrintHeadings", "PrintNotes", "PrintTitleColumns", "PrintTitleRows",
+            "RightFooter", "RightHeader", "RightMargin",
+            "ScaleWithDocHeaderFooter", "TopMargin", "Zoom"
+        };
+
+        // Main conversion routine
         public static new int Convert(String inputFile, String outputFile, Hashtable options)
         {
             Boolean running = (Boolean)options["noquit"];
@@ -42,6 +56,7 @@ namespace OfficeToPDF
             System.Object activeSheet = null;
             Window activeWindow = null;
             Windows wbWin = null;
+            Hashtable templatePageSetup = new Hashtable();
 
             String tmpFile = null;
             object oMissing = System.Reflection.Missing.Value;
@@ -134,6 +149,9 @@ namespace OfficeToPDF
                 {
                     workbook.RunAutoMacros(XlRunAutoMacro.xlAutoOpen);
                 }
+                
+                // Get any template options
+                setPageOptionsFromTemplate(app, workbooks, options, ref templatePageSetup);
 
                 // Get the sheets
                 worksheets = workbook.Sheets;
@@ -381,13 +399,19 @@ namespace OfficeToPDF
                     }
                     if (activeSheet is _Worksheet)
                     {
+                        var wps = ((_Worksheet)activeSheet).PageSetup;
+                        setPageSetupProperties(templatePageSetup, wps);
                         ((Microsoft.Office.Interop.Excel.Worksheet)activeSheet).ExportAsFixedFormat(XlFixedFormatType.xlTypePDF,
                             outputFile, quality, includeProps, false, Type.Missing, Type.Missing, false, Type.Missing);
+                        Converter.releaseCOMObject(wps);
                     }
                     else if (activeSheet is _Chart)
                     {
+                        var wps = ((_Chart)activeSheet).PageSetup;
+                        setPageSetupProperties(templatePageSetup, wps);
                         ((Microsoft.Office.Interop.Excel.Chart)activeSheet).ExportAsFixedFormat(XlFixedFormatType.xlTypePDF,
                             outputFile, quality, includeProps, false, Type.Missing, Type.Missing, false, Type.Missing);
+                        Converter.releaseCOMObject(wps);
                     }
                     else
                     {
@@ -396,6 +420,18 @@ namespace OfficeToPDF
                 }
                 else
                 {
+                    if (hasTemplateOption(options))
+                    {
+                        // Set up the template page setup options on all the worksheets
+                        // in the workbook
+                        foreach (var ws in workbook.Worksheets)
+                        {
+                            var wps = (ws is _Worksheet) ? ((_Worksheet)ws).PageSetup : ((_Chart)ws).PageSetup;
+                            setPageSetupProperties(templatePageSetup, wps);
+                            Converter.releaseCOMObject(wps);
+                            Converter.releaseCOMObject(ws);
+                        }
+                    }
                     workbook.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF,
                         outputFile, quality, includeProps, false, Type.Missing, Type.Missing, false, Type.Missing);
                 }
@@ -465,6 +501,102 @@ namespace OfficeToPDF
                     System.IO.File.Delete(tmpFile);
                     // Remove the temporary path to the temp file
                     Directory.Delete(Path.GetDirectoryName(tmpFile));
+                }
+            }
+        }
+
+        // Return true if there is a valid template option
+        protected static bool hasTemplateOption(Hashtable options)
+        {
+            if (String.IsNullOrEmpty((string)options["template"]) ||
+                !File.Exists((string)options["template"]) ||
+                !System.Text.RegularExpressions.Regex.IsMatch((string)options["template"], @"^.*\.xl[st][mx]?$"))
+            {
+                return false;
+            }
+            return true;
+        }
+
+        // Read the first worksheet from a template document and extract and store
+        // the page settings for later use
+        protected static void setPageOptionsFromTemplate(Application app, Workbooks workbooks, Hashtable options, ref Hashtable templatePageSetup)
+        {
+            if (!hasTemplateOption(options))
+            {
+                return;
+            }
+
+            try
+            {
+                var template = workbooks.Open((string)options["template"]);
+                if (template != null)
+                {
+                    // Run macros from template if the /excel_template_macros option is given
+                    if ((bool)options["excel_template_macros"])
+                    {
+                        var eventsEnabled = app.EnableEvents;
+                        app.EnableEvents = true;
+                        template.RunAutoMacros(XlRunAutoMacro.xlAutoOpen);
+                        app.EnableEvents = eventsEnabled;
+                    }
+
+                    var templateSheets = template.Worksheets;
+                    if (templateSheets != null)
+                    {
+                        // Copy the page setup details from the first sheet or chart in the template
+                        if (templateSheets.Count > 0)
+                        {
+                            PageSetup tps = null;
+                            var firstItem = templateSheets[1];
+                            if (firstItem is _Worksheet)
+                            {
+                                tps = ((_Worksheet)firstItem).PageSetup;
+                            }
+                            else if (firstItem is _Chart)
+                            {
+                                tps = ((_Chart)firstItem).PageSetup;
+                            }
+                            var tpsType = tps.GetType();
+                            for (int i = 0; i < templateProperties.Length; i++)
+                            {
+                                var prop = tpsType.InvokeMember(templateProperties[i], System.Reflection.BindingFlags.GetProperty, null, tps, null);
+                                if (prop != null)
+                                {
+                                    templatePageSetup[templateProperties[i]] = prop;
+                                }
+                            }
+                            Converter.releaseCOMObject(firstItem);
+                        }
+                        Converter.releaseCOMObject(templateSheets);
+                    }
+                    template.Close();
+                }
+                Converter.releaseCOMObject(template);
+            }
+            finally
+            {
+            }
+        }
+
+        // Load stored worksheet properties into the page setup
+        protected static void setPageSetupProperties(Hashtable tps, PageSetup wps)
+        {
+            if (tps == null || tps.Count == 0)
+            {
+                return;
+            }
+
+            var wpsType = wps.GetType();
+            for (int i = 0; i < templateProperties.Length; i++)
+            {
+                object[] value = { tps[templateProperties[i]] };
+                try
+                {
+                    wpsType.InvokeMember(templateProperties[i], System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.SetProperty, Type.DefaultBinder, wps, value);
+                }
+                catch(Exception)
+                {
+                    Console.WriteLine("Unable to set property {0}", templateProperties[i]);
                 }
             }
         }
