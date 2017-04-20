@@ -57,7 +57,9 @@ The following optional switches can be used:
   /writepassword <pass>      - use <pass> as the write password to open the document with
   /merge                     - when using a template, create a new file from the template and merge
                                the text from the document to convert into the new file
-  /template <template_path>  - use a .dot, .dotx or .dotm template when converting with Word
+  /template <template_path>  - use a .dot, .dotx or .dotm template when converting with Word. When
+                               converting Excel, use the page settings from the first worksheet in
+                               the template document
   /excel_active_sheet        - only convert the active worksheet
   /excel_auto_macros         - run Auto_Open macros in Excel files before conversion
   /excel_show_formulas       - show formulas in the PDF when converting with Excel
@@ -67,6 +69,7 @@ The following optional switches can be used:
                                the file. Applies when converting with Excel
   /excel_no_link_update      - do not update links when opening Excel files
   /excel_no_recalculate      - skip automatic re-calculation of formulas in the workbook
+  /excel_template_macros     - run Auto_Open macros in the /template document before conversion by Excel
   /excel_worksheet <num>     - only convert worksheet <num> in the workbook. First sheet is 1
   /word_header_dist <pts>    - the distance (in points) from the header to the top of
                                the page
