@@ -37,12 +37,27 @@ namespace OfficeToPDF
         /// </summary>
         /// <param name="inputFile">Full path of the input file</param>
         /// <param name="outputFile">Full path of the file to output PDF</param>
-        /// <returns></returns>
+        /// <param name="options">A set of options passed in from the main program</param>
+        /// <returns>0 on success, or an error code on failure</returns>
         public static int Convert(String inputFile, String outputFile, Hashtable options)
         {
             return (int)ExitCode.UnknownError;
         }
 
+        /// <summary>
+        /// Converts the input file to a PDF and updates a reference to a set of bookmarks
+        /// </summary>
+        /// <param name="inputFile">Full path of the input file</param>
+        /// <param name="outputFile">Full path of the file to output PDF</param>
+        /// <param name="options">A set of options passed in from the main program</param>
+        /// <param name="bookmarks">A reference to bookmarks that need to be added to the PDF</param>
+        /// <returns>0 on success, or an error code on failure</returns>
+        public static int Convert(String inputFile, String outputFile, Hashtable options, ref List<PDFBookmark> bookmarks)
+        {
+            return (int)ExitCode.UnknownError;
+        }
+
+        // Clean up COM objects
         protected static void releaseCOMObject(object obj)
         {
             try

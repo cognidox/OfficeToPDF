@@ -77,6 +77,7 @@ namespace OfficeToPDF
             Boolean postProcessPDF = false;
             Boolean postProcessPDFSecurity = false;
             Hashtable options = new Hashtable();
+            List<PDFBookmark> documentBookmarks = new List<PDFBookmark>();
 
             // Loop through the input, grabbing switches off the command line
             options["hidden"] = false;
@@ -567,7 +568,7 @@ namespace OfficeToPDF
                         {
                             Console.WriteLine("Converting with Powerpoint converter");
                         }
-                        converted = PowerpointConverter.Convert(inputFile, outputFile, options);
+                        converted = PowerpointConverter.Convert(inputFile, outputFile, options, ref documentBookmarks);
                         break;
                     case "vsd":
                     case "vsdm":
@@ -627,6 +628,11 @@ namespace OfficeToPDF
                 {
                     Console.WriteLine("Completed Conversion");
                 }
+
+                if (documentBookmarks.Count > 0)
+                {
+                    addPDFBookmarks(outputFile, documentBookmarks, options);
+                }
                 
                 // Determine if we have to post-process the PDF
                 if (postProcessPDF)
@@ -637,6 +643,23 @@ namespace OfficeToPDF
             }
         }
 
+        // Add any bookmarks returned by the conversion process
+        private static void addPDFBookmarks(String generatedFile, List<PDFBookmark> bookmarks, Hashtable options)
+        {
+            if ((Boolean)options["verbose"])
+            {
+                Console.WriteLine("Adding {0} bookmarks to the PDF", bookmarks.Count);
+            }
+            var srcPdf = PdfReader.Open(generatedFile, PdfDocumentOpenMode.Modify);
+            foreach (var bookmark in bookmarks)
+            {
+                var page = srcPdf.Pages[bookmark.page - 1];
+                srcPdf.Outlines.Add(bookmark.title, page);
+            }
+            srcPdf.Save(generatedFile);
+        }
+
+        // Perform some post-processing on the generated PDF
         private static void postProcessPDFFile(String generatedFile, String finalFile, Hashtable options, Boolean postProcessPDFSecurity)
         {
             // Handle PDF merging
