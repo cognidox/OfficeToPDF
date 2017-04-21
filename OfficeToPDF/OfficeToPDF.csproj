@@ -141,6 +141,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PDFBookmark.cs" />
     <Compile Include="Converter.cs" />
     <Compile Include="ProjectConverter.cs" />
     <Compile Include="OutlookConverter.cs" />

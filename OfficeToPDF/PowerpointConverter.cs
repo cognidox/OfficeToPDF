@@ -36,6 +36,12 @@ namespace OfficeToPDF
     {
         public static new int Convert(String inputFile, String outputFile, Hashtable options)
         {
+            List<PDFBookmark> bookmarks = new List<PDFBookmark>();
+            return Convert(inputFile, outputFile, options, ref bookmarks);
+        }
+
+        public static new int Convert(String inputFile, String outputFile, Hashtable options, ref List<PDFBookmark> bookmarks)
+        {
             // Check for password protection
             if (Converter.IsPasswordProtected(inputFile))
             {
@@ -110,6 +116,13 @@ namespace OfficeToPDF
                     }
                     Converter.releaseCOMObject(fonts);
                     activePresentation.ExportAsFixedFormat(outputFile, PpFixedFormatType.ppFixedFormatTypePDF, quality, MSCore.MsoTriState.msoFalse, PpPrintHandoutOrder.ppPrintHandoutVerticalFirst, PpPrintOutputType.ppPrintOutputSlides, MSCore.MsoTriState.msoFalse, null, PpPrintRangeType.ppPrintAll, "", includeProps, true, includeTags, true, pdfa, Type.Missing);
+
+                    // Determine if we need to make bookmarks
+                    if ((bool)options["bookmarks"])
+                    {
+                        loadBookmarks(activePresentation, ref bookmarks);
+                        
+                    }
                     activePresentation.Saved = MSCore.MsoTriState.msoTrue;
                     activePresentation.Close();
 
@@ -142,6 +155,69 @@ namespace OfficeToPDF
                 Console.WriteLine(e.Message);
                 return (int)ExitCode.UnknownError;
             }
+        }
+
+        // Loop through all the slides in the presentation creating bookmark items
+        // for all the slides that are not hidden
+        private static void loadBookmarks(Presentation activePresentation, ref List<PDFBookmark> bookmarks)
+        {
+            var slides = activePresentation.Slides;
+            if (slides.Count > 0)
+            {
+                var page = 1;
+                foreach (var s in slides)
+                {
+                    // Look at the transition on the slide to determine if it is hidden
+                    var trans = ((Slide)s).SlideShowTransition;
+                    if (trans.Hidden == MSCore.MsoTriState.msoCTrue || trans.Hidden == MSCore.MsoTriState.msoTrue)
+                    {
+                        Converter.releaseCOMObject(trans);
+                        Converter.releaseCOMObject(s);
+                        continue;
+                    }
+                    Converter.releaseCOMObject(trans);
+
+                    // Create a new bookmark and add the page
+                    var bookmark = new PDFBookmark();
+                    bookmark.page = page++;
+
+                    // Work out a title - base this on the slide name and any title shape text
+                    var slideName = ((Slide)s).Name;
+                    var shapes = ((Slide)s).Shapes;
+
+                    // See if there is a title in the slides shapes
+                    if (shapes.HasTitle == MSCore.MsoTriState.msoTrue || shapes.HasTitle == MSCore.MsoTriState.msoCTrue)
+                    {
+                        var shapeTitle = shapes.Title;
+                        if (shapeTitle != null && (shapeTitle.HasTextFrame == MSCore.MsoTriState.msoCTrue || shapeTitle.HasTextFrame == MSCore.MsoTriState.msoTrue))
+                        {
+                            var textframe = shapeTitle.TextFrame;
+                            if (textframe != null && (textframe.HasText == MSCore.MsoTriState.msoTrue || textframe.HasText == MSCore.MsoTriState.msoCTrue))
+                            {
+                                var textrange = textframe.TextRange;
+                                if (!String.IsNullOrWhiteSpace(textrange.TrimText().Text))
+                                {
+                                    slideName = textrange.TrimText().Text;
+                                }
+                                Converter.releaseCOMObject(textrange);
+                            }
+                            Converter.releaseCOMObject(textframe);
+                        }
+                        Converter.releaseCOMObject(shapeTitle);
+                    }
+                    Converter.releaseCOMObject(shapes);
+
+                    bookmark.title = String.Format("Page {0} - {1}", bookmark.page, slideName);
+
+                    // Put the bookmark into our bookmarks list which will be passed back to the main
+                    // program
+                    bookmarks.Add(bookmark);
+
+                    // Clean up the references to the slide
+                    Converter.releaseCOMObject(s);
+                }
+            }
+            Converter.releaseCOMObject(slides);
         }
     }
 }
