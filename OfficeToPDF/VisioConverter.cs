@@ -108,7 +108,9 @@ namespace OfficeToPDF
                 {
                     extension = "vsd";
                 }
-                tmpFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + "." + extension;
+                var tmpDirectory = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString();
+                System.IO.Directory.CreateDirectory(tmpDirectory);
+                tmpFile = System.IO.Path.Combine(tmpDirectory, (string)options["original_basename"]) + "." + extension;
                 
                 var activeDoc = app.ActiveDocument;
                 activeDoc.SaveAs(tmpFile);
@@ -129,6 +131,7 @@ namespace OfficeToPDF
                 if (tmpFile != null)
                 {
                     System.IO.File.Delete(tmpFile);
+                    System.IO.Directory.Delete(System.IO.Path.GetDirectoryName(tmpFile));
                 }
                 if (app != null && !running)
                 {

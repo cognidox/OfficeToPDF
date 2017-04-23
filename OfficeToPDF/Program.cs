@@ -111,6 +111,8 @@ namespace OfficeToPDF
             options["word_max_pages"] = (int) 0;
             options["word_ref_fonts"] = false;
             options["word_keep_history"] = false;
+            options["original_filename"] = "";
+            options["original_basename"] = "";
             options["pdf_page_mode"] = null;
             options["pdf_layout"] = null;
             options["pdf_merge"] = (int) MergeMode.None;
@@ -456,6 +458,8 @@ namespace OfficeToPDF
                     Environment.Exit((int)(ExitCode.Failed | ExitCode.FileNotFound));
                 }
                 inputFile = info.FullName;
+                options["original_filename"] = info.Name;
+                options["original_basename"] = info.Name.Substring(0, info.Name.Length - info.Extension.Length);
             }
             catch
             {
@@ -594,7 +598,7 @@ namespace OfficeToPDF
                         {
                             Console.WriteLine("Converting with Publisher converter");
                         }
-                        converted = PublisherConverter.Convert(inputFile, outputFile, options);
+                        converted = PublisherConverter.Convert(inputFile, outputFile, options, ref documentBookmarks);
                         break;
                     case "msg":
                     case "vcf":
@@ -631,7 +635,7 @@ namespace OfficeToPDF
 
                 if (documentBookmarks.Count > 0)
                 {
-                    addPDFBookmarks(outputFile, documentBookmarks, options);
+                    addPDFBookmarks(outputFile, documentBookmarks, options, null);
                 }
                 
                 // Determine if we have to post-process the PDF
@@ -644,19 +648,29 @@ namespace OfficeToPDF
         }
 
         // Add any bookmarks returned by the conversion process
-        private static void addPDFBookmarks(String generatedFile, List<PDFBookmark> bookmarks, Hashtable options)
+        private static void addPDFBookmarks(String generatedFile, List<PDFBookmark> bookmarks, Hashtable options, PdfOutline parent)
         {
+            var hasParent = parent != null;
             if ((Boolean)options["verbose"])
             {
-                Console.WriteLine("Adding {0} bookmarks to the PDF", bookmarks.Count);
+                Console.WriteLine("Adding {0} bookmarks {1}", bookmarks.Count, (hasParent ? "as a sub-bookmark" : "to the PDF"));
             }
-            var srcPdf = PdfReader.Open(generatedFile, PdfDocumentOpenMode.Modify);
+            
+            var srcPdf = hasParent ? parent.Owner : PdfReader.Open(generatedFile, PdfDocumentOpenMode.Modify);
             foreach (var bookmark in bookmarks)
             {
                 var page = srcPdf.Pages[bookmark.page - 1];
-                srcPdf.Outlines.Add(bookmark.title, page);
+                // Work out what level to add the bookmark
+                var outline = hasParent ? parent.Outlines.Add(bookmark.title, page) : srcPdf.Outlines.Add(bookmark.title, page);
+                if (bookmark.children != null && bookmark.children.Count > 0)
+                {
+                    addPDFBookmarks(generatedFile, bookmark.children, options, outline);
+                }
             }
-            srcPdf.Save(generatedFile);
+            if (!hasParent)
+            {
+                srcPdf.Save(generatedFile);
+            }
         }
 
         // Perform some post-processing on the generated PDF

@@ -165,6 +165,14 @@ namespace OfficeToPDF
             if (slides.Count > 0)
             {
                 var page = 1;
+
+                // Create a top-level bookmark
+                var parentBookmark = new PDFBookmark();
+                parentBookmark.title = activePresentation.Name;
+                parentBookmark.page = 1;
+                parentBookmark.children = new List<PDFBookmark>();
+
+                // Loop through the slides, adding a ToC entry to the top-level bookmark
                 foreach (var s in slides)
                 {
                     // Look at the transition on the slide to determine if it is hidden
@@ -209,13 +217,14 @@ namespace OfficeToPDF
 
                     bookmark.title = String.Format("Page {0} - {1}", bookmark.page, slideName);
 
-                    // Put the bookmark into our bookmarks list which will be passed back to the main
-                    // program
-                    bookmarks.Add(bookmark);
+                    // Put the bookmark into our parent bookmark children
+                    parentBookmark.children.Add(bookmark);
 
                     // Clean up the references to the slide
                     Converter.releaseCOMObject(s);
                 }
+                // Add the top-level bookmark which will be passed back to the main program
+                bookmarks.Add(parentBookmark);
             }
             Converter.releaseCOMObject(slides);
         }
