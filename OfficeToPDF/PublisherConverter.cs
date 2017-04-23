@@ -36,6 +36,12 @@ namespace OfficeToPDF
     {
         public static new int Convert(String inputFile, String outputFile, Hashtable options)
         {
+            List<PDFBookmark> bookmarks = new List<PDFBookmark>();
+            return Convert(inputFile, outputFile, options, ref bookmarks);
+        }
+
+        public static new int Convert(String inputFile, String outputFile, Hashtable options, ref List<PDFBookmark> bookmarks)
+        {
             Boolean running = (Boolean)options["noquit"];
             Microsoft.Office.Interop.Publisher.Application app = null;
             String tmpFile = null;
@@ -76,6 +82,13 @@ namespace OfficeToPDF
                 var activeDocument = app.ActiveDocument;
                 activeDocument.SaveAs(tmpFile, PbFileFormat.pbFilePublication, false);
                 activeDocument.ExportAsFixedFormat(PbFixedFormatType.pbFixedFormatTypePDF, outputFile, quality, includeProps, -1, -1, -1, -1, -1, -1, -1, true, PbPrintStyle.pbPrintStyleDefault, includeTags, true, pdfa);
+
+                // Determine if we need to make bookmarks
+                if ((bool)options["bookmarks"])
+                {
+                    loadBookmarks(activeDocument, ref bookmarks, options);
+
+                }
                 activeDocument.Close();
 
                 Converter.releaseCOMObject(activeDocument);
@@ -97,6 +110,33 @@ namespace OfficeToPDF
                     ((Microsoft.Office.Interop.Publisher._Application)app).Quit();
                 }
                 Converter.releaseCOMObject(app);
+            }
+        }
+
+        // Loop through all the slides in the presentation creating bookmark items
+        // for all the slides that are not hidden
+        private static void loadBookmarks(Document activeDocument, ref List<PDFBookmark> bookmarks, Hashtable options)
+        {
+            var pages = activeDocument.Pages;
+            if (pages.Count > 0)
+            {
+                // Create a top-level bookmark
+                var parentBookmark = new PDFBookmark();
+                parentBookmark.title = (string)options["original_basename"];
+                parentBookmark.page = 1;
+                parentBookmark.children = new List<PDFBookmark>();
+
+                foreach (var p in pages)
+                {
+                    var bookmark = new PDFBookmark();
+                    bookmark.page = ((Page)p).PageIndex;
+                    bookmark.title = ((Page)p).Name;
+                    parentBookmark.children.Add(bookmark);
+                    Converter.releaseCOMObject(p);
+
+                }
+                Converter.releaseCOMObject(pages);
+                bookmarks.Add(parentBookmark);
             }
         }
     }
