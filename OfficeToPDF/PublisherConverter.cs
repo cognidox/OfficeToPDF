@@ -113,8 +113,7 @@ namespace OfficeToPDF
             }
         }
 
-        // Loop through all the slides in the presentation creating bookmark items
-        // for all the slides that are not hidden
+        // Loop through all the pages in the document creating bookmark items for them
         private static void loadBookmarks(Document activeDocument, ref List<PDFBookmark> bookmarks, Hashtable options)
         {
             var pages = activeDocument.Pages;
