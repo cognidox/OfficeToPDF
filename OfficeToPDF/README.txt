@@ -62,6 +62,7 @@ The following optional switches can be used:
                                the template document
   /excel_active_sheet        - only convert the active worksheet
   /excel_auto_macros         - run Auto_Open macros in Excel files before conversion
+  /excel_delay               - number of milliseconds to pause Excel for during file processing
   /excel_show_formulas       - show formulas in the PDF when converting with Excel
   /excel_show_headings       - show row and column headings
   /excel_max_rows <rows>     - if any worksheet in a spreadsheet document has more

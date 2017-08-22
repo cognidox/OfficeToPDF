@@ -27,3 +27,5 @@ OfficeToPDF/bin/x64/Release-signed/*
 OfficeToPDF/obj/x64/Release-signed/*
 OfficeToPDF/obj/x86/Release-signed/Costura/*
 packages/*
+OfficeToPDF/obj/x86/Debug/Costura/B9B538E7A64DF5E08DC6B8969A303BD77CE97645.costura.pdfsharp.xps.dll.compressed
+OfficeToPDF/obj/x86/Debug/Costura/77D0CFFBE2536C71D91BA339FAEA8983D5D13501.costura.pdfsharp-wpf.dll.compressed

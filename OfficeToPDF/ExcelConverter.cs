@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Runtime.InteropServices;
 using Microsoft.Office.Interop.Excel;
 
@@ -63,8 +64,33 @@ namespace OfficeToPDF
             Boolean nowrite = (Boolean)options["readonly"];
             try
             {
+                // Excel can be very slow to start up, so try to get the COM
+                // object a few times
+                int tries = 10;
                 app = new Microsoft.Office.Interop.Excel.Application();
-                app.ScreenUpdating = false;
+                while (tries > 0)
+                {
+                    try
+                    {
+                        // Try to set a property on the object
+                        app.ScreenUpdating = false;
+                    }
+                    catch (COMException)
+                    {
+                        // Decrement the number of tries and have a bit of a snooze
+                        tries--;
+                        Thread.Sleep(500);
+                        continue;
+                    }
+                    // Looks ok, so bail out of the loop
+                    break;
+                }
+                if (tries == 0)
+                {
+                    Converter.releaseCOMObject(app);
+                    return (int)ExitCode.ApplicationError;
+                }
+
                 app.Visible = true;
                 app.DisplayAlerts = false;
                 app.AskToUpdateLinks = false;
@@ -138,6 +164,9 @@ namespace OfficeToPDF
                 {
                     workbook = workbooks.Open(inputFile, updateLinks, nowrite, oMissing, oReadPass, oWritePass, true, oMissing, oMissing, oMissing, oMissing, oMissing, false, oMissing, oMissing);
                 }
+
+                // Add in a delay to let Excel sort itself out
+                addExcelCOMDelay(options);
 
                 // Unable to open workbook
                 if (workbook == null)
@@ -417,6 +446,7 @@ namespace OfficeToPDF
                     {
                         return (int)ExitCode.UnknownError;
                     }
+                    addExcelCOMDelay(options);
                 }
                 else
                 {
@@ -529,6 +559,7 @@ namespace OfficeToPDF
             try
             {
                 var template = workbooks.Open((string)options["template"]);
+                addExcelCOMDelay(options);
                 if (template != null)
                 {
                     // Run macros from template if the /excel_template_macros option is given
@@ -575,6 +606,15 @@ namespace OfficeToPDF
             }
             finally
             {
+            }
+        }
+
+        // Add in the required millisecond delay
+        private static void addExcelCOMDelay(Hashtable options)
+        {
+            if ((int)options["excel_delay"] > 0)
+            {
+                Thread.Sleep((int)options["excel_delay"]);
             }
         }
 
