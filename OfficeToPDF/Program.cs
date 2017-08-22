@@ -66,7 +66,6 @@ namespace OfficeToPDF
         Full = 2
     }
 
-
     class Program
     {
         [STAThread]
@@ -103,6 +102,7 @@ namespace OfficeToPDF
             options["excel_no_recalculate"] = false;
             options["excel_max_rows"] = (int) 0;
             options["excel_worksheet"] = (int) 0;
+            options["excel_delay"] = (int) 0;
             options["word_field_quick_update"] = false;
             options["word_field_quick_update_safe"] = false;
             options["word_no_field_update"] = false;
@@ -129,7 +129,16 @@ namespace OfficeToPDF
             options["pdf_restrict_accessibility_extraction"] = false;
             options["pdf_restrict_full_quality"] = false;
 
-            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_(max_rows|show_formulas|show_headings|auto_macros|template_macros|active_sheet|worksheet|no_recalculate|no_link_update)|word_(header_dist|footer_dist|ref_fonts|no_field_update|field_quick_update(_safe)?|max_pages|keep_history)|pdf_(page_mode|append|prepend|layout|clean_meta|owner_pass|user_pass|restrict_(annotation|extraction|assembly|forms|modify|print|accessibility_extraction|full_quality))|\?)$", RegexOptions.IgnoreCase);
+            // Strings used in error messages for different options
+            var optionNameMap = new Dictionary<string, string>()
+            {
+                { "excel_max_rows", "Maximum number of rows" },
+                { "excel_worksheet", "Excel worksheet" },
+                { "word_max_pages", "Maximum number of pages" },
+                { "excel_delay", "Excel delay milliseconds" }
+            };
+
+            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_(delay|max_rows|show_formulas|show_headings|auto_macros|template_macros|active_sheet|worksheet|no_recalculate|no_link_update)|word_(header_dist|footer_dist|ref_fonts|no_field_update|field_quick_update(_safe)?|max_pages|keep_history)|pdf_(page_mode|append|prepend|layout|clean_meta|owner_pass|user_pass|restrict_(annotation|extraction|assembly|forms|modify|print|accessibility_extraction|full_quality))|\?)$", RegexOptions.IgnoreCase);
             for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
                 string item = args[argIdx];
@@ -261,34 +270,13 @@ namespace OfficeToPDF
                                 }
                                 break;
                             case "excel_max_rows":
-                                // Only accept the next option if there are enough options
-                                if (argIdx + 2 < args.Length)
-                                {
-                                    if (Regex.IsMatch(args[argIdx + 1], @"^\d+$"))
-                                    {
-                                        options[itemMatch.Groups[1].Value.ToLower()] = (int) Convert.ToInt32(args[argIdx + 1]);
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine("Maximum number of rows ({0}) is invalid", args[argIdx + 1]);
-                                        Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
-                                    }
-                                    argIdx++;
-                                }
-                                break;
                             case "excel_worksheet":
+                            case "excel_delay":
+                            case "word_max_pages":
                                 // Only accept the next option if there are enough options
                                 if (argIdx + 2 < args.Length)
                                 {
-                                    if (Regex.IsMatch(args[argIdx + 1], @"^\d+$"))
-                                    {
-                                        options[itemMatch.Groups[1].Value.ToLower()] = (int)Convert.ToInt32(args[argIdx + 1]);
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine("Excel worksheet ({0}) is invalid", args[argIdx + 1]);
-                                        Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
-                                    }
+                                    checkOptionIsInteger(ref options, itemMatch.Groups[1].Value.ToLower(), optionNameMap[itemMatch.Groups[1].Value.ToLower()], args[argIdx + 1]);
                                     argIdx++;
                                 }
                                 break;
@@ -301,7 +289,6 @@ namespace OfficeToPDF
                                     {
                                         try
                                         {
-
                                             options[itemMatch.Groups[1].Value.ToLower()] = (float)Convert.ToDouble(args[argIdx + 1]);
                                         }
                                         catch (Exception)
@@ -313,22 +300,6 @@ namespace OfficeToPDF
                                     else
                                     {
                                         Console.WriteLine("Header/Footer distance ({0}) is invalid", args[argIdx + 1]);
-                                        Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
-                                    }
-                                    argIdx++;
-                                }
-                                break;
-                            case "word_max_pages":
-                                // Only accept the next option if there are enough options
-                                if (argIdx + 2 < args.Length)
-                                {
-                                    if (Regex.IsMatch(args[argIdx + 1], @"^\d+$"))
-                                    {
-                                        options[itemMatch.Groups[1].Value.ToLower()] = (int)Convert.ToInt32(args[argIdx + 1]);
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine("Maximum number of pages ({0}) is invalid", args[argIdx + 1]);
                                         Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
                                     }
                                     argIdx++;
@@ -419,10 +390,10 @@ namespace OfficeToPDF
 
             // Make sure the input file looks like something we can handle (i.e. has an office
             // filename extension)
-            Regex fileMatch = new Regex(@"\.(((ppt|pps|pot|do[ct]|xls|xlt)[xm]?)|xlsb|od[spt]|rtf|csv|vsd[xm]?|vd[xw]|em[fz]|dwg|dxf|wmf|pub|msg|vcf|ics|mpp|svg|txt|html?|wpd)$", RegexOptions.IgnoreCase);
+            Regex fileMatch = new Regex(@"\.(((ppt|pps|pot|do[ct]|xls|xlt)[xm]?)|xps|xlsb|od[spt]|rtf|csv|vsd[xm]?|vd[xw]|em[fz]|dwg|dxf|wmf|pub|msg|vcf|ics|mpp|svg|txt|html?|wpd)$", RegexOptions.IgnoreCase);
             if (fileMatch.Matches(files[0]).Count != 1)
             {
-                Console.WriteLine("Input file can not be handled. Must be Word, PowerPoint, Excel, Outlook, Publisher or Visio");
+                Console.WriteLine("Input file can not be handled. Must be Word, PowerPoint, Excel, Outlook, Publisher, XPS or Visio");
                 Environment.Exit((int)(ExitCode.Failed | ExitCode.UnsupportedFileFormat));
             }
 
@@ -600,6 +571,14 @@ namespace OfficeToPDF
                         }
                         converted = PublisherConverter.Convert(inputFile, outputFile, options, ref documentBookmarks);
                         break;
+                    case "xps":
+                        // XPS
+                        if ((Boolean)options["verbose"])
+                        {
+                            Console.WriteLine("Converting with XPS converter");
+                        }
+                        converted = XpsConverter.Convert(inputFile, outputFile, options);
+                        break;
                     case "msg":
                     case "vcf":
                     case "ics":
@@ -738,7 +717,7 @@ namespace OfficeToPDF
                     pdf.Info.Keywords = "";
                     pdf.Info.Author = "";
                     pdf.Info.Subject = "";
-                    pdf.Info.Producer = "";
+                    //pdf.Info.Producer = "";
                     if ((MetaClean)options["pdf_clean_meta"] == MetaClean.Full)
                     {
                         pdf.Info.Title = "";
@@ -783,6 +762,19 @@ namespace OfficeToPDF
                 }
                 pdf.Save(finalFile);
                 pdf.Close();
+            }
+        }
+
+        static void checkOptionIsInteger(ref Hashtable options, string optionKey, string optionName, string optionValue)
+        {
+            if (Regex.IsMatch(optionValue, @"^\d+$"))
+            {
+                options[optionKey] = (int)Convert.ToInt32(optionValue);
+            }
+            else
+            {
+                Console.WriteLine("{0} ({1}) is invalid", optionName, optionValue);
+                Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
             }
         }
 
@@ -860,6 +852,7 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file [output_file]
   /excel_active_sheet       - Only convert the active worksheet
   /excel_auto_macros        - Run Auto_Open macros in Excel files before conversion
   /excel_show_formulas      - Show formulas in the generated PDF
+  /excel_delay              - Number of milliseconds to pause Excel for during file processing
   /excel_show_headings      - Show row and column headings
   /excel_max_rows <rows>    - If any worksheet in a spreadsheet document has more
                               than this number of rows, do not attempt to convert
