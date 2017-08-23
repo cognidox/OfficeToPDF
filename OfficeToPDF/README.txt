@@ -28,6 +28,7 @@ The following file types can be converted:
  * Publisher  - .pub
  * Outlook    - .msg, .vcf, .ics
  * Project    - .mpp [requires Project >= 2010]
+ * Windows    - .xps
 
 
 Usage:
@@ -193,3 +194,6 @@ The following optional switches can be used:
 
   OfficeToPDF use the PDFSharp library: http://pdfsharp.codeplex.com/. This
   is licensed using the MIT License: http://pdfsharp.codeplex.com/license
+
+  XPS extensions for PDFSharp from https://github.com/HiraokaHyperTools/PDFsharp.
+  This is licensed using the MIT License: https://github.com/HiraokaHyperTools/PDFsharp/blob/master/LICENSE 

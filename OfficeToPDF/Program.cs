@@ -827,7 +827,7 @@ Handles Office files:
   doc, dot, docx, dotx, docm, dotm, rtf, odt, txt, htm, html, wpd, ppt, pptx,
   pptm, pps, ppsx, ppsm, pot, potm, potx, odp, xls, xlsx, xlsm, xlt, xltm,
   xltx, xlsb, csv, ods, vsd, vsdm, vsdx, svg, vdx, vdw, emf, emz, dwg, dxf, wmf,
-  pub, mpp, ics, vcf, msg
+  pub, mpp, ics, vcf, msg, xps
 
 OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file [output_file]
 
