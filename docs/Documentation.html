@@ -1,0 +1,264 @@
+<div class="wikidoc">
+<h1>Giving back to the community</h1>
+<hr>
+<p>Cognidox <a href="https://www.cognidox.com/">https://www.cognidox.com/</a> would not exist without the help of many open source projects. Perl, Apache and Solr are just a few of the excellent open source packages that help make CogniDox a leading document
+ management system. So, to show our appreciation, we've released a couple of open source projects such as OfficeToPDF to help others.</p>
+<p>You can see all of our open source projects on <a title="Cognidox Opensource" href="https://www.cognidox.com/products/open-source/" target="_blank">
+https://www.cognidox.com/products/open-source/</a>.</p>
+<h2>OfficeToPDF - what does it do?</h2>
+<hr>
+<p>OfficeToPDF is a <strong>command line utility</strong> that converts Microsoft Office 2003, 2007, 2010, 2013 and 2016 documents from their native format into PDF using Office's in-built PDF export features.</p>
+<p>Most Office to PDF converter tools are intended as single-user desktop applications. OfficeToPDF is useful (and unique) if you want to automatically create PDF files on a server-wide basis and free individual users from an extra step of using the &quot;Save as...&quot;
+ command on their Office files. These PDF files can then be stored and managed on a separate server. This can be useful if, for example, a department has a policy of only distributing PDF versions of documents to people outside the department.<br>
+<br>
+There are some technical requirements that must be met before you can use it:</p>
+<ul>
+<li>.NET Framework 4 </li><li>Office 2016, 2013, 2010 <strong>or </strong>Office 2007 </li></ul>
+<p>If you are using Office 2007, you will also need:</p>
+<ul>
+<li>Visual Studio 2010 Tools for Office Runtime [<a href="https://www.microsoft.com/en-GB/download/details.aspx?id=48217" target="_blank">Download</a>]
+</li><li>2007 Microsoft Office Add-in: Microsoft Save as PDF or XPS [<a href="http://www.microsoft.com/downloads/en/details.aspx?familyid=4d951911-3e7e-4ae6-b059-a2e79ed87041&displaylang=en" target="_blank">Download</a>]
+</li></ul>
+<p>It is distributed under the <a href="https://officetopdf.codeplex.com/license">
+<strong>Apache 2.0</strong> license</a>.</p>
+<h2>Supported File Types</h2>
+<hr>
+<p>The following file types can be converted:</p>
+<ul>
+<li>Word (.doc, .dot,&nbsp; .docx, .dotx, .docm, .dotm, .rtf, .wpd) </li><li>Excel&nbsp; (.xls, .xlsx, .xlsm, .xlsb, .xlt, .xltx, .xltm, .csv) </li><li>Powerpoint (.ppt, .pptx, .pptm, .pps, .ppsx, .ppsm, .pot, .potx, .potm) </li><li>Visio (.vsd, .vsdx, .vsdm, .svg) [Requires &gt;= Visio 2013 for .svg, .vsdx and .vsdm support]
+</li><li>Publisher (.pub) </li><li>Outlook (.msg, .vcf, .ics) </li><li>Project (.mpp) [Requires Project &gt;= 2010 for .mpp support] </li><li>OpenOffice (.odt, .odp, .ods) </li></ul>
+<p>Conversion of Visio, Publisher and Project&nbsp;files require that the Visio, Publisher and Project&nbsp;applications are installed. These are not included in the Office standard package.</p>
+<h2>Instructions</h2>
+<hr>
+<p>More information about installation and usage can be found on the Cognidox project page:
+<a title="OfficeToPDF CogniDox" href="https://www.cognidox.com/officetopdf-converter/" target="_blank">
+https://www.cognidox.com/officetopdf-converter/</a></p>
+<p>In order to use the tool, download the officetopdf.exe file and, from the command line, run&nbsp;officetopdf.exe with two arguments - the source Office document and the destination PDF document. e.g.</p>
+<pre><span style="color:#808080">Microsoft Windows [Version 6.1.7601]</span><br><span style="color:#808080">Copyright (c) 2009 Microsoft Corporation. &nbsp;All rights reserved.<br><br></span>C:\Users\test&gt; <strong>officetopdf.exe <em>somefile.docx somefile.pdf</em></strong></pre>
+<h3>Command line switches</h3>
+<p>The following optional switches can be used:</p>
+<table width="581" style="height:147px; width:581px">
+<tbody>
+<tr>
+<td>/bookmarks</td>
+<td>create bookmarks in the PDF when they are supported by the Office application</td>
+</tr>
+<tr>
+<td>/readonly</td>
+<td>attempts to open the source document in read-only mode</td>
+</tr>
+<tr>
+<td>/print</td>
+<td>create high-quality PDFs optimised for print</td>
+</tr>
+<tr>
+<td>/hidden</td>
+<td>attempts to minimise the Office application when converting</td>
+</tr>
+<tr>
+<td>/template <em>&lt;template&gt;</em></td>
+<td>use a .dot, .dotx or .dotm template when converting with Word</td>
+</tr>
+<tr>
+<td>/markup</td>
+<td>show document markup when creating PDFs with Word</td>
+</tr>
+<tr>
+<td>/pdfa</td>
+<td>produce ISO 19005-1 (PDF/A) compliant PDFs</td>
+</tr>
+<tr>
+<td>/noquit</td>
+<td>do not exit running Office applications</td>
+</tr>
+<tr>
+<td>/excludeprops</td>
+<td>do not include properties in generated PDF</td>
+</tr>
+<tr>
+<td>/excludetags</td>
+<td>do not include tags in generated PDF</td>
+</tr>
+<tr>
+<td>/password</td>
+<td>provide a read password to open the file with</td>
+</tr>
+<tr>
+<td>/writepassword</td>
+<td>provide a read/write password to open the file with</td>
+</tr>
+<tr>
+<td>/merge</td>
+<td>when using a template, create a new file from the template and merge the text from the document to convert into the new file</td>
+</tr>
+<tr>
+<td>/excel_show_formulas</td>
+<td>show formulas in Excel</td>
+</tr>
+<tr>
+<td>/excel_show_headings</td>
+<td>shows column and row headings</td>
+</tr>
+<tr>
+<td>/excel_max_rows <em>&lt;rows&gt;</em></td>
+<td>allow a limit on the number of rows to convert</td>
+</tr>
+<tr>
+<td>/excel_active_sheet</td>
+<td>only convert the currently active worksheet in a spreadsheet</td>
+</tr>
+<tr>
+<td>/excel_worksheet <em>&lt;num&gt;</em></td>
+<td>only convert worksheet <em>&lt;num&gt;</em> in the workbook. First sheet is 1</td>
+</tr>
+<tr>
+<td>/excel_auto_macros</td>
+<td>run Auto_Open macros in Excel files before conversion</td>
+</tr>
+<tr>
+<td>/excel_no_link_update</td>
+<td>do not update links when opening Excel files</td>
+</tr>
+<tr>
+<td>/excel_no_recalculate</td>
+<td>skip automatic re-calculation of formulas in the workbook</td>
+</tr>
+<tr>
+<td>/word_header_dist <em>&lt;pts&gt;</em></td>
+<td>the distance (in points) from the header to the top of the page</td>
+</tr>
+<tr>
+<td>/word_footer_dist <em>&lt;pts&gt;</em></td>
+<td>the distance (in points) from the footer to the bottom of the page</td>
+</tr>
+<tr>
+<td>/word_field_quick_update</td>
+<td>perform a fast update of fields in Word before conversion</td>
+</tr>
+<tr>
+<td>/word_keep_history</td>
+<td>do not clear Word's recent files list</td>
+</tr>
+<tr>
+<td>/word_max_pages <em>&lt;pages&gt;</em></td>
+<td>do not attempt conversion of a Word document if it has more than this number of
+<em>&lt;pages&gt;</em></td>
+</tr>
+<tr>
+<td>/word_no_field_update</td>
+<td>do not update fields when creating the PDF</td>
+</tr>
+<tr>
+<td>/word_ref_fonts</td>
+<td>when fonts are not available, a reference to the font is used in the generated PDF rather than a bitmapped version. The default is for a bitmap of the text to be used</td>
+</tr>
+<tr>
+<td>/pdf_clean_meta <em>&lt;type&gt;</em></td>
+<td>allows for some meta-data to be removed from the generated PDF.<br>
+<em>&lt;type&gt;</em> can be:
+<ul>
+<li>basic - removes author, keywords, creator and subject </li><li>full - removes all that basic removes and also the title </li></ul>
+</td>
+</tr>
+<tr>
+<td>/pdf_layout <em>&lt;layout&gt;</em></td>
+<td>controls how the pages layout in Acrobat Reader.<br>
+<em>&lt;layout&gt;</em> can be one of the following values:
+<ul>
+<li>onecol - show pages as a single scrolling column </li><li>single - show pages one at a time </li><li>twocolleft - show pages in two columns, with odd-numbered pages on the left </li><li>&nbsp;twocolright - show pages in two columns, with odd-numbered pages on the right
+</li><li>twopageleft - show pages two at a time, with odd-numbered pages on the left </li><li>twopageright - show pages two at a time, with odd-numbered pages on the right
+</li></ul>
+</td>
+</tr>
+<tr>
+<td>/pdf_page_mode <em>&lt;mode&gt;</em></td>
+<td>controls how the PDF will open with Acrobat Reader.<br>
+<em>&lt;mode&gt;</em> can be one of the following values:
+<ul>
+<li>full - the PDF will open in fullscreen mode </li><li>bookmarks - the PDF will open with the bookmarks visible </li><li>thumbs - the PDF will open with the thumbnail view visible </li><li>none - the PDF will open without the navigation bar visible </li></ul>
+</td>
+</tr>
+<tr>
+<td>/pdf_append</td>
+<td>append the generated PDF to the end of the PDF destination</td>
+</tr>
+<tr>
+<td>/pdf_prepend</td>
+<td>prepend the generated PDF to the start of the PDF destination</td>
+</tr>
+<tr>
+<td>/pdf_owner_pass <em>&lt;pass&gt;</em></td>
+<td>set the owner password on the PDF. Needed to make modifications to the PDF</td>
+</tr>
+<tr>
+<td>/pdf_user_pass <em>&lt;pass&gt;</em></td>
+<td>set the user password on the PDF. Needed to open the PDF</td>
+</tr>
+<tr>
+<td>/pdf_restrict_accessibility_extraction</td>
+<td>Prevent all content extraction without the owner password</td>
+</tr>
+<tr>
+<td>/pdf_restrict_annotation</td>
+<td>prevent annotations on the PDF without the owner password</td>
+</tr>
+<tr>
+<td>/pdf_restrict_assembly</td>
+<td>prevent rotation, removal or insertion of pages without the owner password</td>
+</tr>
+<tr>
+<td>/pdf_restrict_extraction</td>
+<td>prevent content extraction without the owner password</td>
+</tr>
+<tr>
+<td>/pdf_restrict_forms</td>
+<td>prevent form entry without the owner password</td>
+</tr>
+<tr>
+<td>/pdf_restrict_full_quality</td>
+<td>prevent full quality printing without the owner password</td>
+</tr>
+<tr>
+<td>/pdf_restrict_modify</td>
+<td>prevent modification without the owner password</td>
+</tr>
+<tr>
+<td>/pdf_restrict_print</td>
+<td>prevent printing without the owner password</td>
+</tr>
+<tr>
+<td>/verbose</td>
+<td>print out messages as it runs</td>
+</tr>
+<tr>
+<td>/version</td>
+<td>print out the version of OfficeToPDF and exit</td>
+</tr>
+</tbody>
+</table>
+<h2 id="error_codes">Error Codes</h2>
+<hr>
+<p>The following error codes are returned by OfficeToPDF. Note that multiple errors are returned as a bitmask, so bitwise operations can test for multiple errors.</p>
+<p>0 - Success<br>
+1 - Failure<br>
+2 - Unknown Error<br>
+4 - File protected by password<br>
+8 - Invalid arguments<br>
+16 - Unable to open the source file<br>
+32 - Unsupported file format<br>
+64 - Source file not found<br>
+128 - Output directory not found<br>
+256 - The requested worksheet was not found<br>
+512 - Unable to use an empty worksheet<br>
+1024 - Unable to modify or open a protected PDF</p>
+<h2>About CogniDox</h2>
+<hr>
+<p>CogniDox is a web-based, document management software tool aimed primarily at supporting high-tech product development. It enables better product lifecycle management and knowledge transfer from developers to partners, clients and customers.<br>
+<br>
+We provide highly-integrated support for system engineering workflows and the product lifecycle. Plug-ins are provided for CMS products, software SCM tools, EDA tools, CRM systems, CAD tools and Help Desk applications. Our &quot;instant Extranet&quot; solution enables
+ companies to add a secure self-service customer portal onto their public web sites.<br>
+<br>
+Based in Cambridge, UK since its formation in 2008, CogniDox has an impressive portfolio of blue chip users &ndash; see examples at
+<a title="CogniDox Customers" href="https://www.cognidox.com/customers" target="_blank">
+https://www.cognidox.com/customers</a></p>
+</div><div class="ClearBoth"></div>
