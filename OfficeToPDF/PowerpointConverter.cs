@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Runtime.InteropServices;
 using MSCore = Microsoft.Office.Core;
 using Microsoft.Office.Interop.PowerPoint;
@@ -63,8 +64,31 @@ namespace OfficeToPDF
                     }
                     catch (System.Exception)
                     {
+                        int tries = 10;
                         app = new Microsoft.Office.Interop.PowerPoint.Application();
                         running = false;
+                        while (tries > 0)
+                        {
+                            try
+                            {
+                                // Try to set a property on the object
+                                app.DisplayAlerts = PpAlertLevel.ppAlertsNone;
+                            }
+                            catch (COMException)
+                            {
+                                // Decrement the number of tries and have a bit of a snooze
+                                tries--;
+                                Thread.Sleep(500);
+                                continue;
+                            }
+                            // Looks ok, so bail out of the loop
+                            break;
+                        }
+                        if (tries == 0)
+                        {
+                            Converter.releaseCOMObject(app);
+                            return (int)ExitCode.ApplicationError;
+                        }
                     }
                     MSCore.MsoTriState nowrite = (Boolean)options["readonly"] ? MSCore.MsoTriState.msoTrue : MSCore.MsoTriState.msoFalse;
                     bool pdfa = (Boolean)options["pdfa"] ? true : false;

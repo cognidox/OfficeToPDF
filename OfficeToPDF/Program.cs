@@ -24,6 +24,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.AccessControl;
 using System.Text;
 using System.Text.RegularExpressions;
 using PdfSharp.Pdf;
@@ -93,6 +94,8 @@ namespace OfficeToPDF
             options["merge"] = false;
             options["template"] = "";
             options["password"] = "";
+            options["working_dir"] = "";
+            options["has_working_dir"] = false;
             options["excel_show_formulas"] = false;
             options["excel_show_headings"] = false;
             options["excel_auto_macros"] = false;
@@ -138,7 +141,7 @@ namespace OfficeToPDF
                 { "excel_delay", "Excel delay milliseconds" }
             };
 
-            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_(delay|max_rows|show_formulas|show_headings|auto_macros|template_macros|active_sheet|worksheet|no_recalculate|no_link_update)|word_(header_dist|footer_dist|ref_fonts|no_field_update|field_quick_update(_safe)?|max_pages|keep_history)|pdf_(page_mode|append|prepend|layout|clean_meta|owner_pass|user_pass|restrict_(annotation|extraction|assembly|forms|modify|print|accessibility_extraction|full_quality))|\?)$", RegexOptions.IgnoreCase);
+            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_(delay|max_rows|show_formulas|show_headings|auto_macros|template_macros|active_sheet|worksheet|no_recalculate|no_link_update)|word_(header_dist|footer_dist|ref_fonts|no_field_update|field_quick_update(_safe)?|max_pages|keep_history)|pdf_(page_mode|append|prepend|layout|clean_meta|owner_pass|user_pass|restrict_(annotation|extraction|assembly|forms|modify|print|accessibility_extraction|full_quality))|working_dir|\?)$", RegexOptions.IgnoreCase);
             for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
                 string item = args[argIdx];
@@ -265,6 +268,66 @@ namespace OfficeToPDF
                                     else
                                     {
                                         Console.WriteLine("Unable to find {0} {1}", itemMatch.Groups[1].Value.ToLower(), args[argIdx + 1]);
+                                    }
+                                    argIdx++;
+                                }
+                                break;
+                            case "working_dir":
+                                // Allow for a local working directory where files are manipulated
+                                if (argIdx + 2 < args.Length)
+                                {
+                                    if (Directory.Exists(args[argIdx + 1]))
+                                    {
+                                        // Need to check the directory is writable
+                                        bool workingDirectoryWritable = false;
+                                        try
+                                        {
+                                            AuthorizationRuleCollection arc = Directory.GetAccessControl(args[argIdx + 1]).GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
+                                            foreach (FileSystemAccessRule rule in arc)
+                                            {
+                                                if (rule.AccessControlType == AccessControlType.Allow)
+                                                {
+                                                    workingDirectoryWritable = true;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        catch (Exception)
+                                        {}
+                                        if (workingDirectoryWritable)
+                                        {
+                                            int maxTries = 20;
+                                            while (maxTries-- > 0)
+                                            {
+                                                options["working_dir"] = Path.Combine(args[argIdx + 1], Guid.NewGuid().ToString());
+                                                if (!Directory.Exists((string)options["working_dir"]))
+                                                {
+                                                    DirectoryInfo di = Directory.CreateDirectory((string)options["working_dir"]);
+                                                    if (di.Exists)
+                                                    {
+                                                        options["has_working_dir"] = true;
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                            if (maxTries <= 0)
+                                            {
+                                                Console.WriteLine("A working directory can not be created");
+                                                Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
+                                            }
+                                        }
+                                        else
+                                        {
+                                            // The working directory must be writable
+                                            Console.WriteLine("The working directory {0} is not writable", args[argIdx + 1]);
+                                            Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
+                                        }
+                                    }
+                                    else
+                                    {
+                                        // We need a real directory to work in, so there is an error here
+                                        Console.WriteLine("Unable to find working directory {0}", args[argIdx + 1]);
+                                        Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
                                     }
                                     argIdx++;
                                 }
@@ -475,6 +538,23 @@ namespace OfficeToPDF
                 Environment.Exit((int)(ExitCode.Failed | ExitCode.DirectoryNotFound));
             }
 
+            // We want the input and output files copied to a working area where
+            // we can manipulate them
+            if ((bool)options["has_working_dir"])
+            {
+                // Create a local temporary area and put the input and output in separate
+                // areas
+                string workingInput = Path.Combine((string)options["working_dir"], "input");
+                string workingOutput = Path.Combine((string)options["working_dir"], "output");
+                System.IO.Directory.CreateDirectory(workingInput);
+                System.IO.Directory.CreateDirectory(workingOutput);
+                string workingSource = Path.Combine(workingInput, Path.GetFileName(inputFile));
+                string workingDest = Path.Combine(workingOutput, Path.GetFileName(outputFile));
+                options["working_orig_dest"] = outputFile;
+                File.Copy(inputFile, workingSource);
+                inputFile = workingSource;
+                outputFile = workingDest;
+            }
 
             // Now, do the cleverness of determining what the extension is, and so, which
             // conversion class to pass it to
@@ -599,6 +679,18 @@ namespace OfficeToPDF
                         break;
                 }
             }
+
+            // Clear up the working directory and restore the expected output
+            if ((bool)options["has_working_dir"])
+            {
+                if (File.Exists(outputFile))
+                {
+                    File.Copy(outputFile, (string)options["working_orig_dest"]);
+                    outputFile = (string)options["working_orig_dest"];
+                }
+                Directory.Delete((string)options["working_dir"], true);
+            }
+
             if (converted != (int)ExitCode.Success)
             {
                 Console.WriteLine("Did not convert");
@@ -852,7 +944,7 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file [output_file]
   /excel_active_sheet       - Only convert the active worksheet
   /excel_auto_macros        - Run Auto_Open macros in Excel files before conversion
   /excel_show_formulas      - Show formulas in the generated PDF
-  /excel_delay              - Number of milliseconds to pause Excel for during file processing
+  /excel_delay <ms>         - Number of milliseconds to pause Excel for during file processing
   /excel_show_headings      - Show row and column headings
   /excel_max_rows <rows>    - If any worksheet in a spreadsheet document has more
                               than this number of rows, do not attempt to convert
@@ -860,7 +952,7 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file [output_file]
   /excel_no_link_update     - Do not update links when opening Excel files.
   /excel_no_recalculate     - Skip automatic re-calculation of formulas in the workbook.
   /excel_template_macros    - Run Auto_Open macros in the /template document before conversion by Excel
-  /excel_worksheet <num>    - Only convert worksheet <num> in the workbook. First sheet is 1.
+  /excel_worksheet <num>    - Only convert worksheet <num> in the workbook. First sheet is 1
   /word_header_dist <pts>   - The distance (in points) from the header to the top of
                               the page.
   /word_footer_dist <pts>   - The distance (in points) from the footer to the bottom
@@ -905,6 +997,7 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file [output_file]
   /pdf_restrict_modify       - Prevent modification without the owner password.
   /pdf_restrict_print        - Prevent printing without the owner password.
   /version                   - Print out the version of OfficeToPDF and exit.
+  /working_dir <path>        - A path to copy the input file into temporarily when running the conversion.
   
   input_file  - The filename of the Office document to convert
   output_file - The filename of the PDF to create. If not given, the input filename

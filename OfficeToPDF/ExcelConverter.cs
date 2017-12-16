@@ -166,7 +166,7 @@ namespace OfficeToPDF
                 }
 
                 // Add in a delay to let Excel sort itself out
-                addExcelCOMDelay(options);
+                addCOMDelay(options);
 
                 // Unable to open workbook
                 if (workbook == null)
@@ -446,7 +446,7 @@ namespace OfficeToPDF
                     {
                         return (int)ExitCode.UnknownError;
                     }
-                    addExcelCOMDelay(options);
+                    addCOMDelay(options);
                 }
                 else
                 {
@@ -559,7 +559,7 @@ namespace OfficeToPDF
             try
             {
                 var template = workbooks.Open((string)options["template"]);
-                addExcelCOMDelay(options);
+                addCOMDelay(options);
                 if (template != null)
                 {
                     // Run macros from template if the /excel_template_macros option is given
@@ -610,7 +610,7 @@ namespace OfficeToPDF
         }
 
         // Add in the required millisecond delay
-        private static void addExcelCOMDelay(Hashtable options)
+        private static void addCOMDelay(Hashtable options)
         {
             if ((int)options["excel_delay"] > 0)
             {

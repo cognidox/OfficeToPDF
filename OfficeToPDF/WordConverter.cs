@@ -26,6 +26,7 @@ using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Microsoft.Office.Interop.Word;
 
 
@@ -60,9 +61,33 @@ namespace OfficeToPDF
                 }
                 catch (System.Exception)
                 {
-                    word = new Microsoft.Office.Interop.Word.Application();
-                    running = false;
+                     int tries = 10;
+                     word = new Microsoft.Office.Interop.Word.Application();
+                     running = false;
+                     while (tries > 0)
+                     {
+                        try
+                        {
+                            // Try to set a property on the object
+                            word.ScreenUpdating = false;
+                        }
+                        catch (COMException)
+                        {
+                            // Decrement the number of tries and have a bit of a snooze
+                            tries--;
+                            Thread.Sleep(500);
+                            continue;
+                        }
+                        // Looks ok, so bail out of the loop
+                        break;
+                    }
+                    if (tries == 0)
+                    {
+                        Converter.releaseCOMObject(word);
+                        return (int)ExitCode.ApplicationError;
+                    }
                 }
+                
                 word.DisplayAlerts = WdAlertLevel.wdAlertsNone;
                 // Issue #48 - we should allow control over whether the history is lost
                 if (!(Boolean)options["word_keep_history"])

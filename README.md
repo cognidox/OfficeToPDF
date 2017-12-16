@@ -117,6 +117,7 @@ The following optional switches can be used:
 | /pdf_restrict_print        | prevent printing without the owner password |
 | /verbose                   | print out messages as it runs |
 | /version                   | print out the version of OfficeToPDF and exit |
+| /working_dir _path_        | a path to copy the input file into temporarily when running the conversion |
 
 ---
 
