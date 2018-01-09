@@ -26,6 +26,7 @@ using System.Linq;
 using System.Reflection;
 using System.Security.AccessControl;
 using System.Text;
+using System.Threading;
 using System.Text.RegularExpressions;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
@@ -554,6 +555,10 @@ namespace OfficeToPDF
                 File.Copy(inputFile, workingSource);
                 inputFile = workingSource;
                 outputFile = workingDest;
+                if ((Boolean)options["verbose"])
+                {
+                    Console.WriteLine("Created working directory: {0}", (string)options["working_dir"]);
+                }
             }
 
             // Now, do the cleverness of determining what the extension is, and so, which
@@ -685,8 +690,13 @@ namespace OfficeToPDF
             {
                 if (File.Exists(outputFile))
                 {
+                    if ((Boolean)options["verbose"])
+                    {
+                        Console.WriteLine("Copying working file {0} to {1}", outputFile, (string)options["working_orig_dest"]);
+                    }
                     File.Copy(outputFile, (string)options["working_orig_dest"]);
                     outputFile = (string)options["working_orig_dest"];
+                    
                 }
                 Directory.Delete((string)options["working_dir"], true);
             }
@@ -714,6 +724,7 @@ namespace OfficeToPDF
                 {
                     postProcessPDFFile(outputFile, finalOutputFile, options, postProcessPDFSecurity);
                 }
+
                 Environment.Exit((int)ExitCode.Success);
             }
         }
@@ -726,22 +737,60 @@ namespace OfficeToPDF
             {
                 Console.WriteLine("Adding {0} bookmarks {1}", bookmarks.Count, (hasParent ? "as a sub-bookmark" : "to the PDF"));
             }
-            
-            var srcPdf = hasParent ? parent.Owner : PdfReader.Open(generatedFile, PdfDocumentOpenMode.Modify);
-            foreach (var bookmark in bookmarks)
+
+            var srcPdf = hasParent ? parent.Owner : openPDFFile(generatedFile, options);
+            if (srcPdf != null)
             {
-                var page = srcPdf.Pages[bookmark.page - 1];
-                // Work out what level to add the bookmark
-                var outline = hasParent ? parent.Outlines.Add(bookmark.title, page) : srcPdf.Outlines.Add(bookmark.title, page);
-                if (bookmark.children != null && bookmark.children.Count > 0)
+                foreach (var bookmark in bookmarks)
                 {
-                    addPDFBookmarks(generatedFile, bookmark.children, options, outline);
+                    var page = srcPdf.Pages[bookmark.page - 1];
+                    // Work out what level to add the bookmark
+                    var outline = hasParent ? parent.Outlines.Add(bookmark.title, page) : srcPdf.Outlines.Add(bookmark.title, page);
+                    if (bookmark.children != null && bookmark.children.Count > 0)
+                    {
+                        addPDFBookmarks(generatedFile, bookmark.children, options, outline);
+                    }
+                }
+                if (!hasParent)
+                {
+                    srcPdf.Save(generatedFile);
                 }
             }
-            if (!hasParent)
+        }
+
+        // There can be issues if we're copying the generated PDF to a location
+        // that may lock files (e.g. for virus scanning) that prevents us from 
+        // immediately opening the PDF in PDFSharp
+        private static PdfDocument openPDFFile(string file, Hashtable options, PdfDocumentOpenMode mode = PdfDocumentOpenMode.Modify, string password = null)
+        {
+            int tries = 10;
+            while (tries-- > 0)
             {
-                srcPdf.Save(generatedFile);
+                try
+                {
+                    if ((Boolean)options["verbose"])
+                    {
+                        Console.WriteLine("Opening {0} in PDF Reader", file);
+                    }
+                    if (password == null)
+                    {
+                       return PdfReader.Open(file, mode);
+                    }
+                    else
+                    {
+                        return PdfReader.Open(file, password, mode);
+                    }
+                }
+                catch (System.UnauthorizedAccessException)
+                {
+                    if ((Boolean)options["verbose"])
+                    {
+                        Console.WriteLine("Re-trying PDF open of {0}", file);
+                    }
+                    Thread.Sleep(500);
+                }
             }
+            return null;
         }
 
         // Perform some post-processing on the generated PDF
@@ -758,13 +807,13 @@ namespace OfficeToPDF
                 PdfDocument dstDoc = null;
                 if ((MergeMode)options["pdf_merge"] == MergeMode.Append)
                 {
-                    srcDoc = PdfReader.Open(generatedFile, PdfDocumentOpenMode.Import);
-                    dstDoc = readExistingPDFDocument(finalFile, generatedFile, ((string)options["pdf_owner_pass"]).Trim(), PdfDocumentOpenMode.Modify);
+                    srcDoc = openPDFFile(generatedFile, options, PdfDocumentOpenMode.Import);
+                    dstDoc = readExistingPDFDocument(finalFile, generatedFile, ((string)options["pdf_owner_pass"]).Trim(), PdfDocumentOpenMode.Modify, options);
                 }
                 else
                 {
-                    dstDoc = PdfReader.Open(generatedFile, PdfDocumentOpenMode.Modify);
-                    srcDoc = readExistingPDFDocument(finalFile, generatedFile, ((string)options["pdf_owner_pass"]).Trim(), PdfDocumentOpenMode.Import);
+                    dstDoc = openPDFFile(generatedFile, options);
+                    srcDoc = readExistingPDFDocument(finalFile, generatedFile, ((string)options["pdf_owner_pass"]).Trim(), PdfDocumentOpenMode.Import, options);
                 }
                 int pages = srcDoc.PageCount;
                 for (int pi = 0; pi < pages; pi++)
@@ -780,7 +829,7 @@ namespace OfficeToPDF
                 (MetaClean)options["pdf_clean_meta"] != MetaClean.None || postProcessPDFSecurity)
             {
 
-                PdfDocument pdf = PdfReader.Open(finalFile, PdfDocumentOpenMode.Modify);
+                PdfDocument pdf = openPDFFile(finalFile, options);
 
                 if (options["pdf_page_mode"] != null)
                 {
@@ -870,13 +919,13 @@ namespace OfficeToPDF
             }
         }
 
-        static PdfDocument readExistingPDFDocument(String filename, String generatedFilename, String password, PdfDocumentOpenMode mode)
+        static PdfDocument readExistingPDFDocument(String filename, String generatedFilename, String password, PdfDocumentOpenMode mode, Hashtable options)
         {
             PdfDocument dstDoc = null;
             try
             {
 
-                dstDoc = PdfReader.Open(filename, mode);
+                dstDoc = openPDFFile(filename, options, mode);
             }
             catch (PdfReaderException)
             {
@@ -884,7 +933,7 @@ namespace OfficeToPDF
                 {
                     try
                     {
-                        dstDoc = PdfReader.Open(filename, password, mode);
+                        dstDoc = openPDFFile(filename, options, mode, password);
                     }
                     catch (PdfReaderException)
                     {

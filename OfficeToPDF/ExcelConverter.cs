@@ -151,7 +151,6 @@ namespace OfficeToPDF
                     oWritePass = (Object)"FAKEPASSWORD";
                     try
                     {
-
                         workbook = workbooks.Open(inputFile, updateLinks, nowrite, oMissing, oReadPass, oWritePass, true, oMissing, oMissing, oMissing, oMissing, oMissing, false, oMissing, oMissing);
                     }
                     catch (System.Runtime.InteropServices.COMException)
@@ -189,18 +188,9 @@ namespace OfficeToPDF
                 var temporaryStorageDir = Path.GetTempFileName();
                 File.Delete(temporaryStorageDir);
                 Directory.CreateDirectory(temporaryStorageDir);
-                tmpFile = Path.Combine(temporaryStorageDir, Path.GetFileNameWithoutExtension(inputFile) + ".xls");
-                
-                // Set up the file save format
-                if (workbook.HasVBProject)
-                {
-                    fmt = XlFileFormat.xlOpenXMLWorkbookMacroEnabled;
-                    tmpFile += "m";
-                }
-                else
-                {
-                    tmpFile += "x";
-                }
+                // We will save as xlsb (binary format) since this doesn't raise some errors when processing
+                tmpFile = Path.Combine(temporaryStorageDir, Path.GetFileNameWithoutExtension(inputFile) + ".xlsb");
+                fmt = XlFileFormat.xlExcel12;
 
                 // Set up the print quality
                 if (screenQuality)
@@ -417,7 +407,7 @@ namespace OfficeToPDF
                     app.Calculation = XlCalculation.xlCalculationManual;
                     app.CalculateBeforeSave = false;
                 }
-                
+
                 workbook.SaveAs(tmpFile, fmt, Type.Missing, Type.Missing, Type.Missing, false, XlSaveAsAccessMode.xlNoChange, Type.Missing, false, Type.Missing, Type.Missing, Type.Missing);
 
                 if (onlyActiveSheet)
@@ -491,7 +481,6 @@ namespace OfficeToPDF
             }
             finally
             {
-
                 if (workbook != null)
                 {
                     Converter.releaseCOMObject(activeSheet);
@@ -501,9 +490,8 @@ namespace OfficeToPDF
                     GC.WaitForPendingFinalizers();
                     // Excel sometimes needs a bit of a delay before we close in order to
                     // let things get cleaned up
-                    System.Threading.Thread.Sleep(500);
                     workbook.Saved = true;
-                    workbook.Close();
+                    closeExcelWorkbook(workbook);
                 }
 
                 if (!running)
@@ -600,7 +588,7 @@ namespace OfficeToPDF
                         }
                         Converter.releaseCOMObject(templateSheets);
                     }
-                    template.Close();
+                    closeExcelWorkbook(template);
                 }
                 Converter.releaseCOMObject(template);
             }
@@ -639,6 +627,24 @@ namespace OfficeToPDF
                     Console.WriteLine("Unable to set property {0}", templateProperties[i]);
                 }
             }
+        }
+
+        protected static bool closeExcelWorkbook(Workbook workbook)
+        {
+            int tries = 20;
+            while (tries-- > 0)
+            {
+                try
+                {
+                    workbook.Close();
+                    return true;
+                }
+                catch (System.Runtime.InteropServices.COMException)
+                {
+                    System.Threading.Thread.Sleep(500);
+                }
+            }
+            return false;
         }
     }
 }
