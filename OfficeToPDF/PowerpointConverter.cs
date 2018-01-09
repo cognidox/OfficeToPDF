@@ -65,6 +65,7 @@ namespace OfficeToPDF
                     catch (System.Exception)
                     {
                         int tries = 10;
+                        // Create the application
                         app = new Microsoft.Office.Interop.PowerPoint.Application();
                         running = false;
                         while (tries > 0)
@@ -131,7 +132,7 @@ namespace OfficeToPDF
                     {
                         Converter.releaseCOMObject(fonts);
                         // This presentation looked read-only
-                        activePresentation.Close();
+                        closePowerPointPresentation(activePresentation);
                         Converter.releaseCOMObject(activePresentation);
                         // Create a new blank presentation and insert slides from the original
                         activePresentation = presentations.Add(MSCore.MsoTriState.msoFalse);
@@ -145,10 +146,10 @@ namespace OfficeToPDF
                     if ((bool)options["bookmarks"])
                     {
                         loadBookmarks(activePresentation, ref bookmarks);
-                        
+
                     }
                     activePresentation.Saved = MSCore.MsoTriState.msoTrue;
-                    activePresentation.Close();
+                    closePowerPointPresentation(activePresentation);
 
                     return (int)ExitCode.Success;
                 }
@@ -179,6 +180,31 @@ namespace OfficeToPDF
                 Console.WriteLine(e.Message);
                 return (int)ExitCode.UnknownError;
             }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                return (int)ExitCode.UnknownError;
+            }
+        }
+
+        // Try and close PowerPoint presentation, giving time for Office to get
+        // itself in order
+        private static bool closePowerPointPresentation(Presentation presentation)
+        {
+            int tries = 20;
+            while (tries-- > 0)
+            {
+                try
+                {
+                    presentation.Close();
+                    return true;
+                }
+                catch (COMException)
+                {
+                    Thread.Sleep(500);
+                }
+            }
+            return false;
         }
 
         // Loop through all the slides in the presentation creating bookmark items
