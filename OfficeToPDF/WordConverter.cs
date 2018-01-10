@@ -374,12 +374,32 @@ namespace OfficeToPDF
                 }
                 if (word != null && !running)
                 {
-                    ((_Application)word).Quit(ref oMissing, ref oMissing, ref oMissing);
+                    closeWordApplication(word);
                 }
                 Converter.releaseCOMObject(word);
             }
         }
 
+        // Try and close Word, giving time for Office to get
+        // itself in order
+        private static bool closeWordApplication(Application word)
+        {
+            object oMissing = System.Reflection.Missing.Value;
+            int tries = 20;
+            while (tries-- > 0)
+            {
+                try
+                {
+                    ((_Application)word).Quit(ref oMissing, ref oMissing, ref oMissing);
+                    return true;
+                }
+                catch (COMException)
+                {
+                    Thread.Sleep(500);
+                }
+            }
+            return false;
+        }
         // We want to be able to reset the options in Word so it doesn't affect subsequent
         // usage
         private class AppOption

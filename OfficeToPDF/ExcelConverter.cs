@@ -629,7 +629,7 @@ namespace OfficeToPDF
             }
         }
 
-        protected static bool closeExcelWorkbook(Workbook workbook)
+        private static bool closeExcelWorkbook(Workbook workbook)
         {
             int tries = 20;
             while (tries-- > 0)
