@@ -220,7 +220,7 @@ namespace OfficeToPDF
                     return (int)ExitCode.FileOpenFailure;
                 }
                 doc.Activate();
-                
+
                 // Check if there are too many pages
                 if (maxPages > 0)
                 {
@@ -296,7 +296,6 @@ namespace OfficeToPDF
                     }
                 }
 
-
                 // See if we have to update fields
                 if (!(Boolean)options["word_no_field_update"])
                 {
@@ -319,6 +318,7 @@ namespace OfficeToPDF
                     doc.Save();
                 }
                 doc.Saved = true;
+
                 doc.ExportAsFixedFormat(outputFile, WdExportFormat.wdExportFormatPDF, false, 
                     quality, WdExportRange.wdExportAllDocument,
                     1, 1, showMarkup, includeProps, true, bookmarks, includeTags, bitmapMissingFonts, pdfa);
@@ -428,97 +428,104 @@ namespace OfficeToPDF
                 return;
             }
 
-            // Update some of the field types in the document so the printed
-            // PDF looks correct. Skips some field types (such as ASK) that would
-            // create dialogs
-            foreach (Microsoft.Office.Interop.Word.Section section in doc.Sections)
+            try
             {
-                var sectionRange = section.Range;
-                var sectionFields = sectionRange.Fields;
-                var zeroHeader = true;
-                var zeroFooter = true;
+                // Update some of the field types in the document so the printed
+                // PDF looks correct. Skips some field types (such as ASK) that would
+                // create dialogs
+                foreach (Microsoft.Office.Interop.Word.Section section in doc.Sections)
+                {
+                    var sectionRange = section.Range;
+                    var sectionFields = sectionRange.Fields;
+                    var zeroHeader = true;
+                    var zeroFooter = true;
 
-                foreach (Field sectionField in sectionFields)
-                {
-                    WordConverter.updateField(sectionField, word, inputFile);
-                }
+                    foreach (Field sectionField in sectionFields)
+                    {
+                        WordConverter.updateField(sectionField, word, inputFile);
+                    }
 
-                var sectionPageSetup = section.PageSetup;
-                var headers = section.Headers;
-                foreach (Microsoft.Office.Interop.Word.HeaderFooter header in headers)
-                {
-                    if (header.Exists)
+                    var sectionPageSetup = section.PageSetup;
+                    var headers = section.Headers;
+                    foreach (Microsoft.Office.Interop.Word.HeaderFooter header in headers)
                     {
-                        var range = header.Range;
-                        var rangeFields = range.Fields;
-                        foreach (Field rangeField in rangeFields)
+                        if (header.Exists)
                         {
-                            WordConverter.updateField(rangeField, word, inputFile);
+                            var range = header.Range;
+                            var rangeFields = range.Fields;
+                            foreach (Field rangeField in rangeFields)
+                            {
+                                WordConverter.updateField(rangeField, word, inputFile);
+                            }
+                            // Simply querying the range of the header will create it.
+                            // If the header is empty, this can introduce additional space
+                            // between the non-existant header and the top of the page.
+                            // To counter this for empty headers, we manually set the header
+                            // distance to zero here
+                            var shapes = header.Shapes;
+                            var rangeShapes = range.ShapeRange;
+                            if ((shapes.Count > 0) || !String.IsNullOrWhiteSpace(range.Text) || (rangeShapes.Count > 0))
+                            {
+                                zeroHeader = false;
+                            }
+                            Converter.releaseCOMObject(shapes);
+                            Converter.releaseCOMObject(rangeShapes);
+                            Converter.releaseCOMObject(rangeFields);
+                            Converter.releaseCOMObject(range);
                         }
-                        // Simply querying the range of the header will create it.
-                        // If the header is empty, this can introduce additional space
-                        // between the non-existant header and the top of the page.
-                        // To counter this for empty headers, we manually set the header
-                        // distance to zero here
-                        var shapes = header.Shapes;
-                        var rangeShapes = range.ShapeRange;
-                        if ((shapes.Count > 0) || !String.IsNullOrWhiteSpace(range.Text) || (rangeShapes.Count > 0))
-                        {
-                            zeroHeader = false;
-                        }
-                        Converter.releaseCOMObject(shapes);
-                        Converter.releaseCOMObject(rangeShapes);
-                        Converter.releaseCOMObject(rangeFields);
-                        Converter.releaseCOMObject(range);
                     }
-                }
 
-                var footers = section.Footers;
-                foreach (Microsoft.Office.Interop.Word.HeaderFooter footer in footers)
-                {
-                    if (footer.Exists)
+                    var footers = section.Footers;
+                    foreach (Microsoft.Office.Interop.Word.HeaderFooter footer in footers)
                     {
-                        var range = footer.Range;
-                        var rangeFields = range.Fields;
-                        foreach (Field rangeField in rangeFields)
+                        if (footer.Exists)
                         {
-                            WordConverter.updateField(rangeField, word, inputFile);
+                            var range = footer.Range;
+                            var rangeFields = range.Fields;
+                            foreach (Field rangeField in rangeFields)
+                            {
+                                WordConverter.updateField(rangeField, word, inputFile);
+                            }
+                            // Simply querying the range of the footer will create it.
+                            // If the footer is empty, this can introduce additional space
+                            // between the non-existant footer and the bottom of the page.
+                            // To counter this for empty footers, we manually set the footer
+                            // distance to zero here
+                            var shapes = footer.Shapes;
+                            var rangeShapes = range.ShapeRange;
+                            if (shapes.Count > 0 || !String.IsNullOrWhiteSpace(range.Text) || rangeShapes.Count > 0)
+                            {
+                                zeroFooter = false;
+                            }
+                            Converter.releaseCOMObject(shapes);
+                            Converter.releaseCOMObject(rangeShapes);
+                            Converter.releaseCOMObject(rangeFields);
+                            Converter.releaseCOMObject(range);
                         }
-                        // Simply querying the range of the footer will create it.
-                        // If the footer is empty, this can introduce additional space
-                        // between the non-existant footer and the bottom of the page.
-                        // To counter this for empty footers, we manually set the footer
-                        // distance to zero here
-                        var shapes = footer.Shapes;
-                        var rangeShapes = range.ShapeRange;
-                        if (shapes.Count > 0 || !String.IsNullOrWhiteSpace(range.Text) || rangeShapes.Count > 0)
+                    }
+                    if (doc.ProtectionType == WdProtectionType.wdNoProtection)
+                    {
+                        if (zeroHeader)
                         {
-                            zeroFooter = false;
+                            sectionPageSetup.HeaderDistance = 0;
                         }
-                        Converter.releaseCOMObject(shapes);
-                        Converter.releaseCOMObject(rangeShapes);
-                        Converter.releaseCOMObject(rangeFields);
-                        Converter.releaseCOMObject(range);
+                        if (zeroFooter)
+                        {
+                            sectionPageSetup.FooterDistance = 0;
+                        }
                     }
+                    Converter.releaseCOMObject(sectionFields);
+                    Converter.releaseCOMObject(sectionRange);
+                    Converter.releaseCOMObject(headers);
+                    Converter.releaseCOMObject(footers);
+                    Converter.releaseCOMObject(sectionPageSetup);
                 }
-                if (doc.ProtectionType == WdProtectionType.wdNoProtection)
-                {
-                    if (zeroHeader)
-                    {
-                        sectionPageSetup.HeaderDistance = 0;
-                    }
-                    if (zeroFooter)
-                    {
-                        sectionPageSetup.FooterDistance = 0;
-                    }
-                }
-                Converter.releaseCOMObject(sectionFields);
-                Converter.releaseCOMObject(sectionRange);
-                Converter.releaseCOMObject(headers);
-                Converter.releaseCOMObject(footers);
-                Converter.releaseCOMObject(sectionPageSetup);
             }
-
+            catch (COMException)
+            {
+                // There can be odd errors when column widths are out of the page boundaries
+                // See github issue #14
+            }
             var docFields = doc.Fields;
             foreach (Field docField in docFields)
             {
