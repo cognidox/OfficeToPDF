@@ -101,6 +101,7 @@ namespace OfficeToPDF
                 try
                 {
                     // Set the Word options in a way that allows us to reset the options when we finish
+                    wordOptionList.Add(new AppOption("AlertIfNotDefault", false, ref wdOptions));
                     wordOptionList.Add(new AppOption("AllowReadingMode", false, ref wdOptions));
                     wordOptionList.Add(new AppOption("PrecisePositioning", true, ref wdOptions));
                     wordOptionList.Add(new AppOption("UpdateFieldsAtPrint", false, ref wdOptions));
@@ -312,6 +313,18 @@ namespace OfficeToPDF
                     pageSetup.FooterDistance = (float)options["word_footer_dist"];
                 }
 
+                try
+                {
+                    // Make sure we are not in a header footer view
+                    docWinView.SeekView = WdSeekView.wdSeekPrimaryHeader;
+                    docWinView.SeekView = WdSeekView.wdSeekPrimaryFooter;
+                    docWinView.SeekView = WdSeekView.wdSeekMainDocument;
+                }
+                catch(Exception)
+                {
+                    // We might fail when switching views
+                }
+
                 normalTemplate.Saved = true;
                 if (autosave)
                 {
@@ -422,6 +435,8 @@ namespace OfficeToPDF
                 }
                 catch
                 {
+                    // We may be setting word options that are not available in the version of word
+                    // being used, so just skip these errors
                 }
             }
 
@@ -435,10 +450,11 @@ namespace OfficeToPDF
             }
         }
 
+        // Update all the fields in a document
         private static void updateDocumentFields(Document doc, Microsoft.Office.Interop.Word.Application word, String inputFile, Hashtable options)
         {
             // Update fields quickly if it is safe to do so. We have
-            // to check for broken links as they may raise Word dialogs
+            // to check for broken links as they may raise Word dialogs or leave broken content
             if ((Boolean)options["word_field_quick_update"] ||
                 ((Boolean)options["word_field_quick_update_safe"] && !hasBrokenLinks(doc)))
             {
@@ -453,116 +469,97 @@ namespace OfficeToPDF
                 // Update some of the field types in the document so the printed
                 // PDF looks correct. Skips some field types (such as ASK) that would
                 // create dialogs
-                foreach (Microsoft.Office.Interop.Word.Section section in doc.Sections)
+                var docSections = doc.Sections;
+                if (docSections.Count > 0)
                 {
-                    var sectionRange = section.Range;
-                    var sectionFields = sectionRange.Fields;
-                    var zeroHeader = true;
-                    var zeroFooter = true;
+                    for (var dsi = 1; dsi <= docSections.Count; dsi++)
+                    {
+                        var section = docSections[dsi];
+                        var sectionRange = section.Range;
+                        var sectionFields = sectionRange.Fields;
+                        var headers = section.Headers;
+                        var footers = section.Footers;
 
-                    foreach (Field sectionField in sectionFields)
-                    {
-                        WordConverter.updateField(sectionField, word, inputFile);
-                    }
+                        if (sectionFields.Count > 0)
+                        {
+                            for (var si = 1; si <= sectionFields.Count; si++)
+                            {
+                                var sectionField = sectionFields[si];
+                                WordConverter.updateField(sectionField, word, inputFile);
+                                Converter.releaseCOMObject(sectionField);
+                            }
+                        }
 
-                    var sectionPageSetup = section.PageSetup;
-                    var headers = section.Headers;
-                    foreach (Microsoft.Office.Interop.Word.HeaderFooter header in headers)
-                    {
-                        if (header.Exists)
-                        {
-                            var range = header.Range;
-                            var rangeFields = range.Fields;
-                            foreach (Field rangeField in rangeFields)
-                            {
-                                WordConverter.updateField(rangeField, word, inputFile);
-                            }
-                            // Simply querying the range of the header will create it.
-                            // If the header is empty, this can introduce additional space
-                            // between the non-existant header and the top of the page.
-                            // To counter this for empty headers, we manually set the header
-                            // distance to zero here
-                            var shapes = header.Shapes;
-                            var rangeShapes = range.ShapeRange;
-                            if ((shapes.Count > 0) || !String.IsNullOrWhiteSpace(range.Text) || (rangeShapes.Count > 0))
-                            {
-                                zeroHeader = false;
-                            }
-                            Converter.releaseCOMObject(shapes);
-                            Converter.releaseCOMObject(rangeShapes);
-                            Converter.releaseCOMObject(rangeFields);
-                            Converter.releaseCOMObject(range);
-                        }
-                    }
+                        updateHeaderFooterFields(headers, word, inputFile);
+                        updateHeaderFooterFields(footers, word, inputFile);
 
-                    var footers = section.Footers;
-                    foreach (Microsoft.Office.Interop.Word.HeaderFooter footer in footers)
-                    {
-                        if (footer.Exists)
-                        {
-                            var range = footer.Range;
-                            var rangeFields = range.Fields;
-                            foreach (Field rangeField in rangeFields)
-                            {
-                                WordConverter.updateField(rangeField, word, inputFile);
-                            }
-                            // Simply querying the range of the footer will create it.
-                            // If the footer is empty, this can introduce additional space
-                            // between the non-existant footer and the bottom of the page.
-                            // To counter this for empty footers, we manually set the footer
-                            // distance to zero here
-                            var shapes = footer.Shapes;
-                            var rangeShapes = range.ShapeRange;
-                            if (shapes.Count > 0 || !String.IsNullOrWhiteSpace(range.Text) || rangeShapes.Count > 0)
-                            {
-                                zeroFooter = false;
-                            }
-                            Converter.releaseCOMObject(shapes);
-                            Converter.releaseCOMObject(rangeShapes);
-                            Converter.releaseCOMObject(rangeFields);
-                            Converter.releaseCOMObject(range);
-                        }
+                        Converter.releaseCOMObject(footers);
+                        Converter.releaseCOMObject(headers);
+                        Converter.releaseCOMObject(sectionFields);
+                        Converter.releaseCOMObject(sectionRange);
+                        Converter.releaseCOMObject(section);
                     }
-                    if (doc.ProtectionType == WdProtectionType.wdNoProtection)
-                    {
-                        if (zeroHeader)
-                        {
-                            sectionPageSetup.HeaderDistance = 0;
-                        }
-                        if (zeroFooter)
-                        {
-                            sectionPageSetup.FooterDistance = 0;
-                        }
-                    }
-                    Converter.releaseCOMObject(sectionFields);
-                    Converter.releaseCOMObject(sectionRange);
-                    Converter.releaseCOMObject(headers);
-                    Converter.releaseCOMObject(footers);
-                    Converter.releaseCOMObject(sectionPageSetup);
                 }
+                Converter.releaseCOMObject(docSections);
             }
             catch (COMException)
             {
                 // There can be odd errors when column widths are out of the page boundaries
                 // See github issue #14
             }
+            
             var docFields = doc.Fields;
-            foreach (Field docField in docFields)
-            {
-                WordConverter.updateField(docField, word, inputFile);
-            }
             var storyRanges = doc.StoryRanges;
+
+            if (docFields.Count > 0)
+            {
+                for (var fi = 1; fi <= docFields.Count; fi++)
+                {
+                    var docField = docFields[fi];
+                    WordConverter.updateField(docField, word, inputFile);
+                    Converter.releaseCOMObject(docField);
+                }
+            }
+            
             foreach (Range range in storyRanges)
             {
-                var rangeFields = range.Fields;
-                foreach (Field field in rangeFields)
-                {
-                    WordConverter.updateField(field, word, inputFile);
-                }
-                Converter.releaseCOMObject(rangeFields);
+                updateFieldsInRange(range, word, inputFile);
+                Converter.releaseCOMObject(range);
             }
+ 
             Converter.releaseCOMObject(storyRanges);
             Converter.releaseCOMObject(docFields);
+        }
+
+        // update fields in a header or footer
+        private static void updateHeaderFooterFields(HeadersFooters list, Microsoft.Office.Interop.Word.Application word, String filename)
+        {
+            foreach (Microsoft.Office.Interop.Word.HeaderFooter item in list)
+            {
+                if (item.Exists && !item.LinkToPrevious)
+                {
+                    var range = item.Range;
+                    updateFieldsInRange(range, word, filename);
+                    Converter.releaseCOMObject(range);
+                }
+                Converter.releaseCOMObject(item);
+            }
+        }
+
+        // update all fields in a range
+        private static void updateFieldsInRange(Range range, Microsoft.Office.Interop.Word.Application word, String filename)
+        {
+            var rangeFields = range.Fields;
+            if (rangeFields.Count > 0)
+            {
+                for (var i = 1; i <= rangeFields.Count; i++)
+                {
+                    var field = rangeFields[i];
+                    WordConverter.updateField(field, word, filename);
+                    Converter.releaseCOMObject(field);
+                }
+            }
+            Converter.releaseCOMObject(rangeFields);
         }
 
         // Update a specific field
@@ -654,12 +651,16 @@ namespace OfficeToPDF
                 if (linkFormat != null)
                 {
                     // See if the linked file exists (if it is a local path and not a URL)
-                    var linkPath = (String)linkFormat.SourceFullName;
-                    if (linkPath.ToLower().IndexOf("http://") != 0 &&
-                        linkPath.ToLower().IndexOf("https://") != 0 && !File.Exists(linkPath))
+                    // Treat cid: references as also broken
+                    var sourceName = linkFormat.SourceFullName;
+                    var linkPath = sourceName.ToString();
+                    if (linkPath.IndexOf("cid:") == 0 || 
+                        (linkPath.ToLower().IndexOf("http://") != 0 &&
+                         linkPath.ToLower().IndexOf("https://") != 0 && !File.Exists(linkPath)))
                     {
                         hasBrokenLinks = true;
-                    } 
+                    }
+                    Converter.releaseCOMObject(sourceName);
                 }
                 Converter.releaseCOMObject(linkFormat);
                 Converter.releaseCOMObject(shapeThing);
@@ -670,6 +671,7 @@ namespace OfficeToPDF
                     break;
                 }
             }
+            Converter.releaseCOMObject(items);
             return hasBrokenLinks;
         }
     }
