@@ -1,7 +1,7 @@
 ﻿/**
  *  OfficeToPDF command line PDF conversion for Office 2007/2010/2013/2016
- *  Copyright (C) 2011-2016 Cognidox Ltd
- *  http://www.cognidox.com/opensource/
+ *  Copyright (C) 2011-2018 Cognidox Ltd
+ *  https://www.cognidox.com/opensource/
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.

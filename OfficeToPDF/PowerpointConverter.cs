@@ -1,7 +1,7 @@
 ﻿/**
  *  OfficeToPDF command line PDF conversion for Office 2007/2010/2013/2016
- *  Copyright (C) 2011-2016 Cognidox Ltd
- *  http://www.cognidox.com/opensource/
+ *  Copyright (C) 2011-2018 Cognidox Ltd
+ *  https://www.cognidox.com/opensource/
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -223,8 +223,9 @@ namespace OfficeToPDF
                 parentBookmark.children = new List<PDFBookmark>();
 
                 // Loop through the slides, adding a ToC entry to the top-level bookmark
-                foreach (var s in slides)
+                for (int sldIdx = 1; sldIdx <= slides.Count; sldIdx++)
                 {
+                    var s = slides[sldIdx];
                     // Look at the transition on the slide to determine if it is hidden
                     var trans = ((Slide)s).SlideShowTransition;
                     if (trans.Hidden == MSCore.MsoTriState.msoCTrue || trans.Hidden == MSCore.MsoTriState.msoTrue)

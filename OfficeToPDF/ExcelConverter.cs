@@ -111,7 +111,7 @@ namespace OfficeToPDF
                 int worksheetNum = (int)options["excel_worksheet"];
                 int sheetForConversionIdx = 0;
                 activeWindow = app.ActiveWindow;
-                Sheets worksheets = null;
+                Sheets allSheets = null;
                 XlFileFormat fmt = XlFileFormat.xlOpenXMLWorkbook;
                 XlFixedFormatQuality quality = XlFixedFormatQuality.xlQualityStandard;
                 if (isHidden)
@@ -182,7 +182,7 @@ namespace OfficeToPDF
                 setPageOptionsFromTemplate(app, workbooks, options, ref templatePageSetup);
 
                 // Get the sheets
-                worksheets = workbook.Sheets;
+                allSheets = workbook.Sheets;
 
                 // Try and avoid xls files raising a dialog
                 var temporaryStorageDir = Path.GetTempFileName();
@@ -205,20 +205,20 @@ namespace OfficeToPDF
                     onlyActiveSheet = true;
                     try
                     {
-                        if (worksheetNum > worksheets.Count)
+                        if (worksheetNum > allSheets.Count)
                         {
                             // Sheet count is too big
                             return (int)ExitCode.WorksheetNotFound;
                         }
-                        if (worksheets[worksheetNum] is _Worksheet)
+                        if (allSheets[worksheetNum] is _Worksheet)
                         {
-                            ((_Worksheet)worksheets[worksheetNum]).Activate();
-                            sheetForConversionIdx = ((_Worksheet)worksheets[worksheetNum]).Index;
+                            ((_Worksheet)allSheets[worksheetNum]).Activate();
+                            sheetForConversionIdx = ((_Worksheet)allSheets[worksheetNum]).Index;
                         }
-                        else if (worksheets[worksheetNum] is _Chart)
+                        else if (allSheets[worksheetNum] is _Chart)
                         {
-                            ((_Chart)worksheets[worksheetNum]).Activate();
-                            sheetForConversionIdx = ((_Chart)worksheets[worksheetNum]).Index;
+                            ((_Chart)allSheets[worksheetNum]).Activate();
+                            sheetForConversionIdx = ((_Chart)allSheets[worksheetNum]).Index;
                         }
 
                     }
@@ -274,9 +274,9 @@ namespace OfficeToPDF
                     var found_rows = 0;
                     var found_worksheet = "";
                     // Loop through all the sheets (worksheets and charts)
-                    for (int wsIdx = 1; wsIdx <= worksheets.Count; wsIdx++)
+                    for (int wsIdx = 1; wsIdx <= allSheets.Count; wsIdx++)
                     {
-                        var ws = worksheets.Item[wsIdx];
+                        var ws = allSheets.Item[wsIdx];
 
                         // Skip anything that is not the active sheet
                         if (onlyActiveSheet)
@@ -414,7 +414,7 @@ namespace OfficeToPDF
                 {
                     if (sheetForConversionIdx > 0)
                     {
-                        activeSheet = worksheets.Item[sheetForConversionIdx];
+                        activeSheet = allSheets.Item[sheetForConversionIdx];
                     }
                     if (activeSheet is _Worksheet)
                     {
@@ -444,19 +444,22 @@ namespace OfficeToPDF
                     {
                         // Set up the template page setup options on all the worksheets
                         // in the workbook
-                        foreach (var ws in workbook.Worksheets)
+                        var worksheets = workbook.Worksheets;
+                        for (int wsIdx = 1; wsIdx <= worksheets.Count; wsIdx++)
                         {
+                            var ws = worksheets[wsIdx];
                             var wps = (ws is _Worksheet) ? ((_Worksheet)ws).PageSetup : ((_Chart)ws).PageSetup;
                             setPageSetupProperties(templatePageSetup, wps);
                             Converter.releaseCOMObject(wps);
                             Converter.releaseCOMObject(ws);
                         }
+                        Converter.releaseCOMObject(worksheets);
                     }
                     workbook.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF,
                         outputFile, quality, includeProps, false, Type.Missing, Type.Missing, false, Type.Missing);
                 }
 
-                Converter.releaseCOMObject(worksheets);
+                Converter.releaseCOMObject(allSheets);
                 Converter.releaseCOMObject(fmt);
                 Converter.releaseCOMObject(quality);
 
