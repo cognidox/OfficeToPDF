@@ -128,8 +128,9 @@ namespace OfficeToPDF
                 catch (SystemException)
                 {
                 }
-
+                
                 Object filename = (Object)inputFile;
+                Boolean hasSignatures = false;
                 Boolean visible = !(Boolean)options["hidden"];
                 Boolean nowrite = (Boolean)options["readonly"];
                 Boolean includeProps = !(Boolean)options["excludeprops"];
@@ -222,6 +223,18 @@ namespace OfficeToPDF
                 }
                 doc.Activate();
 
+                // Check if there are signatures in the document which 
+                var signatures = doc.Signatures;
+                if (signatures.Count > 0)
+                {
+                    signatures.ShowSignaturesPane = false;
+                    nowrite = true;
+                    autosave = false;
+                    hasSignatures = true;
+                    options["word_no_field_update"] = true;
+                }
+                Converter.releaseCOMObject(signatures);
+
                 // Check if there are too many pages
                 if (maxPages > 0)
                 {
@@ -236,11 +249,11 @@ namespace OfficeToPDF
                 // Prevent "property not available" errors, see http://blogs.msmvps.com/wordmeister/2013/02/22/word2013bug-not-available-for-reading/
                 var docWin = doc.ActiveWindow;
                 var docWinView = docWin.View;
-                if (wordVersion >= 15)
+                if (wordVersion >= 15 && !hasSignatures)
                 {
                     docWinView.ReadingLayout = false;
                 }
-                
+
                 // Sometimes the print view will not be available (e.g. for a blog post)
                 // Try and switch view
                 try
@@ -262,13 +275,15 @@ namespace OfficeToPDF
                 doc.GrammarChecked = true;
 
                 // Changing these properties may be disallowed if the document is protected
-                if (doc.ProtectionType == WdProtectionType.wdNoProtection)
+                // and is not signed
+                if (doc.ProtectionType == WdProtectionType.wdNoProtection && !hasSignatures)
                 {
                     if (autosave) { doc.Save(); doc.Saved = true; }
                     doc.TrackMoves = false;
                     doc.TrackRevisions = false;
                     doc.TrackFormatting = false;
                 }
+                
                 normalTemplate.Saved = true;
 
                 // Hide the document window if need be
@@ -332,10 +347,17 @@ namespace OfficeToPDF
                 }
                 doc.Saved = true;
 
-                doc.ExportAsFixedFormat(outputFile, WdExportFormat.wdExportFormatPDF, false, 
-                    quality, WdExportRange.wdExportAllDocument,
-                    1, 1, showMarkup, includeProps, true, bookmarks, includeTags, bitmapMissingFonts, pdfa);
-
+                // If a document has signatures, Word can take a bit of time to
+                // validate them and get itself ready to do the conversion. Here
+                // we pause a bit to give Word time to get itself ready.
+                if (hasSignatures)
+                {
+                    Thread.Sleep(2500);
+                }
+                doc.ExportAsFixedFormat(outputFile, WdExportFormat.wdExportFormatPDF, false,
+                        quality, WdExportRange.wdExportAllDocument,
+                        1, 1, showMarkup, includeProps, true, bookmarks, includeTags, bitmapMissingFonts, pdfa);
+                
                 if (tmpl != null)
                 {
                     tmpl.Saved = true;
