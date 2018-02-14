@@ -249,7 +249,7 @@ namespace OfficeToPDF
                 // Prevent "property not available" errors, see http://blogs.msmvps.com/wordmeister/2013/02/22/word2013bug-not-available-for-reading/
                 var docWin = doc.ActiveWindow;
                 var docWinView = docWin.View;
-                if (wordVersion >= 15 && !hasSignatures)
+                if (wordVersion >= 15)
                 {
                     docWinView.ReadingLayout = false;
                 }
@@ -352,6 +352,7 @@ namespace OfficeToPDF
                 // we pause a bit to give Word time to get itself ready.
                 if (hasSignatures)
                 {
+                    // Bit of a hack really
                     Thread.Sleep(2500);
                 }
                 doc.ExportAsFixedFormat(outputFile, WdExportFormat.wdExportFormatPDF, false,
