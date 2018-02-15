@@ -28,6 +28,9 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Microsoft.Office.Interop.Word;
+using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Wordprocessing;
+using DocumentFormat.OpenXml.Packaging;
 
 
 namespace OfficeToPDF
@@ -54,6 +57,29 @@ namespace OfficeToPDF
             List<AppOption> wordOptionList = new List<AppOption>();
             try
             {
+                String filename = (String)inputFile;
+                Boolean hasSignatures = WordConverter.hasDigitalSignatures(filename);
+                Boolean visible = !(Boolean)options["hidden"];
+                Boolean openAndRepair = !(Boolean)options["word_no_repair"];
+                Boolean nowrite = (Boolean)options["readonly"];
+                Boolean includeProps = !(Boolean)options["excludeprops"];
+                Boolean includeTags = !(Boolean)options["excludetags"];
+                Boolean bitmapMissingFonts = !(Boolean)options["word_ref_fonts"];
+                Boolean autosave = options.ContainsKey("IsTempWord") && (Boolean)options["IsTempWord"];
+                bool pdfa = (Boolean)options["pdfa"] ? true : false;
+                String writePassword = "";
+                String readPassword = "";
+                int maxPages = 0;
+
+                WdExportOptimizeFor quality = WdExportOptimizeFor.wdExportOptimizeForPrint;
+                WdExportItem showMarkup = WdExportItem.wdExportDocumentContent;
+                WdExportCreateBookmarks bookmarks = (Boolean)options["bookmarks"] ?
+                    WdExportCreateBookmarks.wdExportCreateHeadingBookmarks :
+                    WdExportCreateBookmarks.wdExportCreateNoBookmarks;
+                Microsoft.Office.Interop.Word.Options wdOptions = null;
+                Microsoft.Office.Interop.Word.Documents documents = null;
+                Microsoft.Office.Interop.Word.Template normalTemplate = null;
+
                 tmpl = null;
                 try
                 {
@@ -87,7 +113,8 @@ namespace OfficeToPDF
                         return (int)ExitCode.ApplicationError;
                     }
                 }
-                
+
+                wdOptions = word.Options;
                 word.DisplayAlerts = WdAlertLevel.wdAlertsNone;
                 // Issue #48 - we should allow control over whether the history is lost
                 if (!(Boolean)options["word_keep_history"])
@@ -97,15 +124,17 @@ namespace OfficeToPDF
                 word.DisplayDocumentInformationPanel = false;
                 word.FeatureInstall = Microsoft.Office.Core.MsoFeatureInstall.msoFeatureInstallNone;
                 wordVersion = (float)System.Convert.ToDecimal(word.Version, new CultureInfo("en-US"));
-                var wdOptions = word.Options;
+
+                // Set the Word options in a way that allows us to reset the options when we finish
                 try
                 {
-                    // Set the Word options in a way that allows us to reset the options when we finish
                     wordOptionList.Add(new AppOption("AlertIfNotDefault", false, ref wdOptions));
                     wordOptionList.Add(new AppOption("AllowReadingMode", false, ref wdOptions));
                     wordOptionList.Add(new AppOption("PrecisePositioning", true, ref wdOptions));
                     wordOptionList.Add(new AppOption("UpdateFieldsAtPrint", false, ref wdOptions));
                     wordOptionList.Add(new AppOption("UpdateLinksAtPrint", false, ref wdOptions));
+                    wordOptionList.Add(new AppOption("UpdateLinksAtOpen", false, ref wdOptions));
+                    wordOptionList.Add(new AppOption("UpdateFieldsWithTrackedChangesAtPrint", false, ref wdOptions));
                     wordOptionList.Add(new AppOption("WarnBeforeSavingPrintingSendingMarkup", false, ref wdOptions));
                     wordOptionList.Add(new AppOption("BackgroundSave", true, ref wdOptions));
                     wordOptionList.Add(new AppOption("SavePropertiesPrompt", false, ref wdOptions));
@@ -124,21 +153,16 @@ namespace OfficeToPDF
                     wordOptionList.Add(new AppOption("ShowFormatError", false, ref wdOptions));
                     wordOptionList.Add(new AppOption("StoreRSIDOnSave", false, ref wdOptions));
                     wordOptionList.Add(new AppOption("SaveNormalPrompt", false, ref wdOptions));
+                    wordOptionList.Add(new AppOption("AllowFastSave", false, ref wdOptions));
+                    wordOptionList.Add(new AppOption("BackgroundOpen", false, ref wdOptions));
+                    wordOptionList.Add(new AppOption("ShowMarkupOpenSave", false, ref wdOptions));
+                    wordOptionList.Add(new AppOption("SaveInterval", 0, ref wdOptions));
                 }
                 catch (SystemException)
                 {
                 }
                 
-                Object filename = (Object)inputFile;
-                Boolean hasSignatures = false;
-                Boolean visible = !(Boolean)options["hidden"];
-                Boolean nowrite = (Boolean)options["readonly"];
-                Boolean includeProps = !(Boolean)options["excludeprops"];
-                Boolean includeTags = !(Boolean)options["excludetags"];
-                Boolean bitmapMissingFonts = !(Boolean)options["word_ref_fonts"];
-                Boolean autosave = options.ContainsKey("IsTempWord") && (Boolean)options["IsTempWord"];
-                bool pdfa = (Boolean)options["pdfa"] ? true : false;
-                WdExportOptimizeFor quality = WdExportOptimizeFor.wdExportOptimizeForPrint;
+                // Set up the PDF output quality
                 if ((Boolean)options["print"])
                 {
                     quality = WdExportOptimizeFor.wdExportOptimizeForPrint;
@@ -147,37 +171,30 @@ namespace OfficeToPDF
                 {
                     quality = WdExportOptimizeFor.wdExportOptimizeForOnScreen;
                 }
-                WdExportCreateBookmarks bookmarks = (Boolean)options["bookmarks"] ? 
-                    WdExportCreateBookmarks.wdExportCreateHeadingBookmarks : 
-                    WdExportCreateBookmarks.wdExportCreateNoBookmarks;
-                WdExportItem showMarkup = WdExportItem.wdExportDocumentContent;
+                
                 if ((Boolean)options["markup"])
                 {
                     showMarkup = WdExportItem.wdExportDocumentWithMarkup;
                 }
 
-                // Large Word files may simply not print reliably - if the word_max_pages
-                // configuration option is set, then we must close up and forget about 
-                // converting the file.
-                var maxPages = (int)options[@"word_max_pages"];
-
-                var documents = word.Documents;
-                var normalTemplate = word.NormalTemplate;
-
-                String readPassword = "";
                 if (!String.IsNullOrEmpty((String)options["password"]))
                 {
                     readPassword = (String)options["password"];
                 }
-                Object oReadPass = (Object)readPassword;
 
-                String writePassword = "";
                 if (!String.IsNullOrEmpty((String)options["writepassword"]))
                 {
                     writePassword = (String)options["writepassword"];
                 }
-                Object oWritePass = (Object)writePassword;
 
+                // Large Word files may simply not print reliably - if the word_max_pages
+                // configuration option is set, then we must close up and forget about 
+                // converting the file.
+                maxPages = (int)options[@"word_max_pages"];
+
+                documents = word.Documents;
+                normalTemplate = word.NormalTemplate;
+                
                 // Check for password protection and no password
                 if (Converter.IsPasswordProtected(inputFile) && String.IsNullOrEmpty(readPassword))
                 {
@@ -186,12 +203,20 @@ namespace OfficeToPDF
                     return (int)ExitCode.PasswordFailure;
                 }
 
-                Document doc = null;
+                // Having signatures means we should open the document very carefully
+                if (hasSignatures)
+                {
+                    nowrite = true;
+                    autosave = false;
+                    openAndRepair = false;
+                }
+
+                Microsoft.Office.Interop.Word.Document doc = null;
                 try
                 {
                     if ((bool)options["merge"] && !String.IsNullOrEmpty((string)options["template"]) &&
                         File.Exists((string)options["template"]) &&
-                        System.Text.RegularExpressions.Regex.IsMatch((string)options["template"], @"^.*\.dot[mx]?$"))
+                        System.Text.RegularExpressions.Regex.IsMatch((string)options["template"], @"^.*\.dot[mx]?$", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
                     {
                         // Create a new document based on a template
                         doc = documents.Add((string)options["template"]);
@@ -210,10 +235,7 @@ namespace OfficeToPDF
                     else
                     {
                         // Open the source document
-                        doc = documents.OpenNoRepairDialog(ref filename, ref oMissing,
-                            nowrite, ref oMissing, ref oReadPass, ref oMissing, ref oMissing,
-                            ref oWritePass, ref oMissing, ref oMissing, ref oMissing, visible,
-                            true, ref oMissing, ref oMissing, ref oMissing);
+                        doc = documents.OpenNoRepairDialog(FileName: filename, ReadOnly: nowrite, PasswordDocument: readPassword, WritePasswordDocument: writePassword, Visible: visible, OpenAndRepair: openAndRepair);
                     }
                 }
                 catch (System.Runtime.InteropServices.COMException)
@@ -221,140 +243,134 @@ namespace OfficeToPDF
                     Console.WriteLine("Unable to open file");
                     return (int)ExitCode.FileOpenFailure;
                 }
-                doc.Activate();
 
-                // Check if there are signatures in the document which 
-                var signatures = doc.Signatures;
-                if (signatures.Count > 0)
-                {
-                    signatures.ShowSignaturesPane = false;
-                    nowrite = true;
-                    autosave = false;
-                    hasSignatures = true;
-                    options["word_no_field_update"] = true;
-                }
-                Converter.releaseCOMObject(signatures);
-
-                // Check if there are too many pages
-                if (maxPages > 0)
-                {
-                    var pageCount = doc.ComputeStatistics(WdStatistic.wdStatisticPages, false);
-                    doc.Saved = true;
-                    if (pageCount > maxPages)
-                    {
-                        throw new Exception(String.Format("Too many pages to process ({0}). More than {1}", pageCount, maxPages));
-                    }
-                }
-                
-                // Prevent "property not available" errors, see http://blogs.msmvps.com/wordmeister/2013/02/22/word2013bug-not-available-for-reading/
-                var docWin = doc.ActiveWindow;
-                var docWinView = docWin.View;
-                if (wordVersion >= 15)
-                {
-                    docWinView.ReadingLayout = false;
-                }
-
-                // Sometimes the print view will not be available (e.g. for a blog post)
-                // Try and switch view
-                try
-                {
-                    docWinView.Type = WdViewType.wdPrintPreview;
-                }
-                catch(Exception){}
-
-                // Hide comments
-                try
-                {
-                    docWinView.RevisionsView = WdRevisionsView.wdRevisionsViewFinal;
-                    docWinView.ShowRevisionsAndComments = false;
-                }
-                catch(SystemException){}
-
-                // Try to avoid Word thinking any changes are happening to the document
-                doc.SpellingChecked = true;
-                doc.GrammarChecked = true;
-
-                // Changing these properties may be disallowed if the document is protected
-                // and is not signed
-                if (doc.ProtectionType == WdProtectionType.wdNoProtection && !hasSignatures)
-                {
-                    if (autosave) { doc.Save(); doc.Saved = true; }
-                    doc.TrackMoves = false;
-                    doc.TrackRevisions = false;
-                    doc.TrackFormatting = false;
-                }
-                
-                normalTemplate.Saved = true;
-
-                // Hide the document window if need be
-                if ((Boolean)options["hidden"])
-                {
-                    var activeWin = word.ActiveWindow;
-                    activeWin.Visible = false;
-                    activeWin.WindowState = WdWindowState.wdWindowStateMinimize;
-                    Converter.releaseCOMObject(activeWin);
-                }
-
-                // Check if we have a template file to apply to this document
-                // The template must be a file and must end in .dot, .dotx or .dotm
-                if (!String.IsNullOrEmpty((String)options["template"]) && !(bool)options["merge"])
-                {
-                    string template = (string)options["template"];
-                    if (File.Exists(template) && System.Text.RegularExpressions.Regex.IsMatch(template, @"^.*\.dot[mx]?$"))
-                    {
-                        doc.set_AttachedTemplate(template);
-                        doc.UpdateStyles();
-                        tmpl = doc.get_AttachedTemplate();
-                    }
-                    else
-                    {
-                        Console.WriteLine("Invalid template '{0}'", template);
-                    }
-                }
-
-                // See if we have to update fields
-                if (!(Boolean)options["word_no_field_update"])
-                {
-                    updateDocumentFields(doc, word, inputFile, options);
-                }
-
-                var pageSetup = doc.PageSetup;
-                if ((float)options["word_header_dist"] >= 0)
-                {
-                    pageSetup.HeaderDistance = (float)options["word_header_dist"];
-                }
-                if ((float)options["word_footer_dist"] >= 0)
-                {
-                    pageSetup.FooterDistance = (float)options["word_footer_dist"];
-                }
-
-                try
-                {
-                    // Make sure we are not in a header footer view
-                    docWinView.SeekView = WdSeekView.wdSeekPrimaryHeader;
-                    docWinView.SeekView = WdSeekView.wdSeekPrimaryFooter;
-                    docWinView.SeekView = WdSeekView.wdSeekMainDocument;
-                }
-                catch(Exception)
-                {
-                    // We might fail when switching views
-                }
-
-                normalTemplate.Saved = true;
-                if (autosave)
-                {
-                    doc.Save();
-                }
-                doc.Saved = true;
-
-                // If a document has signatures, Word can take a bit of time to
-                // validate them and get itself ready to do the conversion. Here
-                // we pause a bit to give Word time to get itself ready.
+                // Check if there are signatures in the document which changes how we do things
                 if (hasSignatures)
                 {
-                    // Bit of a hack really
-                    Thread.Sleep(2500);
+                    // Add in a delay to allow signatures to load
+                    Thread.Sleep(500);
                 }
+                else 
+                {
+                    Microsoft.Office.Interop.Word.Window docWin = null;
+                    Microsoft.Office.Interop.Word.View docWinView = null;
+
+                    doc.Activate();
+                    // Check if there are too many pages
+                    if (maxPages > 0)
+                    {
+                        var pageCount = doc.ComputeStatistics(WdStatistic.wdStatisticPages, false);
+                        doc.Saved = true;
+                        if (pageCount > maxPages)
+                        {
+                            throw new Exception(String.Format("Too many pages to process ({0}). More than {1}", pageCount, maxPages));
+                        }
+                    }
+
+                    // Prevent "property not available" errors, see http://blogs.msmvps.com/wordmeister/2013/02/22/word2013bug-not-available-for-reading/
+                    docWin = doc.ActiveWindow;
+                    docWinView = docWin.View;
+                    if (wordVersion >= 15)
+                    {
+                        docWinView.ReadingLayout = false;
+                    }
+
+                    // Sometimes the print view will not be available (e.g. for a blog post)
+                    // Try and switch view
+                    try
+                    {
+                        docWinView.Type = WdViewType.wdPrintPreview;
+                    }
+                    catch (Exception) { }
+
+                    // Hide comments
+                    try
+                    {
+                        docWinView.RevisionsView = WdRevisionsView.wdRevisionsViewFinal;
+                        docWinView.ShowRevisionsAndComments = false;
+                    }
+                    catch (SystemException) { }
+
+                    // Try to avoid Word thinking any changes are happening to the document
+                    doc.SpellingChecked = true;
+                    doc.GrammarChecked = true;
+
+                    // Changing these properties may be disallowed if the document is protected
+                    // and is not signed
+                    if (doc.ProtectionType == WdProtectionType.wdNoProtection && !hasSignatures)
+                    {
+                        if (autosave) { doc.Save(); doc.Saved = true; }
+                        doc.TrackMoves = false;
+                        doc.TrackRevisions = false;
+                        doc.TrackFormatting = false;
+                    }
+
+                    normalTemplate.Saved = true;
+
+                    // Hide the document window if need be
+                    if ((Boolean)options["hidden"])
+                    {
+                        var activeWin = word.ActiveWindow;
+                        activeWin.Visible = false;
+                        activeWin.WindowState = WdWindowState.wdWindowStateMinimize;
+                        Converter.releaseCOMObject(activeWin);
+                    }
+
+                    // Check if we have a template file to apply to this document
+                    // The template must be a file and must end in .dot, .dotx or .dotm
+                    if (!String.IsNullOrEmpty((String)options["template"]) && !(bool)options["merge"])
+                    {
+                        string template = (string)options["template"];
+                        if (File.Exists(template) && System.Text.RegularExpressions.Regex.IsMatch(template, @"^.*\.dot[mx]?$"))
+                        {
+                            doc.set_AttachedTemplate(template);
+                            doc.UpdateStyles();
+                            tmpl = doc.get_AttachedTemplate();
+                        }
+                        else
+                        {
+                            Console.WriteLine("Invalid template '{0}'", template);
+                        }
+                    }
+
+                    // See if we have to update fields
+                    if (!(Boolean)options["word_no_field_update"])
+                    {
+                        updateDocumentFields(doc, word, inputFile, options);
+                    }
+
+                    var pageSetup = doc.PageSetup;
+                    if ((float)options["word_header_dist"] >= 0)
+                    {
+                        pageSetup.HeaderDistance = (float)options["word_header_dist"];
+                    }
+                    if ((float)options["word_footer_dist"] >= 0)
+                    {
+                        pageSetup.FooterDistance = (float)options["word_footer_dist"];
+                    }
+                    Converter.releaseCOMObject(pageSetup);
+                    try
+                    {
+                        // Make sure we are not in a header footer view
+                        docWinView.SeekView = WdSeekView.wdSeekPrimaryHeader;
+                        docWinView.SeekView = WdSeekView.wdSeekPrimaryFooter;
+                        docWinView.SeekView = WdSeekView.wdSeekMainDocument;
+                    }
+                    catch (Exception)
+                    {
+                        // We might fail when switching views
+                    }
+
+                    normalTemplate.Saved = true;
+                    if (autosave)
+                    {
+                        doc.Save();
+                    }
+                    doc.Saved = true;
+                    Converter.releaseCOMObject(docWinView);
+                    Converter.releaseCOMObject(docWin);
+                }
+
                 doc.ExportAsFixedFormat(outputFile, WdExportFormat.wdExportFormatPDF, false,
                         quality, WdExportRange.wdExportAllDocument,
                         1, 1, showMarkup, includeProps, true, bookmarks, includeTags, bitmapMissingFonts, pdfa);
@@ -378,9 +394,6 @@ namespace OfficeToPDF
                     opt.resetValue(ref wdOptions);
                 }
 
-                Converter.releaseCOMObject(pageSetup);
-                Converter.releaseCOMObject(docWinView);
-                Converter.releaseCOMObject(docWin);
                 Converter.releaseCOMObject(wdOptions);
                 Converter.releaseCOMObject(documents);
                 Converter.releaseCOMObject(doc);
@@ -443,12 +456,16 @@ namespace OfficeToPDF
             public string name { get; set; }
             public Boolean value { get; set; }
             public Boolean originalValue { get; set; }
+            public int intValue { get; set; }
+            public int originalIntValue { get; set; }
+            protected Type varType { get; set; }
             public AppOption(string name, Boolean value, ref Options wdOptions)
             {
                 try
                 {
                     this.name = name;
                     this.value = value;
+                    this.varType = typeof(Boolean);
                     this.originalValue = (Boolean)wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.GetProperty, null, wdOptions, null);
 
                     if (this.originalValue != value)
@@ -462,19 +479,49 @@ namespace OfficeToPDF
                     // being used, so just skip these errors
                 }
             }
+            public AppOption(string name, int value, ref Options wdOptions)
+            {
+                try
+                {
+                    this.name = name;
+                    this.intValue = value;
+                    this.varType = typeof(int);
+                    this.originalIntValue = (int)wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.GetProperty, null, wdOptions, null);
+
+                    if (this.originalIntValue != value)
+                    {
+                        wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.SetProperty, null, wdOptions, new Object[] { value });
+                    }
+                }
+                catch
+                {
+                    // We may be setting word options that are not available in the version of word
+                    // being used, so just skip these errors
+                }
+            }
 
             // Allow the value on the options to be reset
             public void resetValue(ref Options wdOptions)
             {
-                if (this.value != this.originalValue)
+                if (this.varType == typeof(Boolean))
                 {
-                    wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.SetProperty, null, wdOptions, new Object[] { this.originalValue });
+                    if (this.value != this.originalValue)
+                    {
+                        wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.SetProperty, null, wdOptions, new Object[] { this.originalValue });
+                    }
+                }
+                else
+                {
+                    if (this.intValue != this.originalIntValue)
+                    {
+                        wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.SetProperty, null, wdOptions, new Object[] { this.originalIntValue });
+                    }
                 }
             }
         }
 
         // Update all the fields in a document
-        private static void updateDocumentFields(Document doc, Microsoft.Office.Interop.Word.Application word, String inputFile, Hashtable options)
+        private static void updateDocumentFields(Microsoft.Office.Interop.Word.Document doc, Microsoft.Office.Interop.Word.Application word, String inputFile, Hashtable options)
         {
             // Update fields quickly if it is safe to do so. We have
             // to check for broken links as they may raise Word dialogs or leave broken content
@@ -645,7 +692,7 @@ namespace OfficeToPDF
         // Check if the document has any broken links from shapes and inline shapes.
         // We need to know this to determine if it is safe to perform
         // an update on all fields
-        private static bool hasBrokenLinks(Document doc)
+        private static bool hasBrokenLinks(Microsoft.Office.Interop.Word.Document doc)
         {
             var hasBrokenLinks = false;
             var docShapes = doc.Shapes;
@@ -696,6 +743,32 @@ namespace OfficeToPDF
             }
             Converter.releaseCOMObject(items);
             return hasBrokenLinks;
+        }
+
+        // Use the OpenXML library to look for signatures
+        protected static bool hasDigitalSignatures(string filename)
+        {
+            try
+            {
+                // Only work for things that look like OpenXml format
+                if (!System.Text.RegularExpressions.Regex.IsMatch(filename , @"^.*\.doc[mx]?$", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                {
+                    return false;
+                }
+                var document = WordprocessingDocument.Open(filename, false);
+                if (document != null)
+                {
+                    var signature = document.MainDocumentPart.Document.Descendants<DocumentFormat.OpenXml.Vml.Office.SignatureLine>().FirstOrDefault();
+                    document.Close();
+                    if (signature != null)
+                    {
+                        return true;
+                    }
+                }
+            }
+            catch(Exception) {}
+
+            return false;
         }
     }
 }

@@ -115,6 +115,7 @@ namespace OfficeToPDF
             options["word_max_pages"] = (int) 0;
             options["word_ref_fonts"] = false;
             options["word_keep_history"] = false;
+            options["word_no_repair"] = false;
             options["original_filename"] = "";
             options["original_basename"] = "";
             options["pdf_page_mode"] = null;
@@ -142,7 +143,7 @@ namespace OfficeToPDF
                 { "excel_delay", "Excel delay milliseconds" }
             };
 
-            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_(delay|max_rows|show_formulas|show_headings|auto_macros|template_macros|active_sheet|worksheet|no_recalculate|no_link_update)|word_(header_dist|footer_dist|ref_fonts|no_field_update|field_quick_update(_safe)?|max_pages|keep_history)|pdf_(page_mode|append|prepend|layout|clean_meta|owner_pass|user_pass|restrict_(annotation|extraction|assembly|forms|modify|print|accessibility_extraction|full_quality))|working_dir|\?)$", RegexOptions.IgnoreCase);
+            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_(delay|max_rows|show_formulas|show_headings|auto_macros|template_macros|active_sheet|worksheet|no_recalculate|no_link_update)|word_(header_dist|footer_dist|ref_fonts|no_field_update|field_quick_update(_safe)?|max_pages|keep_history|no_repair)|pdf_(page_mode|append|prepend|layout|clean_meta|owner_pass|user_pass|restrict_(annotation|extraction|assembly|forms|modify|print|accessibility_extraction|full_quality))|working_dir|\?)$", RegexOptions.IgnoreCase);
             for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
                 string item = args[argIdx];
@@ -1020,6 +1021,7 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file [output_file]
   /word_max_pages <pages>   - Do not attempt conversion of a Word document if it has more than
                               this number of pages.
   /word_no_field_update     - Do not update fields when creating the PDF.
+  /word_no_repair           - Do not attempt to repair a Word document when opening.
   /word_ref_fonts           - When fonts are not available, a reference to the font is used in
                               the generated PDF rather than a bitmapped version. The default is
                               for a bitmap of the text to be used.
