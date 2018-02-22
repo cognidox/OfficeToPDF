@@ -24,6 +24,7 @@ using System.Linq;
 using System.Text;
 using System.Globalization;
 using System.IO;
+using System.IO.Packaging;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -755,15 +756,14 @@ namespace OfficeToPDF
                 {
                     return false;
                 }
+                bool isSigned = false;
                 var document = WordprocessingDocument.Open(filename, false);
                 if (document != null)
                 {
-                    var signature = document.MainDocumentPart.Document.Descendants<DocumentFormat.OpenXml.Vml.Office.SignatureLine>().FirstOrDefault();
+                    PackageDigitalSignatureManager dsm = new PackageDigitalSignatureManager(document.Package);
+                    isSigned = dsm.IsSigned;
                     document.Close();
-                    if (signature != null)
-                    {
-                        return true;
-                    }
+                    return isSigned;
                 }
             }
             catch(Exception) {}
