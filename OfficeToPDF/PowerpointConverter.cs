@@ -91,6 +91,9 @@ namespace OfficeToPDF
                             return (int)ExitCode.ApplicationError;
                         }
                     }
+                    Boolean includeProps = !(Boolean)options["excludeprops"];
+                    Boolean includeTags = !(Boolean)options["excludetags"];
+                    PpPrintOutputType printType = PpPrintOutputType.ppPrintOutputSlides;
                     MSCore.MsoTriState nowrite = (Boolean)options["readonly"] ? MSCore.MsoTriState.msoTrue : MSCore.MsoTriState.msoFalse;
                     bool pdfa = (Boolean)options["pdfa"] ? true : false;
                     if ((Boolean)options["hidden"])
@@ -107,8 +110,12 @@ namespace OfficeToPDF
                     {
                         quality = PpFixedFormatIntent.ppFixedFormatIntentScreen;
                     }
-                    Boolean includeProps = !(Boolean)options["excludeprops"];
-                    Boolean includeTags = !(Boolean)options["excludetags"];
+                    if (!String.IsNullOrWhiteSpace((String)options["powerpoint_output"]))
+                    {
+                        bool printIsValid = false;
+                        printType = PowerpointConverter.getOutputType((String)options["powerpoint_output"], ref printIsValid);
+                    }
+                    
                     app.FeatureInstall = MSCore.MsoFeatureInstall.msoFeatureInstallNone;
                     app.DisplayDocumentInformationPanel = false;
                     app.DisplayAlerts = PpAlertLevel.ppAlertsNone;
@@ -140,7 +147,7 @@ namespace OfficeToPDF
                         activePresentation.Slides.InsertFromFile(inputFile, 0);
                     }
                     Converter.releaseCOMObject(fonts);
-                    activePresentation.ExportAsFixedFormat(outputFile, PpFixedFormatType.ppFixedFormatTypePDF, quality, MSCore.MsoTriState.msoFalse, PpPrintHandoutOrder.ppPrintHandoutVerticalFirst, PpPrintOutputType.ppPrintOutputSlides, MSCore.MsoTriState.msoFalse, null, PpPrintRangeType.ppPrintAll, "", includeProps, true, includeTags, true, pdfa, Type.Missing);
+                    activePresentation.ExportAsFixedFormat(outputFile, PpFixedFormatType.ppFixedFormatTypePDF, quality, MSCore.MsoTriState.msoFalse, PpPrintHandoutOrder.ppPrintHandoutVerticalFirst, printType, MSCore.MsoTriState.msoFalse, null, PpPrintRangeType.ppPrintAll, "", includeProps, true, includeTags, true, pdfa, Type.Missing);
 
                     // Determine if we need to make bookmarks
                     if ((bool)options["bookmarks"])
@@ -278,6 +285,49 @@ namespace OfficeToPDF
                 bookmarks.Add(parentBookmark);
             }
             Converter.releaseCOMObject(slides);
+        }
+
+        
+        // Return the PpPrintOutputType for a given option string
+        public static PpPrintOutputType getOutputType(string printType, ref bool valid)
+        {
+            valid = true;
+            switch (printType)
+            {
+                case "handout":
+                case "handouts":
+                case "handout1":
+                    return PpPrintOutputType.ppPrintOutputOneSlideHandouts;
+                case "handout2":
+                case "handouts2":
+                    return PpPrintOutputType.ppPrintOutputTwoSlideHandouts;
+                case "handout3":
+                case "handouts3":
+                    return PpPrintOutputType.ppPrintOutputThreeSlideHandouts;
+                case "handout4":
+                case "handouts4":
+                    return PpPrintOutputType.ppPrintOutputFourSlideHandouts;
+                case "handout6":
+                case "handouts6":
+                    return PpPrintOutputType.ppPrintOutputSixSlideHandouts;
+                case "handout9":
+                case "handouts9":
+                    return PpPrintOutputType.ppPrintOutputNineSlideHandouts;
+                case "notes":
+                    return PpPrintOutputType.ppPrintOutputNotesPages;
+                case "slides":
+                    return PpPrintOutputType.ppPrintOutputSlides;
+                case "outline":
+                    return PpPrintOutputType.ppPrintOutputOutline;
+                case "build_slides":
+                case "buildslides":
+                case "build-slides":
+                    return PpPrintOutputType.ppPrintOutputBuildSlides;
+                default:
+                    valid = false;
+                    break;
+            }
+            return PpPrintOutputType.ppPrintOutputSlides;
         }
     }
 }
