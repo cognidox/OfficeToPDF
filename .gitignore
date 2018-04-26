@@ -1,4 +1,8 @@
 OfficeToPDF.suo
+sign-files.bat
+.vs
+OfficeToPDF/bin
+OfficeToPDF/obj
 OfficeToPDF/OfficeToPDF.csproj.user
 OfficeToPDF/bin/Release/OfficeToPDF.exe
 OfficeToPDF/bin/Release/OfficeToPDF.pdb
