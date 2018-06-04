@@ -19,10 +19,7 @@
 
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Runtime.InteropServices;
 using Microsoft.Office.Interop.Excel;
@@ -87,7 +84,7 @@ namespace OfficeToPDF
                 }
                 if (tries == 0)
                 {
-                    Converter.releaseCOMObject(app);
+                    ReleaseCOMObject(app);
                     return (int)ExitCode.ApplicationError;
                 }
 
@@ -165,7 +162,7 @@ namespace OfficeToPDF
                 }
 
                 // Add in a delay to let Excel sort itself out
-                addCOMDelay(options);
+                AddCOMDelay(options);
 
                 // Unable to open workbook
                 if (workbook == null)
@@ -179,7 +176,7 @@ namespace OfficeToPDF
                 }
                 
                 // Get any template options
-                setPageOptionsFromTemplate(app, workbooks, options, ref templatePageSetup);
+                SetPageOptionsFromTemplate(app, workbooks, options, ref templatePageSetup);
 
                 // Get the sheets
                 allSheets = workbook.Sheets;
@@ -242,9 +239,12 @@ namespace OfficeToPDF
                 if (isHidden)
                 {
                     wbWin = workbook.Windows;
-                    if (wbWin.Count > 0)
+                    if (null != wbWin)
                     {
-                        wbWin[1].Visible = false;
+                        if (wbWin.Count > 0)
+                        {
+                            wbWin[1].Visible = false;
+                        }
                     }
                     if (null != activeWindow)
                     {
@@ -287,14 +287,14 @@ namespace OfficeToPDF
                                 int itemIndex = 1;
                                 if (activeSheet is _Worksheet)
                                 {
-                                    itemIndex = ((Microsoft.Office.Interop.Excel.Worksheet)activeSheet).Index;
+                                    itemIndex = ((Worksheet)activeSheet).Index;
                                 } else if (activeSheet is _Chart)
                                 {
                                     itemIndex = ((Microsoft.Office.Interop.Excel.Chart)activeSheet).Index;
                                 }
                                 if (wsIdx != itemIndex)
                                 {
-                                    Converter.releaseCOMObject(ws);
+                                    ReleaseCOMObject(ws);
                                     continue;
                                 }
                             }
@@ -302,7 +302,7 @@ namespace OfficeToPDF
                             {
                                 if (ws != null)
                                 {
-                                    Converter.releaseCOMObject(ws);
+                                    ReleaseCOMObject(ws);
                                 }
                                 continue;
                             }
@@ -314,14 +314,14 @@ namespace OfficeToPDF
                             PageSetup pageSetup = null;
                             try
                             {
-                                pageSetup = ((Microsoft.Office.Interop.Excel.Worksheet)ws).PageSetup;
+                                pageSetup = ((Worksheet)ws).PageSetup;
                                 pageSetup.PrintHeadings = true;
                                 
                             }
                             catch (Exception) { }
                             finally
                             {
-                                Converter.releaseCOMObject(pageSetup);
+                                ReleaseCOMObject(pageSetup);
                             }
                         }
 
@@ -331,15 +331,15 @@ namespace OfficeToPDF
                             Range cols = null;
                             try
                             {
-                                ((Microsoft.Office.Interop.Excel._Worksheet)ws).Activate();
+                                ((_Worksheet)ws).Activate();
                                 activeWindow.DisplayFormulas = true;
-                                cols = ((Microsoft.Office.Interop.Excel.Worksheet)ws).Columns;
+                                cols = ((Worksheet)ws).Columns;
                                 cols.AutoFit();
                             }
                             catch (Exception) { }
                             finally
                             {
-                                Converter.releaseCOMObject(cols);
+                                ReleaseCOMObject(cols);
                             }
                         }
 
@@ -347,9 +347,9 @@ namespace OfficeToPDF
                         if (maxRows > 0 && ws is _Worksheet)
                         {
                             // Check for a print area
-                            var pageSetup = ((Microsoft.Office.Interop.Excel.Worksheet)ws).PageSetup;
+                            var pageSetup = ((Worksheet)ws).PageSetup;
                             var printArea = pageSetup.PrintArea;
-                            Converter.releaseCOMObject(pageSetup);
+                            ReleaseCOMObject(pageSetup);
                             if (string.IsNullOrEmpty(printArea))
                             {
                                 // There is no print area, check that the row count is <= to the
@@ -357,7 +357,7 @@ namespace OfficeToPDF
                                 // row, as this may return a huge value, rather find the last non-blank
                                 // row.
                                 var row_count = 0;
-                                var range = ((Microsoft.Office.Interop.Excel.Worksheet)ws).UsedRange;
+                                var range = ((Worksheet)ws).UsedRange;
                                 if (range != null)
                                 {
                                     var rows = range.Rows;
@@ -371,27 +371,27 @@ namespace OfficeToPDF
                                             if (cellSearch != null)
                                             {
                                                 row_count = cellSearch.Row;
-                                                found_worksheet = ((Microsoft.Office.Interop.Excel.Worksheet)ws).Name;
+                                                found_worksheet = ((Worksheet)ws).Name;
                                             }
-                                            Converter.releaseCOMObject(cellSearch);
+                                            ReleaseCOMObject(cellSearch);
                                         }
-                                        Converter.releaseCOMObject(cells);
+                                        ReleaseCOMObject(cells);
                                     }
-                                    Converter.releaseCOMObject(rows);
+                                    ReleaseCOMObject(rows);
                                 }
-                                Converter.releaseCOMObject(range);
+                                ReleaseCOMObject(range);
 
                                 if (row_count > maxRows)
                                 {
                                     // Too many rows on this worksheet - mark the workbook as unprintable
                                     row_count_check_ok = false;
                                     found_rows = row_count;
-                                    Converter.releaseCOMObject(ws);
+                                    Converter.ReleaseCOMObject(ws);
                                     break;
                                 }
                             }
                         } // End of row check
-                        Converter.releaseCOMObject(ws);
+                        Converter.ReleaseCOMObject(ws);
                     }
 
                     // Make sure we are not converting a document with too many rows
@@ -412,6 +412,12 @@ namespace OfficeToPDF
 
                 if (onlyActiveSheet)
                 {
+                    // Set up a delegate function for times we want to print
+                    PrintDocument printFunc = delegate (string destination, string printer)
+                    {
+                        ((Worksheet)activeSheet).PrintOutEx(ActivePrinter: printer, PrintToFile: true, PrToFileName: destination);
+                    };
+
                     if (sheetForConversionIdx > 0)
                     {
                         activeSheet = allSheets.Item[sheetForConversionIdx];
@@ -419,28 +425,53 @@ namespace OfficeToPDF
                     if (activeSheet is _Worksheet)
                     {
                         var wps = ((_Worksheet)activeSheet).PageSetup;
-                        setPageSetupProperties(templatePageSetup, wps);
-                        ((Microsoft.Office.Interop.Excel.Worksheet)activeSheet).ExportAsFixedFormat(XlFixedFormatType.xlTypePDF,
-                            outputFile, quality, includeProps, false, Type.Missing, Type.Missing, false, Type.Missing);
-                        Converter.releaseCOMObject(wps);
+                        SetPageSetupProperties(templatePageSetup, wps);
+                        if (String.IsNullOrEmpty((string)options["printer"]))
+                        {
+                            try
+                            {
+                                ((Worksheet)activeSheet).ExportAsFixedFormat(XlFixedFormatType.xlTypePDF,
+                                outputFile, quality, includeProps, false, Type.Missing, Type.Missing, false, Type.Missing);
+                            }
+                            catch (Exception)
+                            {
+                                if (!String.IsNullOrEmpty((string)options["fallback_printer"]))
+                                {
+                                    PrintToGhostscript((string)options["fallback_printer"], outputFile, printFunc);
+                                }
+                                else
+                                {
+                                    throw;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            PrintToGhostscript((string)options["printer"], outputFile, printFunc);
+                        }
+                        ReleaseCOMObject(wps);
                     }
                     else if (activeSheet is _Chart)
                     {
                         var wps = ((_Chart)activeSheet).PageSetup;
-                        setPageSetupProperties(templatePageSetup, wps);
+                        SetPageSetupProperties(templatePageSetup, wps);
                         ((Microsoft.Office.Interop.Excel.Chart)activeSheet).ExportAsFixedFormat(XlFixedFormatType.xlTypePDF,
                             outputFile, quality, includeProps, false, Type.Missing, Type.Missing, false, Type.Missing);
-                        Converter.releaseCOMObject(wps);
+                        ReleaseCOMObject(wps);
                     }
                     else
                     {
                         return (int)ExitCode.UnknownError;
                     }
-                    addCOMDelay(options);
+                    AddCOMDelay(options);
                 }
                 else
                 {
-                    if (hasTemplateOption(options))
+                    PrintDocument printFunc = delegate (string destination, string printer)
+                    {
+                        workbook.PrintOutEx(ActivePrinter: printer, PrintToFile: true, PrToFileName: destination);
+                    };
+                    if (HasTemplateOption(options))
                     {
                         // Set up the template page setup options on all the worksheets
                         // in the workbook
@@ -449,19 +480,38 @@ namespace OfficeToPDF
                         {
                             var ws = worksheets[wsIdx];
                             var wps = (ws is _Worksheet) ? ((_Worksheet)ws).PageSetup : ((_Chart)ws).PageSetup;
-                            setPageSetupProperties(templatePageSetup, wps);
-                            Converter.releaseCOMObject(wps);
-                            Converter.releaseCOMObject(ws);
+                            SetPageSetupProperties(templatePageSetup, wps);
+                            ReleaseCOMObject(wps);
+                            ReleaseCOMObject(ws);
                         }
-                        Converter.releaseCOMObject(worksheets);
+                        ReleaseCOMObject(worksheets);
                     }
-                    workbook.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF,
-                        outputFile, quality, includeProps, false, Type.Missing, Type.Missing, false, Type.Missing);
+                    if (String.IsNullOrEmpty((string)options["printer"]))
+                    {
+                        try
+                        {
+                            workbook.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF,
+                            outputFile, quality, includeProps, false, Type.Missing, Type.Missing, false, Type.Missing);
+                        }
+                        catch (Exception)
+                        {
+                            if (!String.IsNullOrEmpty((string)options["fallback_printer"]))
+                            {
+                                PrintToGhostscript((string)options["fallback_printer"], outputFile, printFunc);
+                            }
+                            else
+                            {
+                                throw;
+                            }
+                        }
+                    } else {
+                        PrintToGhostscript((string)options["printer"], outputFile, printFunc);
+                    }
                 }
 
-                Converter.releaseCOMObject(allSheets);
-                Converter.releaseCOMObject(fmt);
-                Converter.releaseCOMObject(quality);
+                ReleaseCOMObject(allSheets);
+                ReleaseCOMObject(fmt);
+                ReleaseCOMObject(quality);
 
                 return (int)ExitCode.Success;
             }
@@ -486,15 +536,15 @@ namespace OfficeToPDF
             {
                 if (workbook != null)
                 {
-                    Converter.releaseCOMObject(activeSheet);
-                    Converter.releaseCOMObject(activeWindow);
-                    Converter.releaseCOMObject(wbWin);
+                    ReleaseCOMObject(activeSheet);
+                    ReleaseCOMObject(activeWindow);
+                    ReleaseCOMObject(wbWin);
                     GC.Collect();
                     GC.WaitForPendingFinalizers();
                     // Excel sometimes needs a bit of a delay before we close in order to
                     // let things get cleaned up
                     workbook.Saved = true;
-                    closeExcelWorkbook(workbook);
+                    CloseExcelWorkbook(workbook);
                 }
 
                 if (!running)
@@ -511,9 +561,9 @@ namespace OfficeToPDF
                 }
 
                 // Clean all the COM leftovers
-                Converter.releaseCOMObject(workbook);
-                Converter.releaseCOMObject(workbooks);
-                Converter.releaseCOMObject(app);
+                ReleaseCOMObject(workbook);
+                ReleaseCOMObject(workbooks);
+                ReleaseCOMObject(app);
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
 
@@ -527,7 +577,7 @@ namespace OfficeToPDF
         }
 
         // Return true if there is a valid template option
-        protected static bool hasTemplateOption(Hashtable options)
+        protected static bool HasTemplateOption(Hashtable options)
         {
             if (String.IsNullOrEmpty((string)options["template"]) ||
                 !File.Exists((string)options["template"]) ||
@@ -540,9 +590,9 @@ namespace OfficeToPDF
 
         // Read the first worksheet from a template document and extract and store
         // the page settings for later use
-        protected static void setPageOptionsFromTemplate(Application app, Workbooks workbooks, Hashtable options, ref Hashtable templatePageSetup)
+        protected static void SetPageOptionsFromTemplate(Application app, Workbooks workbooks, Hashtable options, ref Hashtable templatePageSetup)
         {
-            if (!hasTemplateOption(options))
+            if (!HasTemplateOption(options))
             {
                 return;
             }
@@ -550,7 +600,7 @@ namespace OfficeToPDF
             try
             {
                 var template = workbooks.Open((string)options["template"]);
-                addCOMDelay(options);
+                AddCOMDelay(options);
                 if (template != null)
                 {
                     // Run macros from template if the /excel_template_macros option is given
@@ -587,13 +637,13 @@ namespace OfficeToPDF
                                     templatePageSetup[templateProperties[i]] = prop;
                                 }
                             }
-                            Converter.releaseCOMObject(firstItem);
+                            Converter.ReleaseCOMObject(firstItem);
                         }
-                        Converter.releaseCOMObject(templateSheets);
+                        ReleaseCOMObject(templateSheets);
                     }
-                    closeExcelWorkbook(template);
+                    CloseExcelWorkbook(template);
                 }
-                Converter.releaseCOMObject(template);
+                ReleaseCOMObject(template);
             }
             finally
             {
@@ -601,7 +651,7 @@ namespace OfficeToPDF
         }
 
         // Add in the required millisecond delay
-        private static void addCOMDelay(Hashtable options)
+        private static void AddCOMDelay(Hashtable options)
         {
             if ((int)options["excel_delay"] > 0)
             {
@@ -610,7 +660,7 @@ namespace OfficeToPDF
         }
 
         // Load stored worksheet properties into the page setup
-        protected static void setPageSetupProperties(Hashtable tps, PageSetup wps)
+        protected static void SetPageSetupProperties(Hashtable tps, PageSetup wps)
         {
             if (tps == null || tps.Count == 0)
             {
@@ -632,7 +682,7 @@ namespace OfficeToPDF
             }
         }
 
-        private static bool closeExcelWorkbook(Workbook workbook)
+        private static bool CloseExcelWorkbook(Workbook workbook)
         {
             int tries = 20;
             while (tries-- > 0)
@@ -642,9 +692,9 @@ namespace OfficeToPDF
                     workbook.Close();
                     return true;
                 }
-                catch (System.Runtime.InteropServices.COMException)
+                catch (COMException)
                 {
-                    System.Threading.Thread.Sleep(500);
+                    Thread.Sleep(500);
                 }
             }
             return false;

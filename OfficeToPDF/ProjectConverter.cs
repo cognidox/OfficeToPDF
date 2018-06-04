@@ -96,7 +96,7 @@ namespace OfficeToPDF
                 {
                     ((MSProject.Application)app).Quit();
                 }
-                Converter.releaseCOMObject(app);
+                ReleaseCOMObject(app);
             }
         }
     }

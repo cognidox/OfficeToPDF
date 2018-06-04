@@ -62,7 +62,7 @@ namespace OfficeToPDF
                 {
                     var activeWin = app.ActiveWindow;
                     activeWin.Visible = false;
-                    Converter.releaseCOMObject(activeWin);
+                    ReleaseCOMObject(activeWin);
                 }
                 app.Open(inputFile, nowrite, false, PbSaveOptions.pbDoNotSaveChanges);
                 PbFixedFormatIntent quality = PbFixedFormatIntent.pbIntentStandard;
@@ -91,7 +91,7 @@ namespace OfficeToPDF
                 }
                 activeDocument.Close();
 
-                Converter.releaseCOMObject(activeDocument);
+                ReleaseCOMObject(activeDocument);
                 return (int)ExitCode.Success;
             }
             catch (Exception e)
@@ -109,7 +109,7 @@ namespace OfficeToPDF
                 {
                     ((Microsoft.Office.Interop.Publisher._Application)app).Quit();
                 }
-                Converter.releaseCOMObject(app);
+                ReleaseCOMObject(app);
             }
         }
 
@@ -131,10 +131,10 @@ namespace OfficeToPDF
                     bookmark.page = ((Page)p).PageIndex;
                     bookmark.title = ((Page)p).Name;
                     parentBookmark.children.Add(bookmark);
-                    Converter.releaseCOMObject(p);
+                    ReleaseCOMObject(p);
 
                 }
-                Converter.releaseCOMObject(pages);
+                ReleaseCOMObject(pages);
                 bookmarks.Add(parentBookmark);
             }
         }

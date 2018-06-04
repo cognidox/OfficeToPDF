@@ -21,12 +21,14 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Runtime.InteropServices;
+using System.Windows.Forms;
+using Ghostscript.NET.Processor;
 
 namespace OfficeToPDF
 {
+    public delegate void PrintDocument(string destination, string printerName);
+
     /// <summary>
     /// Base converter class that all conversion handlers implement
     /// </summary>
@@ -58,7 +60,7 @@ namespace OfficeToPDF
         }
 
         // Clean up COM objects
-        protected static void releaseCOMObject(object obj)
+        protected static void ReleaseCOMObject(object obj)
         {
             try
             {
@@ -149,6 +151,39 @@ namespace OfficeToPDF
 
             // finally return the result
             return ScanForPassword(stream, footer, sectionSize);
+        }
+
+        protected static void PrintToGhostscript(string printer, string outputFilename, PrintDocument printFunc)
+        {
+            String postscriptFile = outputFilename + ".ps";
+            PrintDialog printDialog = new PrintDialog
+            {
+                AllowPrintToFile = true,
+                PrintToFile = true
+            };
+            System.Drawing.Printing.PrinterSettings printerSettings = printDialog.PrinterSettings;
+            printerSettings.PrintToFile = true;
+            printerSettings.PrinterName = printer;
+            printerSettings.PrintFileName = postscriptFile;
+            printFunc(postscriptFile, printerSettings.PrinterName);
+            ReleaseCOMObject(printerSettings);
+            ReleaseCOMObject(printDialog);
+            GhostscriptProcessor gsproc = new GhostscriptProcessor();
+            List<string> gsArgs = new List<string>
+                    {
+                        "gs",
+                        "-dBATCH",
+                        "-dNOPAUSE",
+                        "-dQUIET",
+                        "-dSAFER",
+                        "-dNOPROMPT",
+                        "-sDEVICE=pdfwrite",
+                        String.Format("-sOutputFile=\"{0}\"", string.Join(@"\\", outputFilename.Split(new string[] { @"\" }, StringSplitOptions.None))),
+                        @"-f",
+                        postscriptFile
+                    };
+            gsproc.Process(gsArgs.ToArray());
+            File.Delete(postscriptFile);
         }
 
         static void ReadFromStream(Stream stream, byte[] buffer)

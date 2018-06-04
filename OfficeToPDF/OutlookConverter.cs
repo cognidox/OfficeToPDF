@@ -65,26 +65,26 @@ namespace OfficeToPDF
                         var message = (MailItem) session.OpenSharedItem(inputFile);
                         if (message == null)
                         {
-                            Converter.releaseCOMObject(message);
-                            Converter.releaseCOMObject(session);
+                            ReleaseCOMObject(message);
+                            ReleaseCOMObject(session);
                             return (int)ExitCode.FileOpenFailure;
                         }
                         message.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
                         ((_MailItem)message).Close(OlInspectorClose.olDiscard);
-                        Converter.releaseCOMObject(message);
-                        Converter.releaseCOMObject(session);
+                        ReleaseCOMObject(message);
+                        ReleaseCOMObject(session);
                         break;
                     case ".vcf":
                         var contact = (ContactItem)session.OpenSharedItem(inputFile);
                         if (contact == null)
                         {
-                            Converter.releaseCOMObject(contact);
-                            Converter.releaseCOMObject(session);
+                            ReleaseCOMObject(contact);
+                            ReleaseCOMObject(session);
                             return (int)ExitCode.FileOpenFailure;
                         }
                         contact.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
-                        Converter.releaseCOMObject(contact);
-                        Converter.releaseCOMObject(session);
+                        ReleaseCOMObject(contact);
+                        ReleaseCOMObject(session);
                         break;
                     case ".ics":
                         // Issue #47 - there is a problem opening some ics files - looks like the issue is down to
@@ -111,7 +111,7 @@ namespace OfficeToPDF
                                     if (appointment != null)
                                     {
                                         appointment.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
-                                        Converter.releaseCOMObject(appointment);
+                                        ReleaseCOMObject(appointment);
                                     }
                                     break;
                                 case "IPM.Schedule.Meeting.Request":
@@ -119,7 +119,7 @@ namespace OfficeToPDF
                                     if (meeting != null)
                                     {
                                         meeting.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
-                                        Converter.releaseCOMObject(meeting);
+                                        ReleaseCOMObject(meeting);
                                     }
                                     break;
                                 case "IPM.Task":
@@ -127,20 +127,20 @@ namespace OfficeToPDF
                                     if (task != null)
                                     {
                                         task.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
-                                        Converter.releaseCOMObject(task);
+                                        ReleaseCOMObject(task);
                                     }
                                     break;
                                 default:
                                     Console.WriteLine("Unable to convert ICS type " + itemType);
                                     break;
                             }
-                            Converter.releaseCOMObject(item);
+                            ReleaseCOMObject(item);
                         }
                         else
                         {
                             Console.WriteLine("Unable to convert this type of ICS file");
                         }
-                        Converter.releaseCOMObject(session);
+                        ReleaseCOMObject(session);
                         break;
                 }
 
@@ -173,7 +173,7 @@ namespace OfficeToPDF
                 {
                     ((Microsoft.Office.Interop.Outlook._Application)app).Quit();
                 }
-                Converter.releaseCOMObject(app);
+                ReleaseCOMObject(app);
             }
         }
     }

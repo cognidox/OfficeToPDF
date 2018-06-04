@@ -22,16 +22,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Security.AccessControl;
-using System.Text;
 using System.Threading;
 using System.Text.RegularExpressions;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
 using PdfSharp.Pdf.Security;
-using PdfSharp;
 
 namespace OfficeToPDF
 {
@@ -95,6 +92,8 @@ namespace OfficeToPDF
             options["merge"] = false;
             options["template"] = "";
             options["password"] = "";
+            options["printer"] = "";
+            options["fallback_printer"] = "";
             options["working_dir"] = "";
             options["has_working_dir"] = false;
             options["excel_show_formulas"] = false;
@@ -144,7 +143,7 @@ namespace OfficeToPDF
                 { "excel_delay", "Excel delay milliseconds" }
             };
 
-            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_(delay|max_rows|show_formulas|show_headings|auto_macros|template_macros|active_sheet|worksheet|no_recalculate|no_link_update)|powerpoint_(output)|word_(header_dist|footer_dist|ref_fonts|no_field_update|field_quick_update(_safe)?|max_pages|keep_history|no_repair)|pdf_(page_mode|append|prepend|layout|clean_meta|owner_pass|user_pass|restrict_(annotation|extraction|assembly|forms|modify|print|accessibility_extraction|full_quality))|working_dir|\?)$", RegexOptions.IgnoreCase);
+            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|(fallback_)?printer|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_(delay|max_rows|show_formulas|show_headings|auto_macros|template_macros|active_sheet|worksheet|no_recalculate|no_link_update)|powerpoint_(output)|word_(header_dist|footer_dist|ref_fonts|no_field_update|field_quick_update(_safe)?|max_pages|keep_history|no_repair)|pdf_(page_mode|append|prepend|layout|clean_meta|owner_pass|user_pass|restrict_(annotation|extraction|assembly|forms|modify|print|accessibility_extraction|full_quality))|working_dir|\?)$", RegexOptions.IgnoreCase);
             for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
                 string item = args[argIdx];
@@ -159,7 +158,7 @@ namespace OfficeToPDF
                         if (itemMatch.Groups[1].Value.ToLower().Equals("help") ||
                             itemMatch.Groups[1].Value.Equals("?"))
                         {
-                            showHelp();
+                            ShowHelp();
                         }
                         switch (itemMatch.Groups[1].Value.ToLower())
                         {
@@ -280,7 +279,7 @@ namespace OfficeToPDF
                                 if (argIdx + 2 < args.Length)
                                 {
                                     bool validOutputType = false;
-                                    PowerpointConverter.getOutputType(args[argIdx + 1], ref validOutputType);
+                                    PowerpointConverter.GetOutputType(args[argIdx + 1], ref validOutputType);
                                     if (!validOutputType)
                                     {
                                         Console.WriteLine("Invalid PowerPoint output type");
@@ -357,7 +356,7 @@ namespace OfficeToPDF
                                 // Only accept the next option if there are enough options
                                 if (argIdx + 2 < args.Length)
                                 {
-                                    checkOptionIsInteger(ref options, itemMatch.Groups[1].Value.ToLower(), optionNameMap[itemMatch.Groups[1].Value.ToLower()], args[argIdx + 1]);
+                                    CheckOptionIsInteger(ref options, itemMatch.Groups[1].Value.ToLower(), optionNameMap[itemMatch.Groups[1].Value.ToLower()], args[argIdx + 1]);
                                     argIdx++;
                                 }
                                 break;
@@ -388,6 +387,8 @@ namespace OfficeToPDF
                                 break;
                             case "password":
                             case "writepassword":
+                            case "printer":
+                            case "fallback_printer":
                                 // Only accept the next option if there are enough options
                                 if (argIdx + 2 < args.Length)
                                 {
@@ -459,7 +460,7 @@ namespace OfficeToPDF
             // arguments to this script
             if (filesSeen != 1 && filesSeen != 2)
             {
-                showHelp();
+                ShowHelp();
             }
 
             // Make sure we only choose one of /screen or /print options
@@ -741,13 +742,13 @@ namespace OfficeToPDF
 
                 if (documentBookmarks.Count > 0)
                 {
-                    addPDFBookmarks(outputFile, documentBookmarks, options, null);
+                    AddPDFBookmarks(outputFile, documentBookmarks, options, null);
                 }
                 
                 // Determine if we have to post-process the PDF
                 if (postProcessPDF)
                 {
-                    postProcessPDFFile(outputFile, finalOutputFile, options, postProcessPDFSecurity);
+                    PostProcessPDFFile(outputFile, finalOutputFile, options, postProcessPDFSecurity);
                 }
 
                 Environment.Exit((int)ExitCode.Success);
@@ -755,7 +756,7 @@ namespace OfficeToPDF
         }
 
         // Add any bookmarks returned by the conversion process
-        private static void addPDFBookmarks(String generatedFile, List<PDFBookmark> bookmarks, Hashtable options, PdfOutline parent)
+        private static void AddPDFBookmarks(String generatedFile, List<PDFBookmark> bookmarks, Hashtable options, PdfOutline parent)
         {
             var hasParent = parent != null;
             if ((Boolean)options["verbose"])
@@ -763,7 +764,7 @@ namespace OfficeToPDF
                 Console.WriteLine("Adding {0} bookmarks {1}", bookmarks.Count, (hasParent ? "as a sub-bookmark" : "to the PDF"));
             }
 
-            var srcPdf = hasParent ? parent.Owner : openPDFFile(generatedFile, options);
+            var srcPdf = hasParent ? parent.Owner : OpenPDFFile(generatedFile, options);
             if (srcPdf != null)
             {
                 foreach (var bookmark in bookmarks)
@@ -773,7 +774,7 @@ namespace OfficeToPDF
                     var outline = hasParent ? parent.Outlines.Add(bookmark.title, page) : srcPdf.Outlines.Add(bookmark.title, page);
                     if (bookmark.children != null && bookmark.children.Count > 0)
                     {
-                        addPDFBookmarks(generatedFile, bookmark.children, options, outline);
+                        AddPDFBookmarks(generatedFile, bookmark.children, options, outline);
                     }
                 }
                 if (!hasParent)
@@ -786,7 +787,7 @@ namespace OfficeToPDF
         // There can be issues if we're copying the generated PDF to a location
         // that may lock files (e.g. for virus scanning) that prevents us from 
         // immediately opening the PDF in PDFSharp
-        private static PdfDocument openPDFFile(string file, Hashtable options, PdfDocumentOpenMode mode = PdfDocumentOpenMode.Modify, string password = null)
+        private static PdfDocument OpenPDFFile(string file, Hashtable options, PdfDocumentOpenMode mode = PdfDocumentOpenMode.Modify, string password = null)
         {
             int tries = 10;
             while (tries-- > 0)
@@ -819,7 +820,7 @@ namespace OfficeToPDF
         }
 
         // Perform some post-processing on the generated PDF
-        private static void postProcessPDFFile(String generatedFile, String finalFile, Hashtable options, Boolean postProcessPDFSecurity)
+        private static void PostProcessPDFFile(String generatedFile, String finalFile, Hashtable options, Boolean postProcessPDFSecurity)
         {
             // Handle PDF merging
             if ((MergeMode)options["pdf_merge"] != MergeMode.None)
@@ -832,13 +833,13 @@ namespace OfficeToPDF
                 PdfDocument dstDoc = null;
                 if ((MergeMode)options["pdf_merge"] == MergeMode.Append)
                 {
-                    srcDoc = openPDFFile(generatedFile, options, PdfDocumentOpenMode.Import);
-                    dstDoc = readExistingPDFDocument(finalFile, generatedFile, ((string)options["pdf_owner_pass"]).Trim(), PdfDocumentOpenMode.Modify, options);
+                    srcDoc = OpenPDFFile(generatedFile, options, PdfDocumentOpenMode.Import);
+                    dstDoc = ReadExistingPDFDocument(finalFile, generatedFile, ((string)options["pdf_owner_pass"]).Trim(), PdfDocumentOpenMode.Modify, options);
                 }
                 else
                 {
-                    dstDoc = openPDFFile(generatedFile, options);
-                    srcDoc = readExistingPDFDocument(finalFile, generatedFile, ((string)options["pdf_owner_pass"]).Trim(), PdfDocumentOpenMode.Import, options);
+                    dstDoc = OpenPDFFile(generatedFile, options);
+                    srcDoc = ReadExistingPDFDocument(finalFile, generatedFile, ((string)options["pdf_owner_pass"]).Trim(), PdfDocumentOpenMode.Import, options);
                 }
                 int pages = srcDoc.PageCount;
                 for (int pi = 0; pi < pages; pi++)
@@ -854,7 +855,7 @@ namespace OfficeToPDF
                 (MetaClean)options["pdf_clean_meta"] != MetaClean.None || postProcessPDFSecurity)
             {
 
-                PdfDocument pdf = openPDFFile(finalFile, options);
+                PdfDocument pdf = OpenPDFFile(finalFile, options);
 
                 if (options["pdf_page_mode"] != null)
                 {
@@ -931,7 +932,7 @@ namespace OfficeToPDF
             }
         }
 
-        static void checkOptionIsInteger(ref Hashtable options, string optionKey, string optionName, string optionValue)
+        static void CheckOptionIsInteger(ref Hashtable options, string optionKey, string optionName, string optionValue)
         {
             if (Regex.IsMatch(optionValue, @"^\d+$"))
             {
@@ -944,13 +945,13 @@ namespace OfficeToPDF
             }
         }
 
-        static PdfDocument readExistingPDFDocument(String filename, String generatedFilename, String password, PdfDocumentOpenMode mode, Hashtable options)
+        static PdfDocument ReadExistingPDFDocument(String filename, String generatedFilename, String password, PdfDocumentOpenMode mode, Hashtable options)
         {
             PdfDocument dstDoc = null;
             try
             {
 
-                dstDoc = openPDFFile(filename, options, mode);
+                dstDoc = OpenPDFFile(filename, options, mode);
             }
             catch (PdfReaderException)
             {
@@ -958,7 +959,7 @@ namespace OfficeToPDF
                 {
                     try
                     {
-                        dstDoc = openPDFFile(filename, options, mode, password);
+                        dstDoc = OpenPDFFile(filename, options, mode, password);
                     }
                     catch (PdfReaderException)
                     {
@@ -986,7 +987,7 @@ namespace OfficeToPDF
             return dstDoc;
         }
 
-        static void showHelp()
+        static void ShowHelp()
         {
             Console.Write(@"Converts Office documents to PDF from the command line.
 Handles Office files:

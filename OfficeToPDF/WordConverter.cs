@@ -20,19 +20,13 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Globalization;
 using System.IO;
 using System.IO.Packaging;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Microsoft.Office.Interop.Word;
-using DocumentFormat.OpenXml;
-using DocumentFormat.OpenXml.Wordprocessing;
 using DocumentFormat.OpenXml.Packaging;
-
 
 namespace OfficeToPDF
 {
@@ -50,16 +44,16 @@ namespace OfficeToPDF
         public static new int Convert(String inputFile, String outputFile, Hashtable options)
         {
             Boolean running = (Boolean)options["noquit"];
-            Microsoft.Office.Interop.Word.Application word = null;
+            Application word = null;
             object oMissing = System.Reflection.Missing.Value;
-            Microsoft.Office.Interop.Word.Template tmpl;
+            Template tmpl;
             String temporaryStorageDir = null;
             float wordVersion = 0;
             List<AppOption> wordOptionList = new List<AppOption>();
             try
             {
                 String filename = (String)inputFile;
-                Boolean hasSignatures = WordConverter.hasDigitalSignatures(filename);
+                Boolean hasSignatures = WordConverter.HasDigitalSignatures(filename);
                 Boolean visible = !(Boolean)options["hidden"];
                 Boolean openAndRepair = !(Boolean)options["word_no_repair"];
                 Boolean nowrite = (Boolean)options["readonly"];
@@ -77,22 +71,22 @@ namespace OfficeToPDF
                 WdExportCreateBookmarks bookmarks = (Boolean)options["bookmarks"] ?
                     WdExportCreateBookmarks.wdExportCreateHeadingBookmarks :
                     WdExportCreateBookmarks.wdExportCreateNoBookmarks;
-                Microsoft.Office.Interop.Word.Options wdOptions = null;
-                Microsoft.Office.Interop.Word.Documents documents = null;
-                Microsoft.Office.Interop.Word.Template normalTemplate = null;
+                Options wdOptions = null;
+                Documents documents = null;
+                Template normalTemplate = null;
 
                 tmpl = null;
                 try
                 {
-                    word = (Microsoft.Office.Interop.Word.Application) Marshal.GetActiveObject("Word.Application");
+                    word = (Microsoft.Office.Interop.Word.Application)Marshal.GetActiveObject("Word.Application");
                 }
                 catch (System.Exception)
                 {
-                     int tries = 10;
-                     word = new Microsoft.Office.Interop.Word.Application();
-                     running = false;
-                     while (tries > 0)
-                     {
+                    int tries = 10;
+                    word = new Microsoft.Office.Interop.Word.Application();
+                    running = false;
+                    while (tries > 0)
+                    {
                         try
                         {
                             // Try to set a property on the object
@@ -110,7 +104,7 @@ namespace OfficeToPDF
                     }
                     if (tries == 0)
                     {
-                        Converter.releaseCOMObject(word);
+                        ReleaseCOMObject(word);
                         return (int)ExitCode.ApplicationError;
                     }
                 }
@@ -162,7 +156,7 @@ namespace OfficeToPDF
                 catch (SystemException)
                 {
                 }
-                
+
                 // Set up the PDF output quality
                 if ((Boolean)options["print"])
                 {
@@ -172,7 +166,7 @@ namespace OfficeToPDF
                 {
                     quality = WdExportOptimizeFor.wdExportOptimizeForOnScreen;
                 }
-                
+
                 if ((Boolean)options["markup"])
                 {
                     showMarkup = WdExportItem.wdExportDocumentWithMarkup;
@@ -195,9 +189,9 @@ namespace OfficeToPDF
 
                 documents = word.Documents;
                 normalTemplate = word.NormalTemplate;
-                
+
                 // Check for password protection and no password
-                if (Converter.IsPasswordProtected(inputFile) && String.IsNullOrEmpty(readPassword))
+                if (IsPasswordProtected(inputFile) && String.IsNullOrEmpty(readPassword))
                 {
                     normalTemplate.Saved = true;
                     Console.WriteLine("Unable to open password protected file");
@@ -212,7 +206,7 @@ namespace OfficeToPDF
                     openAndRepair = false;
                 }
 
-                Microsoft.Office.Interop.Word.Document doc = null;
+                Document doc = null;
                 try
                 {
                     if ((bool)options["merge"] && !String.IsNullOrEmpty((string)options["template"]) &&
@@ -225,7 +219,7 @@ namespace OfficeToPDF
                         Object rEnd = 0;
                         Range range = doc.Range(rStart, rEnd);
                         range.InsertFile(inputFile);
-                        Converter.releaseCOMObject(range);
+                        ReleaseCOMObject(range);
                         // Make sure we save the file with the original filename so 
                         // filename fields update correctly
                         temporaryStorageDir = Path.GetTempFileName();
@@ -239,7 +233,7 @@ namespace OfficeToPDF
                         doc = documents.OpenNoRepairDialog(FileName: filename, ReadOnly: nowrite, PasswordDocument: readPassword, WritePasswordDocument: writePassword, Visible: visible, OpenAndRepair: openAndRepair);
                     }
                 }
-                catch (System.Runtime.InteropServices.COMException)
+                catch (COMException)
                 {
                     Console.WriteLine("Unable to open file");
                     return (int)ExitCode.FileOpenFailure;
@@ -251,10 +245,10 @@ namespace OfficeToPDF
                     // Add in a delay to allow signatures to load
                     Thread.Sleep(500);
                 }
-                else 
+                else
                 {
-                    Microsoft.Office.Interop.Word.Window docWin = null;
-                    Microsoft.Office.Interop.Word.View docWinView = null;
+                    Window docWin = null;
+                    View docWinView = null;
 
                     doc.Activate();
                     // Check if there are too many pages
@@ -287,10 +281,17 @@ namespace OfficeToPDF
                     // Hide comments
                     try
                     {
+                        word.PrintPreview = false;
                         docWinView.RevisionsView = WdRevisionsView.wdRevisionsViewFinal;
                         docWinView.ShowRevisionsAndComments = false;
+                        docWinView.ShowComments = false;
+                        docWinView.ShowFormatChanges = false;
+                        docWinView.ShowInkAnnotations = false;
+                        docWinView.ShowInsertionsAndDeletions = false;
                     }
-                    catch (SystemException) { }
+                    catch (SystemException e) {
+                        Console.WriteLine("Failed to set revision settings {0}", e.Message);
+                    }
 
                     // Try to avoid Word thinking any changes are happening to the document
                     doc.SpellingChecked = true;
@@ -314,7 +315,7 @@ namespace OfficeToPDF
                         var activeWin = word.ActiveWindow;
                         activeWin.Visible = false;
                         activeWin.WindowState = WdWindowState.wdWindowStateMinimize;
-                        Converter.releaseCOMObject(activeWin);
+                        ReleaseCOMObject(activeWin);
                     }
 
                     // Check if we have a template file to apply to this document
@@ -337,7 +338,7 @@ namespace OfficeToPDF
                     // See if we have to update fields
                     if (!(Boolean)options["word_no_field_update"])
                     {
-                        updateDocumentFields(doc, word, inputFile, options);
+                        UpdateDocumentFields(doc, word, inputFile, options);
                     }
 
                     var pageSetup = doc.PageSetup;
@@ -349,7 +350,7 @@ namespace OfficeToPDF
                     {
                         pageSetup.FooterDistance = (float)options["word_footer_dist"];
                     }
-                    Converter.releaseCOMObject(pageSetup);
+                    ReleaseCOMObject(pageSetup);
                     try
                     {
                         // Make sure we are not in a header footer view
@@ -368,13 +369,39 @@ namespace OfficeToPDF
                         doc.Save();
                     }
                     doc.Saved = true;
-                    Converter.releaseCOMObject(docWinView);
-                    Converter.releaseCOMObject(docWin);
+                    ReleaseCOMObject(docWinView);
+                    ReleaseCOMObject(docWin);
                 }
 
-                doc.ExportAsFixedFormat(outputFile, WdExportFormat.wdExportFormatPDF, false,
+                // Set up a delegate function if we're using a printer
+                PrintDocument printFunc = delegate (string destination, string printerName)
+                {
+                    word.ActivePrinter = printerName;
+                    doc.PrintOut(Background: false, OutputFileName: destination);
+                };
+
+                if (String.IsNullOrEmpty((string)options["printer"])) {
+                    // No printer given, so export
+                    try
+                    {
+                        doc.ExportAsFixedFormat(outputFile, WdExportFormat.wdExportFormatPDF, false,
                         quality, WdExportRange.wdExportAllDocument,
                         1, 1, showMarkup, includeProps, true, bookmarks, includeTags, bitmapMissingFonts, pdfa);
+                    } catch(Exception)
+                    {
+                        // Couldn't export, so see if there is a fallback printer
+                        if (!String.IsNullOrEmpty((string)options["fallback_printer"])) {
+                            PrintToGhostscript((string)options["fallback_printer"], outputFile, printFunc);
+                        }
+                        else
+                        {
+                            throw;
+                        }
+                    }
+                } else
+                {
+                    PrintToGhostscript((string)options["printer"], outputFile, printFunc);
+                }
                 
                 if (tmpl != null)
                 {
@@ -392,14 +419,14 @@ namespace OfficeToPDF
                 // Reset options
                 foreach (AppOption opt in wordOptionList)
                 {
-                    opt.resetValue(ref wdOptions);
+                    opt.ResetValue(ref wdOptions);
                 }
 
-                Converter.releaseCOMObject(wdOptions);
-                Converter.releaseCOMObject(documents);
-                Converter.releaseCOMObject(doc);
-                Converter.releaseCOMObject(tmpl);
-                Converter.releaseCOMObject(normalTemplate);
+                ReleaseCOMObject(wdOptions);
+                ReleaseCOMObject(documents);
+                ReleaseCOMObject(doc);
+                ReleaseCOMObject(tmpl);
+                ReleaseCOMObject(normalTemplate);
 
                 return (int)ExitCode.Success;
             }
@@ -424,15 +451,15 @@ namespace OfficeToPDF
                 }
                 if (word != null && !running)
                 {
-                    closeWordApplication(word);
+                    CloseWordApplication(word);
                 }
-                Converter.releaseCOMObject(word);
+                ReleaseCOMObject(word);
             }
         }
 
         // Try and close Word, giving time for Office to get
         // itself in order
-        private static bool closeWordApplication(Application word)
+        private static bool CloseWordApplication(Microsoft.Office.Interop.Word.Application word)
         {
             object oMissing = System.Reflection.Missing.Value;
             int tries = 20;
@@ -454,22 +481,22 @@ namespace OfficeToPDF
         // usage
         private class AppOption
         {
-            public string name { get; set; }
-            public Boolean value { get; set; }
-            public Boolean originalValue { get; set; }
-            public int intValue { get; set; }
-            public int originalIntValue { get; set; }
-            protected Type varType { get; set; }
+            public string Name { get; set; }
+            public Boolean Value { get; set; }
+            public Boolean OriginalValue { get; set; }
+            public int IntValue { get; set; }
+            public int OriginalIntValue { get; set; }
+            protected Type VarType { get; set; }
             public AppOption(string name, Boolean value, ref Options wdOptions)
             {
                 try
                 {
-                    this.name = name;
-                    this.value = value;
-                    this.varType = typeof(Boolean);
-                    this.originalValue = (Boolean)wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.GetProperty, null, wdOptions, null);
+                    Name = name;
+                    Value = value;
+                    VarType = typeof(Boolean);
+                    OriginalValue = (Boolean)wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.GetProperty, null, wdOptions, null);
 
-                    if (this.originalValue != value)
+                    if (OriginalValue != value)
                     {
                         wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.SetProperty, null, wdOptions, new Object[] {value});
                     }
@@ -484,12 +511,12 @@ namespace OfficeToPDF
             {
                 try
                 {
-                    this.name = name;
-                    this.intValue = value;
-                    this.varType = typeof(int);
-                    this.originalIntValue = (int)wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.GetProperty, null, wdOptions, null);
+                    Name = name;
+                    IntValue = value;
+                    VarType = typeof(int);
+                    OriginalIntValue = (int)wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.GetProperty, null, wdOptions, null);
 
-                    if (this.originalIntValue != value)
+                    if (OriginalIntValue != value)
                     {
                         wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.SetProperty, null, wdOptions, new Object[] { value });
                     }
@@ -502,36 +529,36 @@ namespace OfficeToPDF
             }
 
             // Allow the value on the options to be reset
-            public void resetValue(ref Options wdOptions)
+            public void ResetValue(ref Options wdOptions)
             {
-                if (this.varType == typeof(Boolean))
+                if (VarType == typeof(Boolean))
                 {
-                    if (this.value != this.originalValue)
+                    if (Value != this.OriginalValue)
                     {
-                        wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.SetProperty, null, wdOptions, new Object[] { this.originalValue });
+                        wdOptions.GetType().InvokeMember(Name, System.Reflection.BindingFlags.SetProperty, null, wdOptions, new Object[] { OriginalValue });
                     }
                 }
                 else
                 {
-                    if (this.intValue != this.originalIntValue)
+                    if (IntValue != OriginalIntValue)
                     {
-                        wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.SetProperty, null, wdOptions, new Object[] { this.originalIntValue });
+                        wdOptions.GetType().InvokeMember(Name, System.Reflection.BindingFlags.SetProperty, null, wdOptions, new Object[] { OriginalIntValue });
                     }
                 }
             }
         }
 
         // Update all the fields in a document
-        private static void updateDocumentFields(Microsoft.Office.Interop.Word.Document doc, Microsoft.Office.Interop.Word.Application word, String inputFile, Hashtable options)
+        private static void UpdateDocumentFields(Microsoft.Office.Interop.Word.Document doc, Microsoft.Office.Interop.Word.Application word, String inputFile, Hashtable options)
         {
             // Update fields quickly if it is safe to do so. We have
             // to check for broken links as they may raise Word dialogs or leave broken content
             if ((Boolean)options["word_field_quick_update"] ||
-                ((Boolean)options["word_field_quick_update_safe"] && !hasBrokenLinks(doc)))
+                ((Boolean)options["word_field_quick_update_safe"] && !HasBrokenLinks(doc)))
             {
                 var fields = doc.Fields;
                 fields.Update();
-                Converter.releaseCOMObject(fields);
+                ReleaseCOMObject(fields);
                 return;
             }
 
@@ -556,22 +583,22 @@ namespace OfficeToPDF
                             for (var si = 1; si <= sectionFields.Count; si++)
                             {
                                 var sectionField = sectionFields[si];
-                                WordConverter.updateField(sectionField, word, inputFile);
-                                Converter.releaseCOMObject(sectionField);
+                                UpdateField(sectionField, word, inputFile);
+                                ReleaseCOMObject(sectionField);
                             }
                         }
 
-                        updateHeaderFooterFields(headers, word, inputFile);
-                        updateHeaderFooterFields(footers, word, inputFile);
+                        UpdateHeaderFooterFields(headers, word, inputFile);
+                        UpdateHeaderFooterFields(footers, word, inputFile);
 
-                        Converter.releaseCOMObject(footers);
-                        Converter.releaseCOMObject(headers);
-                        Converter.releaseCOMObject(sectionFields);
-                        Converter.releaseCOMObject(sectionRange);
-                        Converter.releaseCOMObject(section);
+                        ReleaseCOMObject(footers);
+                        ReleaseCOMObject(headers);
+                        ReleaseCOMObject(sectionFields);
+                        ReleaseCOMObject(sectionRange);
+                        ReleaseCOMObject(section);
                     }
                 }
-                Converter.releaseCOMObject(docSections);
+                ReleaseCOMObject(docSections);
             }
             catch (COMException)
             {
@@ -587,38 +614,38 @@ namespace OfficeToPDF
                 for (var fi = 1; fi <= docFields.Count; fi++)
                 {
                     var docField = docFields[fi];
-                    WordConverter.updateField(docField, word, inputFile);
-                    Converter.releaseCOMObject(docField);
+                    UpdateField(docField, word, inputFile);
+                    ReleaseCOMObject(docField);
                 }
             }
 
             foreach (Range range in storyRanges)
             {
-                updateFieldsInRange(range, word, inputFile);
-                Converter.releaseCOMObject(range);
+                UpdateFieldsInRange(range, word, inputFile);
+                ReleaseCOMObject(range);
             }
  
-            Converter.releaseCOMObject(storyRanges);
-            Converter.releaseCOMObject(docFields);
+            ReleaseCOMObject(storyRanges);
+            ReleaseCOMObject(docFields);
         }
 
         // update fields in a header or footer
-        private static void updateHeaderFooterFields(HeadersFooters list, Microsoft.Office.Interop.Word.Application word, String filename)
+        private static void UpdateHeaderFooterFields(HeadersFooters list, Microsoft.Office.Interop.Word.Application word, String filename)
         {
-            foreach (Microsoft.Office.Interop.Word.HeaderFooter item in list)
+            foreach (HeaderFooter item in list)
             {
                 if (item.Exists && !item.LinkToPrevious)
                 {
                     var range = item.Range;
-                    updateFieldsInRange(range, word, filename);
-                    Converter.releaseCOMObject(range);
+                    UpdateFieldsInRange(range, word, filename);
+                    ReleaseCOMObject(range);
                 }
-                Converter.releaseCOMObject(item);
+                ReleaseCOMObject(item);
             }
         }
 
         // update all fields in a range
-        private static void updateFieldsInRange(Range range, Microsoft.Office.Interop.Word.Application word, String filename)
+        private static void UpdateFieldsInRange(Range range, Microsoft.Office.Interop.Word.Application word, String filename)
         {
             var rangeFields = range.Fields;
             if (rangeFields.Count > 0)
@@ -626,15 +653,15 @@ namespace OfficeToPDF
                 for (var i = 1; i <= rangeFields.Count; i++)
                 {
                     var field = rangeFields[i];
-                    WordConverter.updateField(field, word, filename);
-                    Converter.releaseCOMObject(field);
+                    UpdateField(field, word, filename);
+                    ReleaseCOMObject(field);
                 }
             }
-            Converter.releaseCOMObject(rangeFields);
+            ReleaseCOMObject(rangeFields);
         }
 
         // Update a specific field
-        private static void updateField(Field field, Microsoft.Office.Interop.Word.Application word, String filename)
+        private static void UpdateField(Field field, Microsoft.Office.Interop.Word.Application word, String filename)
         {
             switch (field.Type)
             {
@@ -685,7 +712,7 @@ namespace OfficeToPDF
                     field.Delete();
                     Selection selection = word.Selection;
                     selection.TypeText(Path.GetFileName(filename));
-                    Converter.releaseCOMObject(selection);
+                    ReleaseCOMObject(selection);
                     break;
             }
         }
@@ -693,25 +720,25 @@ namespace OfficeToPDF
         // Check if the document has any broken links from shapes and inline shapes.
         // We need to know this to determine if it is safe to perform
         // an update on all fields
-        private static bool hasBrokenLinks(Microsoft.Office.Interop.Word.Document doc)
+        private static bool HasBrokenLinks(Microsoft.Office.Interop.Word.Document doc)
         {
             var hasBrokenLinks = false;
             var docShapes = doc.Shapes;
-            hasBrokenLinks = hasBrokenLinksInShapeList<Shapes>(ref docShapes);
+            hasBrokenLinks = HasBrokenLinksInShapeList<Shapes>(ref docShapes);
             if (!hasBrokenLinks)
             {
                 // If there are no broken Shapes, then try the inline shapes list
                 var inlineShapes = doc.InlineShapes;
-                hasBrokenLinks = hasBrokenLinksInShapeList<InlineShapes>(ref inlineShapes);
-                Converter.releaseCOMObject(inlineShapes);
+                hasBrokenLinks = HasBrokenLinksInShapeList<InlineShapes>(ref inlineShapes);
+                ReleaseCOMObject(inlineShapes);
             }
-            Converter.releaseCOMObject(docShapes);
+            ReleaseCOMObject(docShapes);
             return hasBrokenLinks;
         }
 
         // Loop through a list of shapes or inline shapes finding out if
         // any one has a broken reference
-        private static bool hasBrokenLinksInShapeList<T>(ref T shapeList) 
+        private static bool HasBrokenLinksInShapeList<T>(ref T shapeList) 
             where T : IEnumerable
         {
             var hasBrokenLinks = false;
@@ -731,10 +758,10 @@ namespace OfficeToPDF
                     {
                         hasBrokenLinks = true;
                     }
-                    Converter.releaseCOMObject(sourceName);
+                    ReleaseCOMObject(sourceName);
                 }
-                Converter.releaseCOMObject(linkFormat);
-                Converter.releaseCOMObject(shapeThing);
+                ReleaseCOMObject(linkFormat);
+                ReleaseCOMObject(shapeThing);
                 if (hasBrokenLinks)
                 {
                     // If there are broken links, we can break out now since we
@@ -742,12 +769,12 @@ namespace OfficeToPDF
                     break;
                 }
             }
-            Converter.releaseCOMObject(items);
+            ReleaseCOMObject(items);
             return hasBrokenLinks;
         }
 
         // Use the OpenXML library to look for signatures
-        protected static bool hasDigitalSignatures(string filename)
+        protected static bool HasDigitalSignatures(string filename)
         {
             try
             {

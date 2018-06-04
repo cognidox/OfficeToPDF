@@ -20,9 +20,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Runtime.InteropServices;
 using MSCore = Microsoft.Office.Core;
@@ -44,7 +41,7 @@ namespace OfficeToPDF
         public static new int Convert(String inputFile, String outputFile, Hashtable options, ref List<PDFBookmark> bookmarks)
         {
             // Check for password protection
-            if (Converter.IsPasswordProtected(inputFile))
+            if (IsPasswordProtected(inputFile))
             {
                 Console.WriteLine("Unable to open password protected file");
                 return (int)ExitCode.PasswordFailure;
@@ -54,8 +51,8 @@ namespace OfficeToPDF
             try
             {
                 Microsoft.Office.Interop.PowerPoint.Application app = null;
-                Microsoft.Office.Interop.PowerPoint.Presentation activePresentation = null;
-                Microsoft.Office.Interop.PowerPoint.Presentations presentations = null;
+                Presentation activePresentation = null;
+                Presentations presentations = null;
                 try
                 {
                     try
@@ -87,7 +84,7 @@ namespace OfficeToPDF
                         }
                         if (tries == 0)
                         {
-                            Converter.releaseCOMObject(app);
+                            ReleaseCOMObject(app);
                             return (int)ExitCode.ApplicationError;
                         }
                     }
@@ -113,7 +110,7 @@ namespace OfficeToPDF
                     if (!String.IsNullOrWhiteSpace((String)options["powerpoint_output"]))
                     {
                         bool printIsValid = false;
-                        printType = PowerpointConverter.getOutputType((String)options["powerpoint_output"], ref printIsValid);
+                        printType = GetOutputType((String)options["powerpoint_output"], ref printIsValid);
                     }
                     
                     app.FeatureInstall = MSCore.MsoFeatureInstall.msoFeatureInstallNone;
@@ -135,28 +132,56 @@ namespace OfficeToPDF
                     {
                         var fontCount = fonts.Count;
                     }
-                    catch (System.Runtime.InteropServices.COMException)
+                    catch (COMException)
                     {
-                        Converter.releaseCOMObject(fonts);
+                        ReleaseCOMObject(fonts);
                         // This presentation looked read-only
-                        closePowerPointPresentation(activePresentation);
-                        Converter.releaseCOMObject(activePresentation);
+                        ClosePowerPointPresentation(activePresentation);
+                        ReleaseCOMObject(activePresentation);
                         // Create a new blank presentation and insert slides from the original
                         activePresentation = presentations.Add(MSCore.MsoTriState.msoFalse);
                         // This is only a band-aid - backgrounds won't come through
                         activePresentation.Slides.InsertFromFile(inputFile, 0);
                     }
-                    Converter.releaseCOMObject(fonts);
-                    activePresentation.ExportAsFixedFormat(outputFile, PpFixedFormatType.ppFixedFormatTypePDF, quality, MSCore.MsoTriState.msoFalse, PpPrintHandoutOrder.ppPrintHandoutVerticalFirst, printType, MSCore.MsoTriState.msoFalse, null, PpPrintRangeType.ppPrintAll, "", includeProps, true, includeTags, true, pdfa, Type.Missing);
+                    ReleaseCOMObject(fonts);
+
+                    // Set up a delegate function for times we want to print
+                    PrintDocument printFunc = delegate (string destination, string printer)
+                    {
+                        PrintOptions activePrintOptions = activePresentation.PrintOptions;
+                        activePrintOptions.PrintInBackground = MSCore.MsoTriState.msoFalse;
+                        activePrintOptions.ActivePrinter = printer;
+                        activePresentation.PrintOut(PrintToFile: destination, Copies: 1);
+                        ReleaseCOMObject(activePrintOptions);
+                    };
+
+                    if (String.IsNullOrEmpty((string)options["printer"]))
+                    {
+                        try
+                        {
+                            activePresentation.ExportAsFixedFormat(outputFile, PpFixedFormatType.ppFixedFormatTypePDF, quality, MSCore.MsoTriState.msoFalse, PpPrintHandoutOrder.ppPrintHandoutVerticalFirst, printType, MSCore.MsoTriState.msoFalse, null, PpPrintRangeType.ppPrintAll, "", includeProps, true, includeTags, true, pdfa, Type.Missing);
+                        }
+                        catch (Exception) {
+                            if (!String.IsNullOrEmpty((string)options["fallback_printer"])) {
+                                PrintToGhostscript((string)options["fallback_printer"], outputFile, printFunc);
+                            } else {
+                                throw;
+                            }
+                        }
+                    } else
+                    {
+                        // Print via a delegate
+                        PrintToGhostscript((string)options["printer"], outputFile, printFunc);
+                    }
 
                     // Determine if we need to make bookmarks
                     if ((bool)options["bookmarks"])
                     {
-                        loadBookmarks(activePresentation, ref bookmarks);
+                        LoadBookmarks(activePresentation, ref bookmarks);
 
                     }
                     activePresentation.Saved = MSCore.MsoTriState.msoTrue;
-                    closePowerPointPresentation(activePresentation);
+                    ClosePowerPointPresentation(activePresentation);
 
                     return (int)ExitCode.Success;
                 }
@@ -167,14 +192,14 @@ namespace OfficeToPDF
                 }
                 finally
                 {
-                    Converter.releaseCOMObject(activePresentation);
-                    Converter.releaseCOMObject(presentations);
+                    ReleaseCOMObject(activePresentation);
+                    ReleaseCOMObject(presentations);
 
                     if (app != null && !running)
                     {
                         app.Quit();
                     }
-                    Converter.releaseCOMObject(app);
+                    ReleaseCOMObject(app);
                     GC.Collect();
                     GC.WaitForPendingFinalizers();
 
@@ -182,7 +207,7 @@ namespace OfficeToPDF
                     GC.WaitForPendingFinalizers();
                 }
             }
-            catch (System.Runtime.InteropServices.COMException e)
+            catch (COMException e)
             {
                 Console.WriteLine(e.Message);
                 return (int)ExitCode.UnknownError;
@@ -196,7 +221,7 @@ namespace OfficeToPDF
 
         // Try and close PowerPoint presentation, giving time for Office to get
         // itself in order
-        private static bool closePowerPointPresentation(Presentation presentation)
+        private static bool ClosePowerPointPresentation(Presentation presentation)
         {
             int tries = 20;
             while (tries-- > 0)
@@ -216,7 +241,7 @@ namespace OfficeToPDF
 
         // Loop through all the slides in the presentation creating bookmark items
         // for all the slides that are not hidden
-        private static void loadBookmarks(Presentation activePresentation, ref List<PDFBookmark> bookmarks)
+        private static void LoadBookmarks(Presentation activePresentation, ref List<PDFBookmark> bookmarks)
         {
             var slides = activePresentation.Slides;
             if (slides.Count > 0)
@@ -237,11 +262,11 @@ namespace OfficeToPDF
                     var trans = ((Slide)s).SlideShowTransition;
                     if (trans.Hidden == MSCore.MsoTriState.msoCTrue || trans.Hidden == MSCore.MsoTriState.msoTrue)
                     {
-                        Converter.releaseCOMObject(trans);
-                        Converter.releaseCOMObject(s);
+                        ReleaseCOMObject(trans);
+                        ReleaseCOMObject(s);
                         continue;
                     }
-                    Converter.releaseCOMObject(trans);
+                    ReleaseCOMObject(trans);
 
                     // Create a new bookmark and add the page
                     var bookmark = new PDFBookmark();
@@ -265,13 +290,13 @@ namespace OfficeToPDF
                                 {
                                     slideName = textrange.TrimText().Text;
                                 }
-                                Converter.releaseCOMObject(textrange);
+                                ReleaseCOMObject(textrange);
                             }
-                            Converter.releaseCOMObject(textframe);
+                            ReleaseCOMObject(textframe);
                         }
-                        Converter.releaseCOMObject(shapeTitle);
+                        ReleaseCOMObject(shapeTitle);
                     }
-                    Converter.releaseCOMObject(shapes);
+                    ReleaseCOMObject(shapes);
 
                     bookmark.title = String.Format("Page {0} - {1}", bookmark.page, slideName);
 
@@ -279,17 +304,17 @@ namespace OfficeToPDF
                     parentBookmark.children.Add(bookmark);
 
                     // Clean up the references to the slide
-                    Converter.releaseCOMObject(s);
+                    ReleaseCOMObject(s);
                 }
                 // Add the top-level bookmark which will be passed back to the main program
                 bookmarks.Add(parentBookmark);
             }
-            Converter.releaseCOMObject(slides);
+            ReleaseCOMObject(slides);
         }
 
         
         // Return the PpPrintOutputType for a given option string
-        public static PpPrintOutputType getOutputType(string printType, ref bool valid)
+        public static PpPrintOutputType GetOutputType(string printType, ref bool valid)
         {
             valid = true;
             switch (printType)
