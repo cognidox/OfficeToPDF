@@ -7,8 +7,6 @@ Apache and Solr are just a few of the excellent open source packages that help m
 management system. So, to show our appreciation, we've released a couple of open source projects such as
 OfficeToPDF to help others.
 
-You can see all of our open source projects on https://www.cognidox.com/products/open-source/
-
 ---
 ## OfficeToPDF - what does it do?
 
@@ -54,8 +52,6 @@ applications are installed. These are not included in the Office standard packag
 ---
 
 ## Instructions
-
-More information about installation and usage can be found on the Cognidox project page: https://www.cognidox.com/officetopdf-converter/
 
 In order to use the tool, download the officetopdf.exe file and, from the command line, run officetopdf.exe with two arguments - 
 the source Office document and the destination PDF document. e.g.
