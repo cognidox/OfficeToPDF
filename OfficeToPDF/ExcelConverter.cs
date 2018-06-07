@@ -415,7 +415,7 @@ namespace OfficeToPDF
                     // Set up a delegate function for times we want to print
                     PrintDocument printFunc = delegate (string destination, string printer)
                     {
-                        ((Worksheet)activeSheet).PrintOutEx(ActivePrinter: printer, PrintToFile: true, PrToFileName: destination);
+                        ((Worksheet)activeSheet).PrintOut(ActivePrinter: printer, PrintToFile: true, PrToFileName: destination);
                     };
 
                     if (sheetForConversionIdx > 0)

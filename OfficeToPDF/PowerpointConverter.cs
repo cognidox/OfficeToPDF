@@ -112,14 +112,35 @@ namespace OfficeToPDF
                         bool printIsValid = false;
                         printType = GetOutputType((String)options["powerpoint_output"], ref printIsValid);
                     }
-                    
+
+                    // Powerpoint files can be protected by a write password, but there's no way
+                    // of opening them in 
+                    if (nowrite == MSCore.MsoTriState.msoFalse && IsReadOnlyEnforced(inputFile))
+                    {
+                        // Seems like PowerPoint interop will ignore the read-only option
+                        // when it is opening a document with a write password and still pop
+                        // up a password input dialog. To prevent this freezing, don't open
+                        // the file
+                        throw new Exception("Presentation has a write password - this prevents it being opened");
+                    }
+
                     app.FeatureInstall = MSCore.MsoFeatureInstall.msoFeatureInstallNone;
                     app.DisplayDocumentInformationPanel = false;
                     app.DisplayAlerts = PpAlertLevel.ppAlertsNone;
                     app.Visible = MSCore.MsoTriState.msoTrue;
                     app.AutomationSecurity = MSCore.MsoAutomationSecurity.msoAutomationSecurityLow;
                     presentations = app.Presentations;
-                    activePresentation = presentations.Open2007(inputFile, nowrite, MSCore.MsoTriState.msoTrue, MSCore.MsoTriState.msoTrue, MSCore.MsoTriState.msoTrue);
+                    String filenameWithPasswords = inputFile;
+                    if (!String.IsNullOrWhiteSpace((string)options["password"]) ||
+                        !String.IsNullOrWhiteSpace((string)options["writepassword"]))
+                    {
+                        // seems we can use the passwords by appending them to the file name!
+                        filenameWithPasswords = String.Format("{0}::{1}::{2}", inputFile, 
+                            (String.IsNullOrEmpty((string)options["password"]) ? "" : (string)options["password"]),
+                            (String.IsNullOrEmpty((string)options["writepassword"]) ? "" : (string)options["writepassword"]));
+                        Console.WriteLine(filenameWithPasswords);
+                    }
+                    activePresentation = presentations.Open2007(FileName: filenameWithPasswords, ReadOnly: nowrite, Untitled: MSCore.MsoTriState.msoTrue, OpenAndRepair: MSCore.MsoTriState.msoTrue);
                     activePresentation.Final = false;
 
                     // Sometimes, presentations can have restrictions on them that block
@@ -151,6 +172,7 @@ namespace OfficeToPDF
                         PrintOptions activePrintOptions = activePresentation.PrintOptions;
                         activePrintOptions.PrintInBackground = MSCore.MsoTriState.msoFalse;
                         activePrintOptions.ActivePrinter = printer;
+                        activePrintOptions.PrintInBackground = MSCore.MsoTriState.msoFalse;
                         activePresentation.PrintOut(PrintToFile: destination, Copies: 1);
                         ReleaseCOMObject(activePrintOptions);
                     };
@@ -231,7 +253,7 @@ namespace OfficeToPDF
                     presentation.Close();
                     return true;
                 }
-                catch (COMException)
+                catch (Exception)
                 {
                     Thread.Sleep(500);
                 }
@@ -249,10 +271,12 @@ namespace OfficeToPDF
                 var page = 1;
 
                 // Create a top-level bookmark
-                var parentBookmark = new PDFBookmark();
-                parentBookmark.title = activePresentation.Name;
-                parentBookmark.page = 1;
-                parentBookmark.children = new List<PDFBookmark>();
+                var parentBookmark = new PDFBookmark
+                {
+                    title = activePresentation.Name,
+                    page = 1,
+                    children = new List<PDFBookmark>()
+                };
 
                 // Loop through the slides, adding a ToC entry to the top-level bookmark
                 for (int sldIdx = 1; sldIdx <= slides.Count; sldIdx++)
@@ -269,8 +293,10 @@ namespace OfficeToPDF
                     ReleaseCOMObject(trans);
 
                     // Create a new bookmark and add the page
-                    var bookmark = new PDFBookmark();
-                    bookmark.page = page++;
+                    var bookmark = new PDFBookmark
+                    {
+                        page = page++
+                    };
 
                     // Work out a title - base this on the slide name and any title shape text
                     var slideName = ((Slide)s).Name;

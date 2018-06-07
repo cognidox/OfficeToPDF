@@ -146,6 +146,9 @@
       <EmbedInteropTypes>True</EmbedInteropTypes>
       <HintPath>..\..\..\..\..\..\..\Program Files\Microsoft Visual Studio 9.0\Visual Studio Tools for Office\PIA\Office14\OFFICE.DLL</HintPath>
     </Reference>
+    <Reference Include="OpenMcdf, Version=2.1.1.5, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\OpenMcdf-2.2.1.1.5\lib\net40\OpenMcdf.dll</HintPath>
+    </Reference>
     <Reference Include="PdfSharp-WPF">
       <HintPath>..\packages\kenjiuno.PdfSharp-WPF.1.31.4604\lib\net40\PdfSharp-WPF.dll</HintPath>
     </Reference>

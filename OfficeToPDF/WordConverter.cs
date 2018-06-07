@@ -189,13 +189,21 @@ namespace OfficeToPDF
 
                 documents = word.Documents;
                 normalTemplate = word.NormalTemplate;
-
+                
                 // Check for password protection and no password
                 if (IsPasswordProtected(inputFile) && String.IsNullOrEmpty(readPassword))
                 {
                     normalTemplate.Saved = true;
                     Console.WriteLine("Unable to open password protected file");
                     return (int)ExitCode.PasswordFailure;
+                }
+
+                // If we are opening a document with a write password and no read password, and
+                // we are not in read only mode, we should follow the document properties and
+                // enforce a read only open. If we do not, Word pops up a dialog
+                if (!nowrite && String.IsNullOrEmpty(writePassword) && IsReadOnlyEnforced(inputFile))
+                {
+                    nowrite = true;
                 }
 
                 // Having signatures means we should open the document very carefully

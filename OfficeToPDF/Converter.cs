@@ -22,8 +22,15 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading;
+using System.Xml.Linq;
 using System.Windows.Forms;
 using Ghostscript.NET.Processor;
+using OpenMcdf;
+using OpenMcdf.Extensions;
+using System.IO.Packaging;
+using DocumentFormat.OpenXml.Presentation;
+using DocumentFormat.OpenXml.Packaging;
 
 namespace OfficeToPDF
 {
@@ -34,6 +41,13 @@ namespace OfficeToPDF
     /// </summary>
     class Converter
     {
+        private enum DocumentFileTypes
+        {
+            Unknown = 0,
+            CDF = 1,
+            OpenXML = 2
+        }
+
         /// <summary>
         /// Converts an input file to an output PDF
         /// </summary>
@@ -88,7 +102,9 @@ namespace OfficeToPDF
         protected static bool IsPasswordProtected(string fileName)
         {
             using (var stream = File.OpenRead(fileName))
+            {
                 return IsPasswordProtected(stream);
+            }
         }
 
         /// <summary>
@@ -99,26 +115,9 @@ namespace OfficeToPDF
         /// <returns>True if document is protected by a password, false otherwise.</returns>
         protected static bool IsPasswordProtected(Stream stream)
         {
-            // minimum file size for office file is 4k
-            if (stream.Length < 4096)
-                return false;
-
-            // read file header
-            stream.Seek(0, SeekOrigin.Begin);
             var compObjHeader = new byte[0x20];
-            ReadFromStream(stream, compObjHeader);
-
-            // check if we have plain zip file
-            if (compObjHeader[0] == 'P' && compObjHeader[1] == 'K')
+            if (FileStreamDocumentType(stream, ref compObjHeader) != DocumentFileTypes.CDF)
             {
-                // this is a plain OpenXml document (not encrypted)
-                return false;
-            }
-
-            // check compound object magic bytes
-            if (compObjHeader[0] != 0xD0 || compObjHeader[1] != 0xCF)
-            {
-                // unknown document format
                 return false;
             }
 
@@ -140,7 +139,9 @@ namespace OfficeToPDF
 
             // check if we detected password protection
             if (ScanForPassword(stream, header, sectionSize))
+            {
                 return true;
+            }
 
             // if not, try to scan footer as well
 
@@ -151,39 +152,6 @@ namespace OfficeToPDF
 
             // finally return the result
             return ScanForPassword(stream, footer, sectionSize);
-        }
-
-        protected static void PrintToGhostscript(string printer, string outputFilename, PrintDocument printFunc)
-        {
-            String postscriptFile = outputFilename + ".ps";
-            PrintDialog printDialog = new PrintDialog
-            {
-                AllowPrintToFile = true,
-                PrintToFile = true
-            };
-            System.Drawing.Printing.PrinterSettings printerSettings = printDialog.PrinterSettings;
-            printerSettings.PrintToFile = true;
-            printerSettings.PrinterName = printer;
-            printerSettings.PrintFileName = postscriptFile;
-            printFunc(postscriptFile, printerSettings.PrinterName);
-            ReleaseCOMObject(printerSettings);
-            ReleaseCOMObject(printDialog);
-            GhostscriptProcessor gsproc = new GhostscriptProcessor();
-            List<string> gsArgs = new List<string>
-                    {
-                        "gs",
-                        "-dBATCH",
-                        "-dNOPAUSE",
-                        "-dQUIET",
-                        "-dSAFER",
-                        "-dNOPROMPT",
-                        "-sDEVICE=pdfwrite",
-                        String.Format("-sOutputFile=\"{0}\"", string.Join(@"\\", outputFilename.Split(new string[] { @"\" }, StringSplitOptions.None))),
-                        @"-f",
-                        postscriptFile
-                    };
-            gsproc.Process(gsArgs.ToArray());
-            File.Delete(postscriptFile);
         }
 
         static void ReadFromStream(Stream stream, byte[] buffer)
@@ -226,7 +194,9 @@ namespace OfficeToPDF
                     int sectionOffset = coBaseOffset + sectionId * sectionSize;
                     const int fibScanSize = 0x10;
                     if (sectionOffset + fibScanSize > stream.Length)
+                    {
                         return false; // invalid document
+                    }
                     var fibHeader = new byte[fibScanSize];
                     stream.Seek(sectionOffset, SeekOrigin.Begin);
                     ReadFromStream(stream, fibHeader);
@@ -281,5 +251,226 @@ namespace OfficeToPDF
 
             return false;
         }
+
+        // Return what we thing the document type is
+        private static DocumentFileTypes FileStreamDocumentType(Stream stream)
+        {
+            byte[] compObjHeader = new byte[0x20];
+            return FileStreamDocumentType(stream, ref compObjHeader);
+        }
+
+        // Return what we thing the document type is plus a filled in byte array of the document header
+        private static DocumentFileTypes FileStreamDocumentType(Stream stream, ref byte[] compObjHeader)
+        {
+            // Minimum file size for office file is 4k
+            if (stream.Length < 4096)
+            {
+                return DocumentFileTypes.Unknown;
+            }
+
+            // read file header
+            stream.Seek(0, SeekOrigin.Begin);
+            
+            ReadFromStream(stream, compObjHeader);
+            
+            // check if we have plain zip file
+            if (compObjHeader[0] == 'P' && compObjHeader[1] == 'K')
+            {
+                // this is a plain OpenXml document (not encrypted)
+                return DocumentFileTypes.OpenXML;
+            }
+
+            // check compound object magic bytes
+            if (compObjHeader[0] != 0xD0 || compObjHeader[1] != 0xCF)
+            {
+                // unknown document format
+                return DocumentFileTypes.Unknown;
+            }
+            return DocumentFileTypes.CDF;
+        }
+        
+        /// <summary>
+        /// Detects if a given office document is should be opened in read-only
+        /// mode based on the file extended properties
+        /// </summary>
+        /// <param name="filename">Office document path.</param>
+        /// <returns>True if document is should be opened read-only, false otherwise.</returns>
+        protected static bool IsReadOnlyEnforced(String filename)
+        {
+            DocumentFileTypes documentType;
+            using (var stream = File.OpenRead(filename))
+            {
+                documentType = FileStreamDocumentType(stream);
+            }
+            switch (documentType)
+            {
+                case DocumentFileTypes.CDF:
+                    return IsCDFReadOnlyEnforced(filename);
+                case DocumentFileTypes.OpenXML:
+                    return IsOpenXMLReadOnlyEnforced(filename);
+                default:
+                    return false;
+            }
+        }
+
+        // Return true if a compound document is enforcing read-only
+        // Looks in the Summary Information stream
+        private static bool IsCDFReadOnlyEnforced(string filename)
+        {
+            CompoundFile cf = new CompoundFile(fileName: filename);
+            if (null == cf)
+            {
+                return false;
+            }
+            CFStream summaryInfo = cf.RootStorage.GetStream("\x05SummaryInformation");
+            if (null != summaryInfo)
+            {
+                // Interested in the doc security setting
+                OpenMcdf.Extensions.OLEProperties.PropertySetStream ps = summaryInfo.AsOLEProperties();
+                int securityIdx = ps.PropertySet0.PropertyIdentifierAndOffsets.FindIndex(x => x.PropertyIdentifier == OpenMcdf.Extensions.OLEProperties.PropertyIdentifiersSummaryInfo.PIDSI_DOC_SECURITY);
+                if (securityIdx >= 0 && securityIdx < ps.PropertySet0.Properties.Count) {
+                    int security = (int)ps.PropertySet0.Properties[securityIdx].PropertyValue;
+                    // See if read-only is enforced https://msdn.microsoft.com/en-us/library/windows/desktop/aa371587(v=vs.85).aspx
+                    if ((security & 4) == 4)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        // Return true if an open XML document is enforcing read-only
+        private static bool IsOpenXMLReadOnlyEnforced(string filename)
+        {
+            // Read an OpenXML type document
+            using (Package package = Package.Open(path: filename, packageMode: FileMode.Open, packageAccess: FileAccess.Read))
+            {
+                if (null == package)
+                {
+                    return false;
+                }
+                try
+                {
+                    // Document security is set in the extended properties
+                    // https://docs.microsoft.com/en-us/previous-versions/office/developer/office-2010/cc845474(v%3doffice.14)
+                    string extendedType = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties";
+                    PackageRelationshipCollection extendedProps = package.GetRelationshipsByType(extendedType);
+                    if (null != extendedProps)
+                    {
+                        IEnumerator extendedPropsList = extendedProps.GetEnumerator();
+                        if (extendedPropsList.MoveNext())
+                        {
+                            Uri extendedPropsUri = PackUriHelper.ResolvePartUri(new Uri("/", UriKind.Relative), ((PackageRelationship)extendedPropsList.Current).TargetUri);
+                            PackagePart props = package.GetPart(extendedPropsUri);
+                            if (null != props)
+                            {
+                                // Read the internal docProps/app.xml XML file
+                                XDocument xmlDoc = XDocument.Load(props.GetStream());
+                                XElement securityEl = xmlDoc.Root.Element(XName.Get("DocSecurity", xmlDoc.Root.GetDefaultNamespace().NamespaceName));
+                                if (null != securityEl)
+                                {
+                                    if (!String.IsNullOrWhiteSpace(securityEl.Value))
+                                    {
+                                        // See https://docs.microsoft.com/en-us/previous-versions/office/developer/office-2010/cc840043%28v%3doffice.14%29
+                                        return ((Int16.Parse(securityEl.Value) & 4) == 4);
+                                    }
+                                }
+
+                                package.Close();
+                                // PowerPoint doesn't use DocSecurity (*sigh*) so need another check
+                                XElement appEl = xmlDoc.Root.Element(XName.Get("Application", xmlDoc.Root.GetDefaultNamespace().NamespaceName));
+                                if (null != appEl)
+                                {
+                                    if (!String.IsNullOrWhiteSpace(appEl.Value) &&
+                                        appEl.Value.IndexOf("PowerPoint", StringComparison.InvariantCultureIgnoreCase) >= 0)
+                                    {
+                                        PresentationDocument presentationDocument = PresentationDocument.Open(path: filename, isEditable: false);
+                                        if (null != presentationDocument &&
+                                            presentationDocument.PresentationPart.Presentation.ModificationVerifier != null) {
+                                            return true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception) { }
+                return false;
+            }
+        }
+
+        // Print out a document to a file which we will pass to ghostscript
+        protected static void PrintToGhostscript(string printer, string outputFilename, PrintDocument printFunc)
+        {
+            String postscriptFilePath = "";
+            String postscriptFile = "";
+            try
+            {
+                // Create a temporary location to output to
+                postscriptFilePath = Path.GetTempFileName();
+                File.Delete(postscriptFilePath);
+                Directory.CreateDirectory(postscriptFilePath);
+                postscriptFile = Path.Combine(postscriptFilePath, Guid.NewGuid() + ".ps");
+
+                // Set up the printer
+                PrintDialog printDialog = new PrintDialog
+                {
+                    AllowPrintToFile = true,
+                    PrintToFile = true
+                };
+                System.Drawing.Printing.PrinterSettings printerSettings = printDialog.PrinterSettings;
+                printerSettings.PrintToFile = true;
+                printerSettings.PrinterName = printer;
+                printerSettings.PrintFileName = postscriptFile;
+
+                // Call the appropriate printer function (changes based on the office application)
+                printFunc(postscriptFile, printerSettings.PrinterName);
+                ReleaseCOMObject(printerSettings);
+                ReleaseCOMObject(printDialog);
+                
+                // Call ghostscript
+                GhostscriptProcessor gsproc = new GhostscriptProcessor();
+                List<string> gsArgs = new List<string>
+                    {
+                        "gs",
+                        "-dBATCH",
+                        "-dNOPAUSE",
+                        "-dQUIET",
+                        "-dSAFER",
+                        "-dNOPROMPT",
+                        "-sDEVICE=pdfwrite",
+                        String.Format("-sOutputFile=\"{0}\"", string.Join(@"\\", outputFilename.Split(new string[] { @"\" }, StringSplitOptions.None))),
+                        @"-f",
+                        postscriptFile
+                    };
+                gsproc.Process(gsArgs.ToArray());
+            }
+            finally {
+                // Clean up the temporary files
+                if (!String.IsNullOrWhiteSpace(postscriptFilePath) && Directory.Exists(postscriptFilePath))
+                {
+                    if (!String.IsNullOrWhiteSpace(postscriptFile) && File.Exists(postscriptFile))
+                    {
+                        // Make sure ghostscript is not holding onto the postscript file
+                        for (var i = 0; i < 60; i++)
+                        {
+                            try
+                            {
+                                File.Delete(postscriptFile);
+                                break;
+                            }
+                            catch (IOException)
+                            {
+                                Thread.Sleep(500);
+                            }
+                        }
+                    }
+                    Directory.Delete(postscriptFilePath);
+                }
+            }
+        }
+
     }
 }
