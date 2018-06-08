@@ -317,27 +317,30 @@ namespace OfficeToPDF
         // Looks in the Summary Information stream
         private static bool IsCDFReadOnlyEnforced(string filename)
         {
-            CompoundFile cf = new CompoundFile(fileName: filename);
-            if (null == cf)
+            using (CompoundFile cf = new CompoundFile(fileName: filename, updateMode: CFSUpdateMode.ReadOnly, configParameters: CFSConfiguration.Default))
             {
-                return false;
-            }
-            CFStream summaryInfo = cf.RootStorage.GetStream("\x05SummaryInformation");
-            if (null != summaryInfo)
-            {
-                // Interested in the doc security setting
-                OpenMcdf.Extensions.OLEProperties.PropertySetStream ps = summaryInfo.AsOLEProperties();
-                int securityIdx = ps.PropertySet0.PropertyIdentifierAndOffsets.FindIndex(x => x.PropertyIdentifier == OpenMcdf.Extensions.OLEProperties.PropertyIdentifiersSummaryInfo.PIDSI_DOC_SECURITY);
-                if (securityIdx >= 0 && securityIdx < ps.PropertySet0.Properties.Count) {
-                    int security = (int)ps.PropertySet0.Properties[securityIdx].PropertyValue;
-                    // See if read-only is enforced https://msdn.microsoft.com/en-us/library/windows/desktop/aa371587(v=vs.85).aspx
-                    if ((security & 4) == 4)
+                if (null == cf)
+                {
+                    return false;
+                }
+                CFStream summaryInfo = cf.RootStorage.GetStream("\x05SummaryInformation");
+                if (null != summaryInfo)
+                {
+                    // Interested in the doc security setting
+                    OpenMcdf.Extensions.OLEProperties.PropertySetStream ps = summaryInfo.AsOLEProperties();
+                    int securityIdx = ps.PropertySet0.PropertyIdentifierAndOffsets.FindIndex(x => x.PropertyIdentifier == OpenMcdf.Extensions.OLEProperties.PropertyIdentifiersSummaryInfo.PIDSI_DOC_SECURITY);
+                    if (securityIdx >= 0 && securityIdx < ps.PropertySet0.Properties.Count)
                     {
-                        return true;
+                        int security = (int)ps.PropertySet0.Properties[securityIdx].PropertyValue;
+                        // See if read-only is enforced https://msdn.microsoft.com/en-us/library/windows/desktop/aa371587(v=vs.85).aspx
+                        if ((security & 4) == 4)
+                        {
+                            return true;
+                        }
                     }
                 }
+                return false;
             }
-            return false;
         }
 
         // Return true if an open XML document is enforcing read-only
