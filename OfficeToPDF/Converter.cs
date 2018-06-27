@@ -327,7 +327,16 @@ namespace OfficeToPDF
                 if (null != summaryInfo)
                 {
                     // Interested in the doc security setting
-                    OpenMcdf.Extensions.OLEProperties.PropertySetStream ps = summaryInfo.AsOLEProperties();
+                    OpenMcdf.Extensions.OLEProperties.PropertySetStream ps = null;
+                    try
+                    {
+                        ps = summaryInfo.AsOLEProperties();
+                    }
+                    catch (Exception)
+                    {
+                        // There may be no properties for us to get
+                        return false;
+                    }
                     int securityIdx = ps.PropertySet0.PropertyIdentifierAndOffsets.FindIndex(x => x.PropertyIdentifier == OpenMcdf.Extensions.OLEProperties.PropertyIdentifiersSummaryInfo.PIDSI_DOC_SECURITY);
                     if (securityIdx >= 0 && securityIdx < ps.PropertySet0.Properties.Count)
                     {
