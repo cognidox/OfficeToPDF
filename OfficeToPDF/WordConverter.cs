@@ -313,6 +313,11 @@ namespace OfficeToPDF
                         doc.TrackMoves = false;
                         doc.TrackRevisions = false;
                         doc.TrackFormatting = false;
+
+                        if ((Boolean)options["word_fix_table_columns"])
+                        {
+                            FixWordTableColumnWidths(doc);
+                        }
                     }
 
                     normalTemplate.Saved = true;
@@ -463,6 +468,73 @@ namespace OfficeToPDF
                 }
                 ReleaseCOMObject(word);
             }
+        }
+
+        // Update tables
+        // There may be an issue with some tables which are auto-generated where columns widths
+        // in the body of the tables don't match the header columns
+        // See github issue 27
+        private static void FixWordTableColumnWidths(Document doc)
+        {
+            try
+            {
+                Tables tables = doc.Tables;
+                for (var i = 1; i <= tables.Count; i++)
+                {
+                    Table t = tables[i];
+                    Rows allRows = t.Rows;
+                    if (allRows.Count > 1 && i > 1)
+                    {
+                        Row firstRow = allRows.First;
+                        if (firstRow.HeadingFormat == 0)
+                        {
+                            Cells cells = firstRow.Cells;
+                            if (cells.Count > 0)
+                            {
+                                Table previousTable = tables[i - 1];
+                                Rows previousRows = previousTable.Rows;
+                                if (previousRows.Count > 0)
+                                {
+                                    Row previousFirstRow = previousRows.First;
+                                    if (previousFirstRow.HeadingFormat == -1)
+                                    {
+                                        Columns columns = t.Columns;
+                                        Columns previousColumns = previousTable.Columns;
+                                        // Only match columns widths if the tables match column count and width
+                                        if (t.PreferredWidth == previousTable.PreferredWidth && columns.Count == previousColumns.Count)
+                                        {
+                                            for (var cx = 1; cx <= cells.Count; cx++)
+                                            {
+                                                Cell cell = cells[cx];
+                                                if (cell.PreferredWidth == 0 && cell.PreferredWidthType == WdPreferredWidthType.wdPreferredWidthAuto)
+                                                {
+                                                    Column thisColumn = cell.Column;
+                                                    Column previousColumn = previousTable.Columns[cell.ColumnIndex];
+                                                    thisColumn.Width = previousColumn.Width;
+                                                    ReleaseCOMObject(previousColumn);
+                                                    ReleaseCOMObject(thisColumn);
+                                                }
+                                                ReleaseCOMObject(cell);
+                                            }
+                                        }
+                                        ReleaseCOMObject(columns);
+                                        ReleaseCOMObject(previousColumns);
+                                        ReleaseCOMObject(cells);
+                                    }
+                                    ReleaseCOMObject(previousFirstRow);
+                                }
+                                ReleaseCOMObject(previousRows);
+                                ReleaseCOMObject(previousTable);
+                            }
+                        }
+                        ReleaseCOMObject(firstRow);
+                    }
+                    ReleaseCOMObject(allRows);
+                    ReleaseCOMObject(t);
+                }
+                ReleaseCOMObject(tables);
+            }
+            catch (Exception) { }
         }
 
         // Try and close Word, giving time for Office to get

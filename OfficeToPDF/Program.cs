@@ -115,6 +115,7 @@ namespace OfficeToPDF
             options["word_ref_fonts"] = false;
             options["word_keep_history"] = false;
             options["word_no_repair"] = false;
+            options["word_fix_table_columns"] = false;
             options["original_filename"] = "";
             options["original_basename"] = "";
             options["powerpoint_output"] = "";
@@ -143,7 +144,7 @@ namespace OfficeToPDF
                 { "excel_delay", "Excel delay milliseconds" }
             };
 
-            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|(fallback_)?printer|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_(delay|max_rows|show_formulas|show_headings|auto_macros|template_macros|active_sheet|worksheet|no_recalculate|no_link_update)|powerpoint_(output)|word_(header_dist|footer_dist|ref_fonts|no_field_update|field_quick_update(_safe)?|max_pages|keep_history|no_repair)|pdf_(page_mode|append|prepend|layout|clean_meta|owner_pass|user_pass|restrict_(annotation|extraction|assembly|forms|modify|print|accessibility_extraction|full_quality))|working_dir|\?)$", RegexOptions.IgnoreCase);
+            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|(fallback_)?printer|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_(delay|max_rows|show_formulas|show_headings|auto_macros|template_macros|active_sheet|worksheet|no_recalculate|no_link_update)|powerpoint_(output)|word_(header_dist|footer_dist|ref_fonts|no_field_update|field_quick_update(_safe)?|max_pages|keep_history|no_repair|fix_table_columns)|pdf_(page_mode|append|prepend|layout|clean_meta|owner_pass|user_pass|restrict_(annotation|extraction|assembly|forms|modify|print|accessibility_extraction|full_quality))|working_dir|\?)$", RegexOptions.IgnoreCase);
             for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
                 string item = args[argIdx];
@@ -1037,6 +1038,8 @@ OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file [output_file]
                               of the page.
   /word_field_quick_update  - Perform a fast update of fields in Word before conversion.
   /word_field_quick_update_safe - Perform a fast update for fields only if there are no broken linked files.
+  /word_fix_table_columns   - Fix table column widths in cases where table body columns do not match header
+                              column widths.
   /word_keep_history        - Do not clear Word's recent files list.
   /word_max_pages <pages>   - Do not attempt conversion of a Word document if it has more than
                               this number of pages.

@@ -82,6 +82,8 @@ The following optional switches can be used:
                                of the page
   /word_field_quick_update   - perform a fast update of fields in Word before conversion
   /word_field_quick_update_safe - perform a fast update of fields only if there are no un-available linked files.
+  /word_fix_table_columns    - fix table column widths in cases where table body columns do not match header
+                               column widths
   /word_keep_history         - do not clear Word's recent files list
   /word_max_pages <pages>    - do not attempt conversion of a Word document if it has more than
                                this number of pages
