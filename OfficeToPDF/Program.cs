@@ -21,6 +21,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing.Printing;
 using System.IO;
 using System.Reflection;
 using System.Security.AccessControl;
@@ -48,7 +49,8 @@ namespace OfficeToPDF
         WorksheetNotFound = 256,
         EmptyWorksheet = 512,
         PDFProtectedDocument = 1024,
-        ApplicationError = 2048
+        ApplicationError = 2048,
+        NoPrinters = 4096
     }
 
     public enum MergeMode : int
@@ -134,6 +136,14 @@ namespace OfficeToPDF
             options["pdf_restrict_annotation"] = false;
             options["pdf_restrict_accessibility_extraction"] = false;
             options["pdf_restrict_full_quality"] = false;
+
+            // We need some printers to keep office happy
+            Dictionary<string,bool> installedPrinters = GetInstalledPrinters();
+            if (installedPrinters.Count <= 0)
+            {
+                Console.WriteLine("There are no installed printers, so conversion can not proceed");
+                Environment.Exit((int)(ExitCode.Failed | ExitCode.NoPrinters));
+            }
 
             // Strings used in error messages for different options
             var optionNameMap = new Dictionary<string, string>()
@@ -391,10 +401,19 @@ namespace OfficeToPDF
                             case "printer":
                             case "fallback_printer":
                                 // Only accept the next option if there are enough options
+                                string optname = itemMatch.Groups[1].Value.ToLower();
                                 if (argIdx + 2 < args.Length)
                                 {
-                                    options[itemMatch.Groups[1].Value.ToLower()] = args[argIdx + 1];
+                                    options[optname] = args[argIdx + 1];
                                     argIdx++;
+                                }
+                                if (optname.Equals("printer") || optname.Equals("fallback_printer"))
+                                {
+                                    if (!installedPrinters.ContainsKey(((string)options[optname]).ToLowerInvariant())) {
+                                        // The requested printer did not exists
+                                        Console.WriteLine("The printer \"{0}\" is not installed", options[optname]);
+                                        Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
+                                    }
                                 }
                                 break;
                             case "screen":
@@ -986,6 +1005,16 @@ namespace OfficeToPDF
                 }
             }
             return dstDoc;
+        }
+
+        private static Dictionary<string, bool> GetInstalledPrinters()
+        {
+            Dictionary<string, bool> printers = new Dictionary<string, bool>();
+            foreach (string name in PrinterSettings.InstalledPrinters)
+            {
+                printers[name.ToLowerInvariant()] = true;
+            }
+            return printers;
         }
 
         static void ShowHelp()

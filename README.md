@@ -92,10 +92,13 @@ The following optional switches can be used:
 | /word_header_dist _pts_    | the distance (in points) from the header to the top of the page |
 | /word_footer_dist _pts_    | the distance (in points) from the footer to the bottom of the page |
 | /word_field_quick_update   | perform a fast update of fields in Word before conversion |
+| /word_fix_table_columns    | update table column widths to match table heading column widths |
 | /word_keep_history         | do not clear Word's recent files list |
 | /word_max_pages _pages_    | do not attempt conversion of a Word document if it has more than this number of _pages_ |
 | /word_no_field_update      | do not update fields when creating the PDF |
 | /word_ref_fonts            | when fonts are not available, a reference to the font is used in the generated PDF rather than a bitmapped version. The default is for a bitmap of the text to be used |
+| /fallback_printer <name>   | print the document to postscript printer <name> for conversion when the main conversion routine fails. Requires Ghostscript to be installed |
+| /printer <name>            | print the document to postscript printer <name> for conversion. Requires Ghostscript to be installed |
 | /pdf_clean_meta _type_     | allows for some meta-data to be removed from the generated PDF<br>_type_ can be:<ul><li>basic - removes author, keywords, creator and subject</li><li>full - removes all that basic removes and also the title</li></ul> |
 | /pdf_layout _layout_       | controls how the pages layout in Acrobat Reader<br>_layout_ can be one of the following values:<ul><li>onecol - show pages as a single scrolling column</li><li>single - show pages one at a time</li><li>twocolleft - show pages in two columns, with odd-numbered pages on the left</li><li>twocolright - show pages in two columns, with odd-numbered pages on the right</li><li>twopageleft - show pages two at a time, with odd-numbered pages on the left</li><li>twopageright - show pages two at a time, with odd-numbered pages on the right</li></ul> |
 | /pdf_page_mode _mode_      | controls how the PDF will open with Acrobat Reader<br>_mode_ can be one of the following values:<ul><li>full - the PDF will open in fullscreen mode</li><li>bookmarks - the PDF will open with the bookmarks visible</li><li>thumbs - the PDF will open with the thumbnail view visible</li><li>none - the PDF will open without the navigation bar visible</li></ul> |
@@ -135,6 +138,8 @@ so bitwise operations can test for multiple errors.
 256 - The requested worksheet was not found
 512 - Unable to use an empty worksheet
 1024 - Unable to modify or open a protected PDF
+2048 - Raised when there is a problem calling an Office application
+4096 - There are no printers installed, so Office conversion can not proceed
 ```
 
 ---
