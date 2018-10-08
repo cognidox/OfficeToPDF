@@ -149,7 +149,7 @@ namespace OfficeToPDF
             stream.Seek(-scanLength, SeekOrigin.End);
             var footer = new byte[scanLength];
             ReadFromStream(stream, footer);
-
+            
             // finally return the result
             return ScanForPassword(stream, footer, sectionSize);
         }
@@ -179,7 +179,9 @@ namespace OfficeToPDF
                 // (old .ppt documents use this stream as well)
                 if (bufferString.Contains(encryptedPackageName) ||
                     bufferString.Contains(encryptedSummaryName))
+                {
                     return true;
+                }
 
                 // try to detect password protection for legacy Office documents
 
@@ -243,8 +245,12 @@ namespace OfficeToPDF
             {
                 // BitConverter exceptions may be related to document format problems
                 // so we just treat them as "password not detected" result
-                if (ex is ArgumentOutOfRangeException)
+                if (ex is ArgumentOutOfRangeException ||
+                    ex is ArgumentException)
+                {
                     return false;
+                }
+
                 // respect all the rest exceptions
                 throw;
             }
