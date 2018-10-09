@@ -190,11 +190,18 @@ namespace OfficeToPDF
                                 throw;
                             }
                         }
+                        finally
+                        {
+                            ReleaseCOMObject(printType);
+                            ReleaseCOMObject(quality);
+                        }
                     } else
                     {
                         // Print via a delegate
                         PrintToGhostscript((string)options["printer"], outputFile, printFunc);
                     }
+                    ReleaseCOMObject(printType);
+                    ReleaseCOMObject(quality);
 
                     // Determine if we need to make bookmarks
                     if ((bool)options["bookmarks"])

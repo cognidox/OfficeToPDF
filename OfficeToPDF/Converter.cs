@@ -73,14 +73,19 @@ namespace OfficeToPDF
             return (int)ExitCode.UnknownError;
         }
 
-        // Clean up COM objects
+        /// <summary>
+        /// Clean up COM objects
+        /// </summary>
+        /// <param name="obj">COM object to be released</param>
+        /// <remarks>
+        /// See https://support.microsoft.com/en-gb/help/317109/office-application-does-not-exit-after-automation-from-visual-studio-n
+        /// </remarks>
         protected static void ReleaseCOMObject(object obj)
         {
             try
             {
-                if (null != obj && System.Runtime.InteropServices.Marshal.IsComObject(obj))
+                while (null != obj && System.Runtime.InteropServices.Marshal.ReleaseComObject(obj) > 0)
                 {
-                    System.Runtime.InteropServices.Marshal.FinalReleaseComObject(obj);
                 }
             }
             catch { }
