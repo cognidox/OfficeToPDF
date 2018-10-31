@@ -174,7 +174,7 @@ namespace OfficeToPDF
                         switch (itemMatch.Groups[1].Value.ToLower())
                         {
                             case "pdf_page_mode":
-                                if (argIdx + 2 < args.Length)
+                                if (argIdx + 1 < args.Length)
                                 {
                                     postProcessPDF = true;
                                     var pageMode = args[argIdx + 1];
@@ -202,7 +202,7 @@ namespace OfficeToPDF
                                 }
                                 break;
                             case "pdf_clean_meta":
-                                if (argIdx + 2 < args.Length)
+                                if (argIdx + 1 < args.Length)
                                 {
                                     postProcessPDF = true;
                                     var cleanType = args[argIdx + 1];
@@ -224,7 +224,7 @@ namespace OfficeToPDF
                                 }
                                 break;
                             case "pdf_layout":
-                                if (argIdx + 2 < args.Length)
+                                if (argIdx + 1 < args.Length)
                                 {
                                     postProcessPDF = true;
                                     var pdfLayout = args[argIdx + 1];
@@ -259,7 +259,7 @@ namespace OfficeToPDF
                                 break;
                             case "pdf_owner_pass":
                             case "pdf_user_pass":
-                                if (argIdx + 2 < args.Length)
+                                if (argIdx + 1 < args.Length)
                                 {
                                     postProcessPDF = true;
                                     postProcessPDFSecurity = true;
@@ -271,7 +271,7 @@ namespace OfficeToPDF
                                 break;
                             case "template":
                                 // Only accept the next option if there are enough options
-                                if (argIdx + 2 < args.Length)
+                                if (argIdx + 1 < args.Length)
                                 {
                                     if (File.Exists(args[argIdx + 1]))
                                     {
@@ -287,7 +287,7 @@ namespace OfficeToPDF
                                 break;
                             case "powerpoint_output":
                                 // Only accept the next option if there are enough options
-                                if (argIdx + 2 < args.Length)
+                                if (argIdx + 1 < args.Length)
                                 {
                                     bool validOutputType = false;
                                     PowerpointConverter.GetOutputType(args[argIdx + 1], ref validOutputType);
@@ -302,7 +302,7 @@ namespace OfficeToPDF
                                 break;
                             case "working_dir":
                                 // Allow for a local working directory where files are manipulated
-                                if (argIdx + 2 < args.Length)
+                                if (argIdx + 1 < args.Length)
                                 {
                                     if (Directory.Exists(args[argIdx + 1]))
                                     {
@@ -365,7 +365,7 @@ namespace OfficeToPDF
                             case "excel_delay":
                             case "word_max_pages":
                                 // Only accept the next option if there are enough options
-                                if (argIdx + 2 < args.Length)
+                                if (argIdx + 1 < args.Length)
                                 {
                                     CheckOptionIsInteger(ref options, itemMatch.Groups[1].Value.ToLower(), optionNameMap[itemMatch.Groups[1].Value.ToLower()], args[argIdx + 1]);
                                     argIdx++;
@@ -374,7 +374,7 @@ namespace OfficeToPDF
                             case "word_header_dist":
                             case "word_footer_dist":
                                 // Only accept the next option if there are enough options
-                                if (argIdx + 2 < args.Length)
+                                if (argIdx + 1 < args.Length)
                                 {
                                     if (Regex.IsMatch(args[argIdx + 1], @"^[\d\.]+$"))
                                     {
@@ -402,7 +402,7 @@ namespace OfficeToPDF
                             case "fallback_printer":
                                 // Only accept the next option if there are enough options
                                 string optname = itemMatch.Groups[1].Value.ToLower();
-                                if (argIdx + 2 < args.Length)
+                                if (argIdx + 1 < args.Length)
                                 {
                                     options[optname] = args[argIdx + 1];
                                     argIdx++;
@@ -1026,7 +1026,9 @@ Handles Office files:
   xltx, xlsb, csv, ods, vsd, vsdm, vsdx, svg, vdx, vdw, emf, emz, dwg, dxf, wmf,
   pub, mpp, ics, vcf, msg, xps
 
-OfficeToPDF.exe [/bookmarks] [/hidden] [/readonly] input_file [output_file]
+OfficeToPDF.exe [switches] input_file [output_file]
+
+  Available switches:
 
   /bookmarks    - Create bookmarks in the PDF when they are supported by the
                   Office application
