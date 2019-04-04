@@ -1094,6 +1094,13 @@ OfficeToPDF.exe [switches] input_file [output_file]
   /word_ref_fonts           - When fonts are not available, a reference to the font is used in
                               the generated PDF rather than a bitmapped version. The default is
                               for a bitmap of the text to be used.
+  /word_show_comments       - Show comments when /markup is used.
+  /word_show_revs_comments  - Show revisions and comments when /markup is used.
+  /word_show_format_changes - Show format changes when /markup is used.
+  /word_show_ink_annot      - Show ink annotations when /markup is used.
+  /word_show_ins_del        - Show all markup when /markup is used.
+  /word_show_all_markup     - Show all markup content when /markup is used.
+  /word_markup_balloon      - Show balloon style markup messages rather than inline ones.
   /pdf_clean_meta <type>    - Allows for some meta-data to be removed from the generated PDF.
                               <type> can be:
                                 basic - removes author, keywords, creator and subject

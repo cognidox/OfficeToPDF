@@ -5,8 +5,8 @@ This is the Cognidox Ltd Office To PDF tool. It can be used to convert
 Microsoft Office 2003, 2007, 2010, 2013 or 2016 documents to PDF from the
 command line.
 
-In order to run the tool, .net 4 and one of MS Office 2007, 2010, 2013
-or 2016 must be installed.
+In order to run the tool, .net 4 and one of MS Office 2007, 2010, 2013,
+2016 and 2019 must be installed and at least one printer device configured.
 
 It is distributed under the Apache License v2.0:
 http://opensource.org/licenses/apache2.0
@@ -93,6 +93,13 @@ The following optional switches can be used:
   /word_ref_fonts            - when fonts are not available, a reference to the font is used in
                                the generated PDF rather than a bitmapped version. The default is
                                for a bitmap of the text to be used
+  /word_show_comments        - show comments when /markup is used
+  /word_show_revs_comments   - show revisions and comments when /markup is used
+  /word_show_format_changes  - show format changes when /markup is used
+  /word_show_ink_annot       - show ink annotations when /markup is used
+  /word_show_ins_del         - show all markup when /markup is used
+  /word_show_all_markup      - show all markup content when /markup is used
+  /word_markup_balloon       - show balloon style markup messages rather than inline ones
   /pdf_clean_meta <type>     - allows for some meta-data to be removed from the generated PDF.
                                <type> can be:
                                  basic - removes author, keywords, creator and subject

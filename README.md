@@ -97,6 +97,13 @@ The following optional switches can be used:
 | /word_max_pages _pages_    | do not attempt conversion of a Word document if it has more than this number of _pages_ |
 | /word_no_field_update      | do not update fields when creating the PDF |
 | /word_ref_fonts            | when fonts are not available, a reference to the font is used in the generated PDF rather than a bitmapped version. The default is for a bitmap of the text to be used |
+| /word_show_comments        | show comments when /markup is used |
+| /word_show_revs_comments   | show revisions and comments when /markup is used |
+| /word_show_format_changes  | show format changes when /markup is used |
+| /word_show_ink_annot       | show ink annotations when /markup is used |
+| /word_show_ins_del         | show all markup when /markup is used |
+| /word_show_all_markup      | show all markup content when /markup is used |
+| /word_markup_balloon       | show balloon style markup messages rather than inline ones |
 | /fallback_printer <name>   | print the document to postscript printer <name> for conversion when the main conversion routine fails. Requires Ghostscript to be installed |
 | /printer <name>            | print the document to postscript printer <name> for conversion. Requires Ghostscript to be installed |
 | /pdf_clean_meta _type_     | allows for some meta-data to be removed from the generated PDF<br>_type_ can be:<ul><li>basic - removes author, keywords, creator and subject</li><li>full - removes all that basic removes and also the title</li></ul> |
