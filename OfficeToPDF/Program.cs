@@ -117,6 +117,13 @@ namespace OfficeToPDF
             options["word_ref_fonts"] = false;
             options["word_keep_history"] = false;
             options["word_no_repair"] = false;
+            options["word_show_comments"] = false;
+            options["word_show_revs_comments"] = false;
+            options["word_show_format_changes"] = false;
+            options["word_show_ink_annot"] = false;
+            options["word_show_ins_del"] = false;
+            options["word_markup_balloon"] = false;
+            options["word_show_all_markup"] = false;
             options["word_fix_table_columns"] = false;
             options["original_filename"] = "";
             options["original_basename"] = "";
@@ -154,7 +161,7 @@ namespace OfficeToPDF
                 { "excel_delay", "Excel delay milliseconds" }
             };
 
-            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|(fallback_)?printer|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_(delay|max_rows|show_formulas|show_headings|auto_macros|template_macros|active_sheet|worksheet|no_recalculate|no_link_update)|powerpoint_(output)|word_(header_dist|footer_dist|ref_fonts|no_field_update|field_quick_update(_safe)?|max_pages|keep_history|no_repair|fix_table_columns)|pdf_(page_mode|append|prepend|layout|clean_meta|owner_pass|user_pass|restrict_(annotation|extraction|assembly|forms|modify|print|accessibility_extraction|full_quality))|working_dir|\?)$", RegexOptions.IgnoreCase);
+            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|(fallback_)?printer|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_(delay|max_rows|show_formulas|show_headings|auto_macros|template_macros|active_sheet|worksheet|no_recalculate|no_link_update)|powerpoint_(output)|word_(header_dist|footer_dist|ref_fonts|no_field_update|field_quick_update(_safe)?|max_pages|keep_history|no_repair|fix_table_columns|show_(comments|revs_comments|format_changes|ink_annot|ins_del|all_markup)|markup_balloon)|pdf_(page_mode|append|prepend|layout|clean_meta|owner_pass|user_pass|restrict_(annotation|extraction|assembly|forms|modify|print|accessibility_extraction|full_quality))|working_dir|\?)$", RegexOptions.IgnoreCase);
             for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
                 string item = args[argIdx];
@@ -1010,10 +1017,14 @@ namespace OfficeToPDF
         private static Dictionary<string, bool> GetInstalledPrinters()
         {
             Dictionary<string, bool> printers = new Dictionary<string, bool>();
-            foreach (string name in PrinterSettings.InstalledPrinters)
+            try
             {
-                printers[name.ToLowerInvariant()] = true;
+                foreach (string name in PrinterSettings.InstalledPrinters)
+                {
+                    printers[name.ToLowerInvariant()] = true;
+                }
             }
+            catch (Exception) { }
             return printers;
         }
 

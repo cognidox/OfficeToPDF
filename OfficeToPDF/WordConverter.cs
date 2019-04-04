@@ -286,16 +286,34 @@ namespace OfficeToPDF
                     }
                     catch (Exception) { }
 
-                    // Hide comments
+                    // Handle markup
                     try
                     {
+                        if ((Boolean)options["word_show_all_markup"])
+                        {
+                            options["word_show_comments"] = true;
+                            options["word_show_revs_comments"] = true;
+                            options["word_show_format_changes"] = true;
+                            options["word_show_ink_annot"] = true;
+                            options["word_show_ins_del"] = true;
+                        }
+                        if ((Boolean)options["word_show_comments"] || 
+                            (Boolean)options["word_show_revs_comments"] || 
+                            (Boolean)options["word_show_format_changes"] || 
+                            (Boolean)options["word_show_ink_annot"] ||
+                            (Boolean)options["word_show_ins_del"] ||
+                            showMarkup == WdExportItem.wdExportDocumentWithMarkup)
+                        {
+                            docWinView.MarkupMode = (Boolean)options["word_markup_balloon"] ?
+                                WdRevisionsMode.wdBalloonRevisions : WdRevisionsMode.wdInLineRevisions;
+                        }
                         word.PrintPreview = false;
                         docWinView.RevisionsView = WdRevisionsView.wdRevisionsViewFinal;
-                        docWinView.ShowRevisionsAndComments = false;
-                        docWinView.ShowComments = false;
-                        docWinView.ShowFormatChanges = false;
-                        docWinView.ShowInkAnnotations = false;
-                        docWinView.ShowInsertionsAndDeletions = false;
+                        docWinView.ShowRevisionsAndComments = (Boolean)options["word_show_revs_comments"];
+                        docWinView.ShowComments = (Boolean)options["word_show_comments"];
+                        docWinView.ShowFormatChanges = (Boolean)options["word_show_format_changes"];
+                        docWinView.ShowInkAnnotations = (Boolean)options["word_show_ink_annot"];
+                        docWinView.ShowInsertionsAndDeletions = (Boolean)options["word_show_ins_del"];
                     }
                     catch (SystemException e) {
                         Console.WriteLine("Failed to set revision settings {0}", e.Message);
@@ -325,6 +343,7 @@ namespace OfficeToPDF
                     // Hide the document window if need be
                     if ((Boolean)options["hidden"])
                     {
+                        word.Visible = false;
                         var activeWin = word.ActiveWindow;
                         activeWin.Visible = false;
                         activeWin.WindowState = WdWindowState.wdWindowStateMinimize;
