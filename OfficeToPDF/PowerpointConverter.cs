@@ -46,7 +46,7 @@ namespace OfficeToPDF
                 Console.WriteLine("Unable to open password protected file");
                 return (int)ExitCode.PasswordFailure;
             }
-
+            
             Boolean running = (Boolean)options["noquit"];
             try
             {
@@ -123,7 +123,7 @@ namespace OfficeToPDF
                         // the file
                         throw new Exception("Presentation has a write password - this prevents it being opened");
                     }
-
+                    
                     app.FeatureInstall = MSCore.MsoFeatureInstall.msoFeatureInstallNone;
                     app.DisplayDocumentInformationPanel = false;
                     app.DisplayAlerts = PpAlertLevel.ppAlertsNone;
@@ -141,16 +141,30 @@ namespace OfficeToPDF
                         Console.WriteLine(filenameWithPasswords);
                     }
                     activePresentation = presentations.Open2007(FileName: filenameWithPasswords, ReadOnly: nowrite, Untitled: MSCore.MsoTriState.msoTrue, OpenAndRepair: MSCore.MsoTriState.msoTrue);
-                    activePresentation.Final = false;
-
+                    var changeLoop = 0;
+                    while (changeLoop++ < 10)
+                    {
+                        // Try and wait for the presentation to become usable
+                        try
+                        {
+                            activePresentation.Final = false;
+                            break;
+                        }
+                        catch (Exception)
+                        {
+                            Thread.Sleep(500);
+                        }
+                    }
+                    
                     // Sometimes, presentations can have restrictions on them that block
                     // access to the object model (e.g. fonts containing restrictions).
                     // If we attempt to access the object model and fail, then try a more
                     // sneaky method of getting the presentation - create an empty presentation
                     // and insert the slides from the original file.
-                    var fonts = activePresentation.Fonts;
+                    Fonts fonts = null;
                     try
                     {
+                        fonts = activePresentation.Fonts;
                         var fontCount = fonts.Count;
                     }
                     catch (COMException)
@@ -165,7 +179,7 @@ namespace OfficeToPDF
                         activePresentation.Slides.InsertFromFile(inputFile, 0);
                     }
                     ReleaseCOMObject(fonts);
-
+                    
                     // Set up a delegate function for times we want to print
                     PrintDocument printFunc = delegate (string destination, string printer)
                     {
@@ -176,7 +190,7 @@ namespace OfficeToPDF
                         activePresentation.PrintOut(PrintToFile: destination, Copies: 1);
                         ReleaseCOMObject(activePrintOptions);
                     };
-
+                    
                     if (String.IsNullOrEmpty((string)options["printer"]))
                     {
                         try
