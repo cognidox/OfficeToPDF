@@ -90,7 +90,7 @@ namespace OfficeToPDF
             options["verbose"] = false;
             options["excludeprops"] = false;
             options["excludetags"] = false;
-            options["noquit"] = false;
+            options["noquit"] = true;
             options["merge"] = false;
             options["template"] = "";
             options["password"] = "";
