@@ -412,6 +412,10 @@ namespace OfficeToPDF
                     doc.PrintOut(Background: false, OutputFileName: destination);
                 };
 
+                // Enable screen updating before exporting to ensure that Word
+                // renders borders correctly
+                word.ScreenUpdating = true;
+
                 if (String.IsNullOrEmpty((string)options["printer"])) {
                     // No printer given, so export
                     try
