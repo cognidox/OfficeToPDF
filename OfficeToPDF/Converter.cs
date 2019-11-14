@@ -342,14 +342,14 @@ namespace OfficeToPDF
                     OpenMcdf.Extensions.OLEProperties.PropertySetStream ps = null;
                     try
                     {
-                        ps = summaryInfo.AsOLEProperties();
+                        ps = summaryInfo.AsOleProperties();
                     }
                     catch (Exception)
                     {
                         // There may be no properties for us to get
                         return false;
                     }
-                    int securityIdx = ps.PropertySet0.PropertyIdentifierAndOffsets.FindIndex(x => x.PropertyIdentifier == OpenMcdf.Extensions.OLEProperties.PropertyIdentifiersSummaryInfo.PIDSI_DOC_SECURITY);
+                    int securityIdx = ps.PropertySet0.PropertyIdentifierAndOffsets.FindIndex(x => x.PropertyIdentifier == OpenMcdf.Extensions.OLEProperties.PropertyIdentifiersSummaryInfo.PidsiDocSecurity);
                     if (securityIdx >= 0 && securityIdx < ps.PropertySet0.Properties.Count)
                     {
                         int security = (int)ps.PropertySet0.Properties[securityIdx].PropertyValue;
