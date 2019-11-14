@@ -104,6 +104,8 @@ The following optional switches can be used:
 | /word_show_ins_del         | show all markup when /markup is used |
 | /word_show_all_markup      | show all markup content when /markup is used |
 | /word_markup_balloon       | show balloon style markup messages rather than inline ones |
+| /page_from _num_           | Start of page range (Currently only supported for word documents) |
+| /page_to _num_             | End of page range (Currently only supported for word documents) |
 | /fallback_printer <name>   | print the document to postscript printer <name> for conversion when the main conversion routine fails. Requires Ghostscript to be installed |
 | /printer <name>            | print the document to postscript printer <name> for conversion. Requires Ghostscript to be installed |
 | /pdf_clean_meta _type_     | allows for some meta-data to be removed from the generated PDF<br>_type_ can be:<ul><li>basic - removes author, keywords, creator and subject</li><li>full - removes all that basic removes and also the title</li></ul> |
