@@ -65,6 +65,11 @@ namespace OfficeToPDF
                 String writePassword = "";
                 String readPassword = "";
                 int maxPages = 0;
+                int pageCount = -1;
+                int pageFrom = 1;
+                int pageTo = -1;
+                bool pageRange = false;
+
 
                 WdExportOptimizeFor quality = WdExportOptimizeFor.wdExportOptimizeForPrint;
                 WdExportItem showMarkup = WdExportItem.wdExportDocumentContent;
@@ -187,6 +192,18 @@ namespace OfficeToPDF
                 // converting the file.
                 maxPages = (int)options[@"word_max_pages"];
 
+                if (null != options["page_from"])
+                {
+                    pageRange = true;
+                    pageFrom = (int)options[@"page_from"];
+                }
+
+                if (null != options["page_to"])
+                {
+                    pageRange = true;
+                    pageTo = (int)options[@"page_to"];
+                }
+
                 documents = word.Documents;
                 normalTemplate = word.NormalTemplate;
                 
@@ -259,10 +276,15 @@ namespace OfficeToPDF
                     View docWinView = null;
 
                     doc.Activate();
+
+                    if (maxPages > 0 || (pageRange && pageTo == -1))
+                    {
+                        pageCount = doc.ComputeStatistics(WdStatistic.wdStatisticPages, false);
+                    }
+
                     // Check if there are too many pages
                     if (maxPages > 0)
                     {
-                        var pageCount = doc.ComputeStatistics(WdStatistic.wdStatisticPages, false);
                         doc.Saved = true;
                         if (pageCount > maxPages)
                         {
@@ -405,11 +427,28 @@ namespace OfficeToPDF
                     ReleaseCOMObject(docWin);
                 }
 
+                if (pageRange && pageTo == -1) pageTo = pageCount;
+
                 // Set up a delegate function if we're using a printer
                 PrintDocument printFunc = delegate (string destination, string printerName)
                 {
                     word.ActivePrinter = printerName;
-                    doc.PrintOut(Background: false, OutputFileName: destination);
+
+                    if (pageRange)
+                    {
+                        doc.PrintOut(
+                            Background: false,
+                            OutputFileName: destination,
+                            Range: WdPrintOutRange.wdPrintFromTo,
+                            From: "" + pageFrom,
+                            To: "" + pageTo);
+                    }
+                    else
+                    {
+                        doc.PrintOut(
+                            Background: false,
+                            OutputFileName: destination);
+                    }
                 };
 
                 // Enable screen updating before exporting to ensure that Word
@@ -420,9 +459,22 @@ namespace OfficeToPDF
                     // No printer given, so export
                     try
                     {
-                        doc.ExportAsFixedFormat(outputFile, WdExportFormat.wdExportFormatPDF, false,
-                        quality, WdExportRange.wdExportAllDocument,
-                        1, 1, showMarkup, includeProps, true, bookmarks, includeTags, bitmapMissingFonts, pdfa);
+                        doc.ExportAsFixedFormat(
+                            outputFile,
+                            WdExportFormat.wdExportFormatPDF, 
+                            false,
+                            quality,
+                            pageRange ? WdExportRange.wdExportFromTo : WdExportRange.wdExportAllDocument,
+                            pageFrom, 
+                            pageTo,
+                            showMarkup, 
+                            includeProps, 
+                            true, 
+                            bookmarks, 
+                            includeTags, 
+                            bitmapMissingFonts, 
+                            pdfa
+                        );
                     } catch(Exception)
                     {
                         // Couldn't export, so see if there is a fallback printer
