@@ -661,6 +661,13 @@ namespace OfficeToPDF
                 ((Boolean)options["word_field_quick_update_safe"] && !HasBrokenLinks(doc)))
             {
                 var fields = doc.Fields;
+                foreach (Field f in fields)
+                {
+                    if (f.Type == WdFieldType.wdFieldFillIn)
+                    {
+                        f.Unlink();
+                    }
+                }
                 fields.Update();
                 ReleaseCOMObject(fields);
                 return;
