@@ -2,7 +2,7 @@
 =============
 
 This is the Cognidox Ltd Office To PDF tool. It can be used to convert
-Microsoft Office 2003, 2007, 2010, 2013 or 2016 documents to PDF from the
+Microsoft Office 2003, 2007, 2010, 2013, 2016 or 2019 documents to PDF from the
 command line.
 
 In order to run the tool, .net 4 and one of MS Office 2007, 2010, 2013,
@@ -96,6 +96,7 @@ The following optional switches can be used:
   /word_show_comments        - show comments when /markup is used
   /word_show_revs_comments   - show revisions and comments when /markup is used
   /word_show_format_changes  - show format changes when /markup is used
+  /word_show_hidden          - show hidden text
   /word_show_ink_annot       - show ink annotations when /markup is used
   /word_show_ins_del         - show all markup when /markup is used
   /word_show_all_markup      - show all markup content when /markup is used

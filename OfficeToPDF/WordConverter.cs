@@ -152,6 +152,7 @@ namespace OfficeToPDF
                     wordOptionList.Add(new AppOption("BackgroundOpen", false, ref wdOptions));
                     wordOptionList.Add(new AppOption("ShowMarkupOpenSave", false, ref wdOptions));
                     wordOptionList.Add(new AppOption("SaveInterval", 0, ref wdOptions));
+                    wordOptionList.Add(new AppOption("PrintHiddenText", (Boolean)options["word_show_hidden"], ref wdOptions));
                 }
                 catch (SystemException)
                 {
