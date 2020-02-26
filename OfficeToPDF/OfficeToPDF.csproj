@@ -105,8 +105,8 @@
     <Reference Include="Costura, Version=3.3.3.0, Culture=neutral, PublicKeyToken=9919ef960d84173d, processorArchitecture=MSIL">
       <HintPath>..\packages\Costura.Fody.3.3.3\lib\net40\Costura.dll</HintPath>
     </Reference>
-    <Reference Include="DocumentFormat.OpenXml, Version=2.9.1.0, Culture=neutral, PublicKeyToken=8fb06cb64d019a17, processorArchitecture=MSIL">
-      <HintPath>..\packages\DocumentFormat.OpenXml.2.9.1\lib\net40\DocumentFormat.OpenXml.dll</HintPath>
+    <Reference Include="DocumentFormat.OpenXml, Version=2.10.0.0, Culture=neutral, PublicKeyToken=8fb06cb64d019a17, processorArchitecture=MSIL">
+      <HintPath>..\packages\DocumentFormat.OpenXml.2.10.0\lib\net40\DocumentFormat.OpenXml.dll</HintPath>
     </Reference>
     <Reference Include="Ghostscript.NET, Version=1.2.1.0, Culture=neutral, PublicKeyToken=f85051de34525b59, processorArchitecture=MSIL">
       <HintPath>..\packages\Ghostscript.NET.1.2.1\lib\net40\Ghostscript.NET.dll</HintPath>
@@ -149,14 +149,14 @@
       <EmbedInteropTypes>True</EmbedInteropTypes>
       <HintPath>..\..\..\..\..\..\..\Program Files\Microsoft Visual Studio 9.0\Visual Studio Tools for Office\PIA\Office14\OFFICE.DLL</HintPath>
     </Reference>
-    <Reference Include="OpenMcdf, Version=2.1.1.5, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\OpenMcdf-2.2.1.1.5\lib\net40\OpenMcdf.dll</HintPath>
+    <Reference Include="OpenMcdf, Version=2.1.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\OpenMcdf-2.2.1.2\lib\net40\OpenMcdf.dll</HintPath>
     </Reference>
-    <Reference Include="PdfSharp-WPF, Version=1.31.5198.0, Culture=neutral, PublicKeyToken=f94615aa0424f9eb, processorArchitecture=MSIL">
-      <HintPath>..\packages\kenjiuno.PdfSharp-WPF.1.31.5198\lib\net40\PdfSharp-WPF.dll</HintPath>
+    <Reference Include="PdfSharp-WPF, Version=1.31.5377.0, Culture=neutral, PublicKeyToken=f94615aa0424f9eb, processorArchitecture=MSIL">
+      <HintPath>..\packages\kenjiuno.PdfSharp-WPF.1.31.5377\lib\net40\PdfSharp-WPF.dll</HintPath>
     </Reference>
-    <Reference Include="PdfSharp.Xps, Version=1.1.1.0, Culture=neutral, PublicKeyToken=f94615aa0424f9eb, processorArchitecture=MSIL">
-      <HintPath>..\packages\kenjiuno.PdfSharp.Xps.1.1.1\lib\net40\PdfSharp.Xps.dll</HintPath>
+    <Reference Include="PdfSharp.Xps, Version=1.1.4.0, Culture=neutral, PublicKeyToken=f94615aa0424f9eb, processorArchitecture=MSIL">
+      <HintPath>..\packages\kenjiuno.PdfSharp.Xps.1.1.4\lib\net40\PdfSharp.Xps.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -235,7 +235,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
