@@ -143,6 +143,7 @@ namespace OfficeToPDF
             options["pdf_restrict_annotation"] = false;
             options["pdf_restrict_accessibility_extraction"] = false;
             options["pdf_restrict_full_quality"] = false;
+            options["pdf_orientation_landscape"] = false;
 
             // We need some printers to keep office happy
             Dictionary<string,bool> installedPrinters = GetInstalledPrinters();
