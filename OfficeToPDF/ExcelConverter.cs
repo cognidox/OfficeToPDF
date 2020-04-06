@@ -175,7 +175,6 @@ namespace OfficeToPDF
                 {
                     workbook.RunAutoMacros(XlRunAutoMacro.xlAutoOpen);
                 }
-
                 // Get any template options
                 SetPageOptionsFromTemplate(app, workbooks, options, ref templatePageSetup);
 
