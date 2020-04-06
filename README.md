@@ -89,6 +89,7 @@ The following optional switches can be used:
 | /excel_auto_macros         | run Auto_Open macros in Excel files before conversion |
 | /excel_no_link_update      | do not update links when opening Excel files |
 | /excel_no_recalculate      | skip automatic re-calculation of formulas in the workbook |
+| /excel_fit_to_page_width   | Scale each page to fit on one page wide |
 | /word_header_dist _pts_    | the distance (in points) from the header to the top of the page |
 | /word_footer_dist _pts_    | the distance (in points) from the footer to the bottom of the page |
 | /word_field_quick_update   | perform a fast update of fields in Word before conversion |

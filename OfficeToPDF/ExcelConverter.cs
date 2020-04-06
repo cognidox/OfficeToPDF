@@ -103,6 +103,7 @@ namespace OfficeToPDF
                 Boolean showFormulas = (Boolean)options["excel_show_formulas"];
                 Boolean isHidden = (Boolean)options["hidden"];
                 Boolean screenQuality = (Boolean)options["screen"];
+                Boolean fitToPageWidth = (Boolean)options["excel_fit_to_page_width"];
                 Boolean updateLinks = !(Boolean)options["excel_no_link_update"];
                 int maxRows = (int)options[@"excel_max_rows"];
                 int worksheetNum = (int)options["excel_worksheet"];
@@ -174,7 +175,7 @@ namespace OfficeToPDF
                 {
                     workbook.RunAutoMacros(XlRunAutoMacro.xlAutoOpen);
                 }
-                
+
                 // Get any template options
                 SetPageOptionsFromTemplate(app, workbooks, options, ref templatePageSetup);
 
@@ -224,7 +225,7 @@ namespace OfficeToPDF
                         return (int)ExitCode.WorksheetNotFound;
                     }
                 }
-                
+
                 if (showFormulas)
                 {
                     // Determine whether to show formulas
@@ -251,7 +252,7 @@ namespace OfficeToPDF
                         activeWindow.Visible = false;
                     }
                 }
-                
+
                 // Keep track of the active sheet
                 if (workbook.ActiveSheet != null)
                 {
@@ -288,7 +289,8 @@ namespace OfficeToPDF
                                 if (activeSheet is _Worksheet)
                                 {
                                     itemIndex = ((Worksheet)activeSheet).Index;
-                                } else if (activeSheet is _Chart)
+                                }
+                                else if (activeSheet is _Chart)
                                 {
                                     itemIndex = ((Microsoft.Office.Interop.Excel.Chart)activeSheet).Index;
                                 }
@@ -316,7 +318,7 @@ namespace OfficeToPDF
                             {
                                 pageSetup = ((Worksheet)ws).PageSetup;
                                 pageSetup.PrintHeadings = true;
-                                
+
                             }
                             catch (Exception) { }
                             finally
@@ -410,6 +412,14 @@ namespace OfficeToPDF
 
                 workbook.SaveAs(tmpFile, fmt, Type.Missing, Type.Missing, Type.Missing, false, XlSaveAsAccessMode.xlNoChange, Type.Missing, false, Type.Missing, Type.Missing, Type.Missing);
 
+                // Fit to to one page wide.
+                if (fitToPageWidth)
+                {
+                    templatePageSetup["FitToPagesWide"] = 1;
+                    templatePageSetup["FitToPagesTall"] = false;
+                    templatePageSetup["Zoom"] = false;
+                }
+
                 if (onlyActiveSheet)
                 {
                     // Set up a delegate function for times we want to print
@@ -471,21 +481,20 @@ namespace OfficeToPDF
                     {
                         workbook.PrintOutEx(ActivePrinter: printer, PrintToFile: true, PrToFileName: destination);
                     };
-                    if (HasTemplateOption(options))
+
+                    // Set up the template page setup options on all the worksheets
+                    // in the workbook
+                    var worksheets = workbook.Worksheets;
+                    for (int wsIdx = 1; wsIdx <= worksheets.Count; wsIdx++)
                     {
-                        // Set up the template page setup options on all the worksheets
-                        // in the workbook
-                        var worksheets = workbook.Worksheets;
-                        for (int wsIdx = 1; wsIdx <= worksheets.Count; wsIdx++)
-                        {
-                            var ws = worksheets[wsIdx];
-                            var wps = (ws is _Worksheet) ? ((_Worksheet)ws).PageSetup : ((_Chart)ws).PageSetup;
-                            SetPageSetupProperties(templatePageSetup, wps);
-                            ReleaseCOMObject(wps);
-                            ReleaseCOMObject(ws);
-                        }
-                        ReleaseCOMObject(worksheets);
+                        var ws = worksheets[wsIdx];
+                        var wps = (ws is _Worksheet) ? ((_Worksheet)ws).PageSetup : ((_Chart)ws).PageSetup;
+                        SetPageSetupProperties(templatePageSetup, wps);
+                        ReleaseCOMObject(wps);
+                        ReleaseCOMObject(ws);
                     }
+                    ReleaseCOMObject(worksheets);
+
                     if (String.IsNullOrEmpty((string)options["printer"]))
                     {
                         try
@@ -666,18 +675,20 @@ namespace OfficeToPDF
             {
                 return;
             }
-
             var wpsType = wps.GetType();
             for (int i = 0; i < templateProperties.Length; i++)
             {
-                object[] value = { tps[templateProperties[i]] };
-                try
+                if (tps.ContainsKey(templateProperties[i]))
                 {
-                    wpsType.InvokeMember(templateProperties[i], System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.SetProperty, Type.DefaultBinder, wps, value);
-                }
-                catch(Exception)
-                {
-                    Console.WriteLine("Unable to set property {0}", templateProperties[i]);
+                    object[] value = { tps[templateProperties[i]] };
+                    try
+                    {
+                        wpsType.InvokeMember(templateProperties[i], System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.SetProperty, Type.DefaultBinder, wps, value);
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine("Unable to set property {0}", templateProperties[i]);
+                    }
                 }
             }
         }
