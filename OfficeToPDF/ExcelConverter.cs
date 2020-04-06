@@ -224,7 +224,6 @@ namespace OfficeToPDF
                         return (int)ExitCode.WorksheetNotFound;
                     }
                 }
-
                 if (showFormulas)
                 {
                     // Determine whether to show formulas
@@ -251,7 +250,6 @@ namespace OfficeToPDF
                         activeWindow.Visible = false;
                     }
                 }
-
                 // Keep track of the active sheet
                 if (workbook.ActiveSheet != null)
                 {
@@ -317,7 +315,6 @@ namespace OfficeToPDF
                             {
                                 pageSetup = ((Worksheet)ws).PageSetup;
                                 pageSetup.PrintHeadings = true;
-
                             }
                             catch (Exception) { }
                             finally
