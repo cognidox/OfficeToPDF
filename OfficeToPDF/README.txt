@@ -71,6 +71,7 @@ The following optional switches can be used:
                                the file. Applies when converting with Excel
   /excel_no_link_update      - do not update links when opening Excel files
   /excel_no_recalculate      - skip automatic re-calculation of formulas in the workbook
+  /excel_fit_to_page_width   - Scale each page to fit on one page wide.
   /excel_template_macros     - run Auto_Open macros in the /template document before conversion by Excel
   /excel_worksheet <num>     - only convert worksheet <num> in the workbook. First sheet is 1
   /fallback_printer <name>   - prints the image to the postscript printer with name <name> if the export failes - requires GhostScript
