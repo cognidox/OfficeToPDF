@@ -97,6 +97,7 @@ namespace OfficeToPDF
                 app.FeatureInstall = Microsoft.Office.Core.MsoFeatureInstall.msoFeatureInstallNone;
 
                 var onlyActiveSheet = (Boolean)options["excel_active_sheet"];
+                Boolean activeSheetOnMaxRows = (Boolean)options["excel_active_sheet_on_max_rows"];
                 Boolean includeProps = !(Boolean)options["excludeprops"];
                 Boolean skipRecalculation = (Boolean)options["excel_no_recalculate"];
                 Boolean showHeadings = (Boolean)options["excel_show_headings"];
@@ -251,11 +252,20 @@ namespace OfficeToPDF
                         activeWindow.Visible = false;
                     }
                 }
-                
+
                 // Keep track of the active sheet
+                int activeSheetIdx = 1;
                 if (workbook.ActiveSheet != null)
                 {
                     activeSheet = workbook.ActiveSheet;
+                    if (activeSheet is _Worksheet)
+                    {
+                        activeSheetIdx = ((Worksheet)activeSheet).Index;
+                    }
+                    else if (activeSheet is _Chart)
+                    {
+                        activeSheetIdx = ((Microsoft.Office.Interop.Excel.Chart)activeSheet).Index;
+                    }
                 }
 
                 // Large excel files may simply not print reliably - if the excel_max_rows
@@ -273,10 +283,13 @@ namespace OfficeToPDF
                     var row_count_check_ok = true;
                     var found_rows = 0;
                     var found_worksheet = "";
+                    bool[] rowCountOK = new bool[allSheets.Count + 1];
+
                     // Loop through all the sheets (worksheets and charts)
                     for (int wsIdx = 1; wsIdx <= allSheets.Count; wsIdx++)
                     {
                         var ws = allSheets.Item[wsIdx];
+                        rowCountOK[wsIdx] = true;
 
                         // Skip anything that is not the active sheet
                         if (onlyActiveSheet)
@@ -284,16 +297,10 @@ namespace OfficeToPDF
                             // Have to be careful to treat _Worksheet and _Chart items differently
                             try
                             {
-                                int itemIndex = 1;
-                                if (activeSheet is _Worksheet)
+                                // Get the index of the active sheet
+                                if (wsIdx != activeSheetIdx)
                                 {
-                                    itemIndex = ((Worksheet)activeSheet).Index;
-                                } else if (activeSheet is _Chart)
-                                {
-                                    itemIndex = ((Microsoft.Office.Interop.Excel.Chart)activeSheet).Index;
-                                }
-                                if (wsIdx != itemIndex)
-                                {
+                                    // If we are not the active sheet, then skip to the next
                                     ReleaseCOMObject(ws);
                                     continue;
                                 }
@@ -385,8 +392,14 @@ namespace OfficeToPDF
                                 {
                                     // Too many rows on this worksheet - mark the workbook as unprintable
                                     row_count_check_ok = false;
+                                    rowCountOK[wsIdx] = false;
                                     found_rows = row_count;
                                     Converter.ReleaseCOMObject(ws);
+                                    if (activeSheetOnMaxRows)
+                                    {
+                                        // Keep checking
+                                        continue;
+                                    }
                                     break;
                                 }
                             }
@@ -397,7 +410,22 @@ namespace OfficeToPDF
                     // Make sure we are not converting a document with too many rows
                     if (row_count_check_ok == false)
                     {
-                        throw new Exception(String.Format("Too many rows to process ({0}) on worksheet {1}", found_rows, found_worksheet));
+                        // We may want to try and convert the active sheet if it has not been included in the
+                        // sheets with too many rows
+                        bool bailOut = true;
+                        if (activeSheetOnMaxRows && !onlyActiveSheet)
+                        {
+                            if (rowCountOK[activeSheetIdx])
+                            {
+                                bailOut = false;
+                                sheetForConversionIdx = activeSheetIdx;
+                                onlyActiveSheet = true;
+                            }
+                        }
+                        if (bailOut)
+                        {
+                            throw new Exception(String.Format("Too many rows to process ({0}) on worksheet {1}", found_rows, found_worksheet));
+                        }
                     }
                 }
 

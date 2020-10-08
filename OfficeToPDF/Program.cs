@@ -106,6 +106,7 @@ namespace OfficeToPDF
             options["excel_no_link_update"] = false;
             options["excel_no_recalculate"] = false;
             options["excel_max_rows"] = (int) 0;
+            options["excel_active_sheet_on_max_rows"] = false;
             options["excel_worksheet"] = (int) 0;
             options["excel_delay"] = (int) 0;
             options["word_field_quick_update"] = false;
@@ -162,7 +163,7 @@ namespace OfficeToPDF
                 { "excel_delay", "Excel delay milliseconds" }
             };
 
-            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|(fallback_)?printer|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_(delay|max_rows|show_formulas|show_headings|auto_macros|template_macros|active_sheet|worksheet|no_recalculate|no_link_update)|powerpoint_(output)|word_(show_hidden|header_dist|footer_dist|ref_fonts|no_field_update|field_quick_update(_safe)?|max_pages|keep_history|no_repair|fix_table_columns|show_(comments|revs_comments|format_changes|ink_annot|ins_del|all_markup)|markup_balloon)|pdf_(page_mode|append|prepend|layout|clean_meta|owner_pass|user_pass|restrict_(annotation|extraction|assembly|forms|modify|print|accessibility_extraction|full_quality))|working_dir|\?)$", RegexOptions.IgnoreCase);
+            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|(fallback_)?printer|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_(delay|max_rows|show_formulas|show_headings|auto_macros|template_macros|active_sheet|active_sheet_on_max_rows|worksheet|no_recalculate|no_link_update)|powerpoint_(output)|word_(show_hidden|header_dist|footer_dist|ref_fonts|no_field_update|field_quick_update(_safe)?|max_pages|keep_history|no_repair|fix_table_columns|show_(comments|revs_comments|format_changes|ink_annot|ins_del|all_markup)|markup_balloon)|pdf_(page_mode|append|prepend|layout|clean_meta|owner_pass|user_pass|restrict_(annotation|extraction|assembly|forms|modify|print|accessibility_extraction|full_quality))|working_dir|\?)$", RegexOptions.IgnoreCase);
             for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
                 string item = args[argIdx];
@@ -1065,6 +1066,7 @@ OfficeToPDF.exe [switches] input_file [output_file]
   /printer <name>           - Convert by printing the document to the postscript printer with name
                               <name>. 
   /excel_active_sheet       - Only convert the active worksheet
+  /excel_active_sheet_on_max_rows - Only convert the active sheet if another worksheet has too many rows.
   /excel_auto_macros        - Run Auto_Open macros in Excel files before conversion
   /excel_show_formulas      - Show formulas in the generated PDF
   /excel_delay <ms>         - Number of milliseconds to pause Excel for during file processing
