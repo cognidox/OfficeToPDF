@@ -33,7 +33,7 @@ namespace OfficeToPDF
     /// <summary>
     /// Handle conversion of Word files
     /// </summary>
-    class WordConverter: Converter
+    class WordConverter : Converter
     {
         /// <summary>
         /// Convert a Word file to PDF
@@ -54,9 +54,10 @@ namespace OfficeToPDF
             {
                 String filename = (String)inputFile;
                 Boolean hasSignatures = WordConverter.HasDigitalSignatures(filename);
+                Boolean fileIsCorrupt = WordConverter.IsFileCorrupt(filename);
                 Boolean visible = !(Boolean)options["hidden"];
                 Boolean openAndRepair = !(Boolean)options["word_no_repair"];
-                Boolean nowrite = (Boolean)options["readonly"];
+                Boolean nowrite = (Boolean)options["readonly"] || fileIsCorrupt;
                 Boolean includeProps = !(Boolean)options["excludeprops"];
                 Boolean includeTags = !(Boolean)options["excludetags"];
                 Boolean bitmapMissingFonts = !(Boolean)options["word_ref_fonts"];
@@ -298,9 +299,9 @@ namespace OfficeToPDF
                             options["word_show_ink_annot"] = true;
                             options["word_show_ins_del"] = true;
                         }
-                        if ((Boolean)options["word_show_comments"] || 
-                            (Boolean)options["word_show_revs_comments"] || 
-                            (Boolean)options["word_show_format_changes"] || 
+                        if ((Boolean)options["word_show_comments"] ||
+                            (Boolean)options["word_show_revs_comments"] ||
+                            (Boolean)options["word_show_format_changes"] ||
                             (Boolean)options["word_show_ink_annot"] ||
                             (Boolean)options["word_show_ins_del"] ||
                             showMarkup == WdExportItem.wdExportDocumentWithMarkup)
@@ -424,7 +425,7 @@ namespace OfficeToPDF
                         doc.ExportAsFixedFormat(outputFile, WdExportFormat.wdExportFormatPDF, false,
                         quality, WdExportRange.wdExportAllDocument,
                         1, 1, showMarkup, includeProps, true, bookmarks, includeTags, bitmapMissingFonts, pdfa);
-                    } catch(Exception)
+                    } catch (Exception)
                     {
                         // Couldn't export, so see if there is a fallback printer
                         if (!String.IsNullOrEmpty((string)options["fallback_printer"])) {
@@ -439,13 +440,13 @@ namespace OfficeToPDF
                 {
                     PrintToGhostscript((string)options["printer"], outputFile, printFunc);
                 }
-                
+
                 if (tmpl != null)
                 {
                     tmpl.Saved = true;
                 }
 
-                object saveChanges = autosave? WdSaveOptions.wdSaveChanges : WdSaveOptions.wdDoNotSaveChanges;
+                object saveChanges = autosave ? WdSaveOptions.wdSaveChanges : WdSaveOptions.wdDoNotSaveChanges;
                 if (nowrite)
                 {
                     doc.Saved = true;
@@ -602,7 +603,7 @@ namespace OfficeToPDF
 
                     if (OriginalValue != value)
                     {
-                        wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.SetProperty, null, wdOptions, new Object[] {value});
+                        wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.SetProperty, null, wdOptions, new Object[] { value });
                     }
                 }
                 catch
@@ -716,7 +717,7 @@ namespace OfficeToPDF
                 // There can be odd errors when column widths are out of the page boundaries
                 // See github issue #14
             }
-            
+
             var docFields = doc.Fields;
             var storyRanges = doc.StoryRanges;
 
@@ -735,7 +736,7 @@ namespace OfficeToPDF
                 UpdateFieldsInRange(range, word, inputFile);
                 ReleaseCOMObject(range);
             }
- 
+
             ReleaseCOMObject(storyRanges);
             ReleaseCOMObject(docFields);
         }
@@ -849,7 +850,7 @@ namespace OfficeToPDF
 
         // Loop through a list of shapes or inline shapes finding out if
         // any one has a broken reference
-        private static bool HasBrokenLinksInShapeList<T>(ref T shapeList) 
+        private static bool HasBrokenLinksInShapeList<T>(ref T shapeList)
             where T : IEnumerable
         {
             var hasBrokenLinks = false;
@@ -863,7 +864,7 @@ namespace OfficeToPDF
                     // Treat cid: references as also broken
                     var sourceName = linkFormat.SourceFullName;
                     var linkPath = sourceName.ToString();
-                    if (linkPath.IndexOf("cid:") == 0 || 
+                    if (linkPath.IndexOf("cid:") == 0 ||
                         (linkPath.ToLower().IndexOf("http://") != 0 &&
                          linkPath.ToLower().IndexOf("https://") != 0 && !File.Exists(linkPath)))
                     {
@@ -890,7 +891,7 @@ namespace OfficeToPDF
             try
             {
                 // Only work for things that look like OpenXml format
-                if (!System.Text.RegularExpressions.Regex.IsMatch(filename , @"^.*\.doc[mx]?$", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                if (!LooksLinkOpenXmlWord(filename))
                 {
                     return false;
                 }
@@ -904,9 +905,37 @@ namespace OfficeToPDF
                     return isSigned;
                 }
             }
-            catch(Exception) {}
+            catch (Exception) { }
 
             return false;
+        }
+
+        protected static bool IsFileCorrupt(string filename)
+        {
+            // Only work for things that look like OpenXml format
+            if (!LooksLinkOpenXmlWord(filename))
+            {
+                return false;
+            }
+            WordprocessingDocument document = null;
+
+            try
+            {
+                document = WordprocessingDocument.Open(filename, false);
+            }
+            catch (System.IO.FileFormatException)
+            {
+                return true;
+            }
+
+            document.Close();
+            return false;
+        }
+
+        protected static bool LooksLinkOpenXmlWord(string filename)
+        {
+            // Only work for things that look like OpenXml format
+            return (System.Text.RegularExpressions.Regex.IsMatch(filename, @"^.*\.doc[mx]?$", System.Text.RegularExpressions.RegexOptions.IgnoreCase));
         }
     }
 }
