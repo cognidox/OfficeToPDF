@@ -154,12 +154,14 @@ namespace OfficeToPDF
                     catch (System.Runtime.InteropServices.COMException)
                     {
                         // Attempt to open it in read-only mode
-                        workbook = workbooks.Open(inputFile, updateLinks, true, oMissing, oReadPass, oWritePass, true, oMissing, oMissing, oMissing, oMissing, oMissing, false, oMissing, oMissing);
+                        workbook = workbooks.Open(Filename: inputFile, UpdateLinks: updateLinks, ReadOnly: true, Password: oReadPass, WriteResPassword: oWritePass, IgnoreReadOnlyRecommended: true,
+                            AddToMru: false, CorruptLoad: GetXlRepairFile());
                     }
                 }
                 else
                 {
-                    workbook = workbooks.Open(inputFile, updateLinks, nowrite, oMissing, oReadPass, oWritePass, true, oMissing, oMissing, oMissing, oMissing, oMissing, false, oMissing, oMissing);
+                    workbook = workbooks.Open(Filename: inputFile, UpdateLinks: updateLinks, ReadOnly: nowrite, Password: oReadPass, WriteResPassword: oWritePass,
+                        IgnoreReadOnlyRecommended: true, AddToMru: false, CorruptLoad: GetXlRepairFile());
                 }
 
                 // Add in a delay to let Excel sort itself out
@@ -602,6 +604,11 @@ namespace OfficeToPDF
                     Directory.Delete(Path.GetDirectoryName(tmpFile));
                 }
             }
+        }
+
+        private static XlCorruptLoad GetXlRepairFile()
+        {
+            return XlCorruptLoad.xlRepairFile;
         }
 
         // Return true if there is a valid template option
