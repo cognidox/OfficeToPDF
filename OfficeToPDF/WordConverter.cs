@@ -61,7 +61,8 @@ namespace OfficeToPDF
                 Boolean includeProps = !(Boolean)options["excludeprops"];
                 Boolean includeTags = !(Boolean)options["excludetags"];
                 Boolean bitmapMissingFonts = !(Boolean)options["word_ref_fonts"];
-                Boolean autosave = options.ContainsKey("IsTempWord") && (Boolean)options["IsTempWord"];
+                Boolean isTempWord = (options.ContainsKey("IsTempWord") && (Boolean)options["IsTempWord"]);
+                
                 bool pdfa = (Boolean)options["pdfa"] ? true : false;
                 String writePassword = "";
                 String readPassword = "";
@@ -212,7 +213,6 @@ namespace OfficeToPDF
                 if (hasSignatures)
                 {
                     nowrite = true;
-                    autosave = false;
                     openAndRepair = false;
                 }
 
@@ -245,7 +245,7 @@ namespace OfficeToPDF
                 }
                 catch (COMException)
                 {
-                    Console.WriteLine("Unable to open file");
+                    Console.WriteLine("Unable to open file " + filename);
                     return (int)ExitCode.FileOpenFailure;
                 }
 
@@ -329,7 +329,6 @@ namespace OfficeToPDF
                     // and is not signed
                     if (doc.ProtectionType == WdProtectionType.wdNoProtection && !hasSignatures)
                     {
-                        if (autosave) { doc.Save(); doc.Saved = true; }
                         doc.TrackMoves = false;
                         doc.TrackRevisions = false;
                         doc.TrackFormatting = false;
@@ -398,10 +397,6 @@ namespace OfficeToPDF
                     }
 
                     normalTemplate.Saved = true;
-                    if (autosave)
-                    {
-                        doc.Save();
-                    }
                     doc.Saved = true;
                     ReleaseCOMObject(docWinView);
                     ReleaseCOMObject(docWin);
@@ -446,7 +441,7 @@ namespace OfficeToPDF
                     tmpl.Saved = true;
                 }
 
-                object saveChanges = autosave ? WdSaveOptions.wdSaveChanges : WdSaveOptions.wdDoNotSaveChanges;
+                object saveChanges = WdSaveOptions.wdDoNotSaveChanges;
                 if (nowrite)
                 {
                     doc.Saved = true;

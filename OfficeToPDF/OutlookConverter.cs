@@ -58,7 +58,7 @@ namespace OfficeToPDF
                 var session = app.Session;
                 FileInfo fi = new FileInfo(inputFile);
                 // Create a temporary doc file from the message
-                tmpDocFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".doc";
+                tmpDocFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".html";
                 switch(fi.Extension.ToLower())
                 {
                     case ".msg":
@@ -69,7 +69,7 @@ namespace OfficeToPDF
                             ReleaseCOMObject(session);
                             return (int)ExitCode.FileOpenFailure;
                         }
-                        message.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
+                        message.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olHTML);
                         ((_MailItem)message).Close(OlInspectorClose.olDiscard);
                         ReleaseCOMObject(message);
                         ReleaseCOMObject(session);
@@ -82,7 +82,7 @@ namespace OfficeToPDF
                             ReleaseCOMObject(session);
                             return (int)ExitCode.FileOpenFailure;
                         }
-                        contact.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
+                        contact.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olHTML);
                         ReleaseCOMObject(contact);
                         ReleaseCOMObject(session);
                         break;
@@ -110,7 +110,7 @@ namespace OfficeToPDF
                                     var appointment = (AppointmentItem)item;
                                     if (appointment != null)
                                     {
-                                        appointment.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
+                                        appointment.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olHTML);
                                         ReleaseCOMObject(appointment);
                                     }
                                     break;
@@ -118,7 +118,7 @@ namespace OfficeToPDF
                                     var meeting = (MeetingItem)item;
                                     if (meeting != null)
                                     {
-                                        meeting.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
+                                        meeting.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olHTML);
                                         ReleaseCOMObject(meeting);
                                     }
                                     break;
@@ -126,7 +126,7 @@ namespace OfficeToPDF
                                     var task = (TaskItem)item;
                                     if (task != null)
                                     {
-                                        task.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olDoc);
+                                        task.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olHTML);
                                         ReleaseCOMObject(task);
                                     }
                                     break;
@@ -164,7 +164,7 @@ namespace OfficeToPDF
                     try
                     {
 
-                        System.IO.File.Delete(tmpDocFile);
+                       System.IO.File.Delete(tmpDocFile);
                     }
                     catch (System.Exception) { }
                 }
