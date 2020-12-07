@@ -76,7 +76,7 @@ namespace OfficeToPDF
                 Options wdOptions = null;
                 Documents documents = null;
                 Template normalTemplate = null;
-
+                
                 tmpl = null;
                 try
                 {
@@ -192,7 +192,7 @@ namespace OfficeToPDF
 
                 documents = word.Documents;
                 normalTemplate = word.NormalTemplate;
-                
+
                 // Check for password protection and no password
                 if (IsPasswordProtected(inputFile) && String.IsNullOrEmpty(readPassword))
                 {
@@ -886,7 +886,7 @@ namespace OfficeToPDF
             try
             {
                 // Only work for things that look like OpenXml format
-                if (!LooksLinkOpenXmlWord(filename))
+                if (!LooksLikeOpenXmlWord(filename))
                 {
                     return false;
                 }
@@ -908,7 +908,7 @@ namespace OfficeToPDF
         protected static bool IsFileCorrupt(string filename)
         {
             // Only work for things that look like OpenXml format
-            if (!LooksLinkOpenXmlWord(filename))
+            if (!LooksLikeOpenXmlWord(filename))
             {
                 return false;
             }
@@ -917,17 +917,18 @@ namespace OfficeToPDF
             try
             {
                 document = WordprocessingDocument.Open(filename, false);
+                document.Close();
             }
             catch (System.IO.FileFormatException)
             {
                 return true;
             }
-
-            document.Close();
+            catch(Exception) { }
+            
             return false;
         }
 
-        protected static bool LooksLinkOpenXmlWord(string filename)
+        protected static bool LooksLikeOpenXmlWord(string filename)
         {
             // Only work for things that look like OpenXml format
             return (System.Text.RegularExpressions.Regex.IsMatch(filename, @"^.*\.doc[mx]?$", System.Text.RegularExpressions.RegexOptions.IgnoreCase));
