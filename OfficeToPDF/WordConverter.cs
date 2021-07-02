@@ -260,8 +260,8 @@ namespace OfficeToPDF
                 {
                     Window docWin = null;
                     View docWinView = null;
-
                     doc.Activate();
+
                     // Check if there are too many pages
                     if (maxPages > 0)
                     {
@@ -285,6 +285,9 @@ namespace OfficeToPDF
                     // Try and switch view
                     try
                     {
+                        // There is an issue here that if a document has fill-in fields, they'll
+                        // prompt for input as the view type changes.
+                        RemoveFillInFields(doc);
                         docWinView.Type = WdViewType.wdPrintPreview;
                     }
                     catch (Exception) { }
@@ -649,6 +652,56 @@ namespace OfficeToPDF
             }
         }
 
+        // Remove fill-in fields which can cause blocking dialogs
+        private static void RemoveFillInFields(Microsoft.Office.Interop.Word.Document doc)
+        {
+            bool altered = false;
+            var ranges = doc.StoryRanges;
+            try
+            {
+                foreach (Range range in ranges) {
+                    var fields = range.Fields;
+                    try {
+                        foreach (Field f in fields)
+                        {
+                            try
+                            {
+                                if (f.Type == WdFieldType.wdFieldFillIn)
+                                {
+                                    try
+                                    {
+                                        altered = true;
+                                        f.Unlink();
+                                    }
+                                    catch (Exception)
+                                    {
+                                        f.Delete();
+                                    }
+                                }
+                            }
+                            finally
+                            {
+                                ReleaseCOMObject(f);
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        ReleaseCOMObject(fields);
+                    }
+                    ReleaseCOMObject(range);
+                }
+            }
+            finally
+            {
+                ReleaseCOMObject(ranges);
+                if (altered)
+                {
+                    doc.Saved = true;
+                }
+            }
+        }
+
         // Update all the fields in a document
         private static void UpdateDocumentFields(Microsoft.Office.Interop.Word.Document doc, Microsoft.Office.Interop.Word.Application word, String inputFile, Hashtable options)
         {
@@ -657,22 +710,7 @@ namespace OfficeToPDF
             if ((Boolean)options["word_field_quick_update"] ||
                 ((Boolean)options["word_field_quick_update_safe"] && !HasBrokenLinks(doc)))
             {
-                var fields = doc.Fields;
-                foreach (Field f in fields)
-                {
-                    if (f.Type == WdFieldType.wdFieldFillIn)
-                    {
-                        try
-                        {
-                            f.Unlink();
-                        }
-                        catch (Exception) {
-                            f.Delete();
-                        }
-                    }
-                }
-                fields.Update();
-                ReleaseCOMObject(fields);
+                RemoveFillInFields(doc);
                 return;
             }
 
