@@ -95,6 +95,11 @@ namespace OfficeToPDF
                 app.EnableLargeOperationAlert = false;
                 app.Interactive = false;
                 app.FeatureInstall = Microsoft.Office.Core.MsoFeatureInstall.msoFeatureInstallNone;
+                bool currentPaperMapSize = app.MapPaperSize;
+                if (currentPaperMapSize != !(Boolean)options["excel_no_map_papersize"])
+                {
+                    app.MapPaperSize = !(Boolean)options["excel_no_map_papersize"];
+                }
 
                 var onlyActiveSheet = (Boolean)options["excel_active_sheet"];
                 Boolean activeSheetOnMaxRows = (Boolean)options["excel_active_sheet_on_max_rows"];
@@ -105,13 +110,21 @@ namespace OfficeToPDF
                 Boolean isHidden = (Boolean)options["hidden"];
                 Boolean screenQuality = (Boolean)options["screen"];
                 Boolean updateLinks = !(Boolean)options["excel_no_link_update"];
-                int maxRows = (int)options[@"excel_max_rows"];
+                Boolean runMacros = (Boolean)options["excel_auto_macros"];
+                int maxRows = (int)options["excel_max_rows"];
                 int worksheetNum = (int)options["excel_worksheet"];
                 int sheetForConversionIdx = 0;
                 activeWindow = app.ActiveWindow;
                 Sheets allSheets = null;
                 XlFileFormat fmt = XlFileFormat.xlOpenXMLWorkbook;
                 XlFixedFormatQuality quality = XlFixedFormatQuality.xlQualityStandard;
+
+                // turn off macros for non-macro workbooks
+                if (fmt == XlFileFormat.xlOpenXMLWorkbook || fmt == XlFileFormat.xlOpenXMLTemplate)
+                {
+                    runMacros = false;
+                }
+
                 if (isHidden)
                 {
                     // Try and at least minimise it
@@ -139,9 +152,9 @@ namespace OfficeToPDF
                     Console.WriteLine("Unable to open password protected file");
                     return (int)ExitCode.PasswordFailure;
                 }
-
-                app.EnableEvents = (bool)options["excel_auto_macros"];
+                
                 workbooks = app.Workbooks;
+
                 // If we have no write password and we're attempting to open for writing, we might be
                 // caught out by an unexpected write password
                 if (writePassword == "" && !nowrite)
@@ -172,17 +185,17 @@ namespace OfficeToPDF
                 {
                     return (int)ExitCode.FileOpenFailure;
                 }
-
-                if (app.EnableEvents)
+                
+                if (runMacros)
                 {
+                    bool currentEnableEvents = app.EnableEvents;
+                    app.EnableEvents = true;
                     workbook.RunAutoMacros(XlRunAutoMacro.xlAutoOpen);
+                    app.EnableEvents = currentEnableEvents;
                 }
                 
                 // Get any template options
                 SetPageOptionsFromTemplate(app, workbooks, options, ref templatePageSetup);
-
-                // Get the sheets
-                allSheets = workbook.Sheets;
 
                 // Try and avoid xls files raising a dialog
                 var temporaryStorageDir = Path.GetTempFileName();
@@ -191,12 +204,15 @@ namespace OfficeToPDF
                 // We will save as xlsb (binary format) since this doesn't raise some errors when processing
                 tmpFile = Path.Combine(temporaryStorageDir, Path.GetFileNameWithoutExtension(inputFile) + ".xlsb");
                 fmt = XlFileFormat.xlExcel12;
-
+                
                 // Set up the print quality
                 if (screenQuality)
                 {
                     quality = XlFixedFormatQuality.xlQualityMinimum;
                 }
+                
+                // Get the sheets
+                allSheets = workbook.Sheets;
 
                 // If a worksheet has been specified, try and use just the one
                 if (worksheetNum > 0)
@@ -224,6 +240,7 @@ namespace OfficeToPDF
                     }
                     catch (Exception)
                     {
+                        ReleaseCOMObject(allSheets);
                         return (int)ExitCode.WorksheetNotFound;
                     }
                 }
@@ -254,7 +271,7 @@ namespace OfficeToPDF
                         activeWindow.Visible = false;
                     }
                 }
-
+                
                 // Keep track of the active sheet
                 int activeSheetIdx = 1;
                 if (workbook.ActiveSheet != null)
@@ -291,122 +308,152 @@ namespace OfficeToPDF
                     for (int wsIdx = 1; wsIdx <= allSheets.Count; wsIdx++)
                     {
                         var ws = allSheets.Item[wsIdx];
-                        rowCountOK[wsIdx] = true;
-
-                        // Skip anything that is not the active sheet
-                        if (onlyActiveSheet)
+                        try
                         {
-                            // Have to be careful to treat _Worksheet and _Chart items differently
-                            try
+                            rowCountOK[wsIdx] = true;
+
+                            // Skip anything that is not the active sheet
+                            if (onlyActiveSheet)
                             {
-                                // Get the index of the active sheet
-                                if (wsIdx != activeSheetIdx)
+                                // Have to be careful to treat _Worksheet and _Chart items differently
+                                try
                                 {
-                                    // If we are not the active sheet, then skip to the next
-                                    ReleaseCOMObject(ws);
-                                    continue;
-                                }
-                            }
-                            catch (Exception)
-                            {
-                                if (ws != null)
-                                {
-                                    ReleaseCOMObject(ws);
-                                }
-                                continue;
-                            }
-                            sheetForConversionIdx = wsIdx;
-                        }
-
-                        if (showHeadings && ws is _Worksheet)
-                        {
-                            PageSetup pageSetup = null;
-                            try
-                            {
-                                pageSetup = ((Worksheet)ws).PageSetup;
-                                pageSetup.PrintHeadings = true;
-                                
-                            }
-                            catch (Exception) { }
-                            finally
-                            {
-                                ReleaseCOMObject(pageSetup);
-                            }
-                        }
-
-                        // If showing formulas, make things auto-fit
-                        if (showFormulas && ws is _Worksheet)
-                        {
-                            Range cols = null;
-                            try
-                            {
-                                ((_Worksheet)ws).Activate();
-                                activeWindow.DisplayFormulas = true;
-                                cols = ((Worksheet)ws).Columns;
-                                cols.AutoFit();
-                            }
-                            catch (Exception) { }
-                            finally
-                            {
-                                ReleaseCOMObject(cols);
-                            }
-                        }
-
-                        // If there is a maximum row count, make sure we check each worksheet
-                        if (maxRows > 0 && ws is _Worksheet)
-                        {
-                            // Check for a print area
-                            var pageSetup = ((Worksheet)ws).PageSetup;
-                            var printArea = pageSetup.PrintArea;
-                            ReleaseCOMObject(pageSetup);
-                            if (string.IsNullOrEmpty(printArea))
-                            {
-                                // There is no print area, check that the row count is <= to the
-                                // excel_max_rows value. Note that we can't just take the range last
-                                // row, as this may return a huge value, rather find the last non-blank
-                                // row.
-                                var row_count = 0;
-                                var range = ((Worksheet)ws).UsedRange;
-                                if (range != null)
-                                {
-                                    var rows = range.Rows;
-                                    if (rows != null && rows.Count > maxRows)
+                                    // Get the index of the active sheet
+                                    if (wsIdx != activeSheetIdx)
                                     {
-                                        var cells = range.Cells;
-                                        if (cells != null)
-                                        {
-                                            var cellSearch = cells.Find("*", oMissing, oMissing, oMissing, oMissing, Microsoft.Office.Interop.Excel.XlSearchDirection.xlPrevious, false, oMissing, oMissing);
-                                            // Make sure we actually get some results, since the worksheet may be totally blank
-                                            if (cellSearch != null)
-                                            {
-                                                row_count = cellSearch.Row;
-                                                found_worksheet = ((Worksheet)ws).Name;
-                                            }
-                                            ReleaseCOMObject(cellSearch);
-                                        }
-                                        ReleaseCOMObject(cells);
-                                    }
-                                    ReleaseCOMObject(rows);
-                                }
-                                ReleaseCOMObject(range);
-
-                                if (row_count > maxRows)
-                                {
-                                    // Too many rows on this worksheet - mark the workbook as unprintable
-                                    row_count_check_ok = false;
-                                    rowCountOK[wsIdx] = false;
-                                    found_rows = row_count;
-                                    Converter.ReleaseCOMObject(ws);
-                                    if (activeSheetOnMaxRows)
-                                    {
-                                        // Keep checking
+                                        // If we are not the active sheet, then skip to the next
+                                        ReleaseCOMObject(ws);
                                         continue;
                                     }
-                                    break;
+                                }
+                                catch (Exception)
+                                {
+                                    if (ws != null)
+                                    {
+                                        ReleaseCOMObject(ws);
+                                    }
+                                    continue;
+                                }
+                                sheetForConversionIdx = wsIdx;
+                            }
+
+                            if (showHeadings && ws is _Worksheet)
+                            {
+                                PageSetup pageSetup = null;
+                                try
+                                {
+                                    pageSetup = ((Worksheet)ws).PageSetup;
+                                    pageSetup.PrintHeadings = true;
+
+                                }
+                                catch (Exception) { }
+                                finally
+                                {
+                                    ReleaseCOMObject(pageSetup);
                                 }
                             }
-                        } // End of row check
-                        Converter.ReleaseCOMObject(ws);
+
+                            // If showing formulas, make things auto-fit
+                            if (showFormulas && ws is _Worksheet)
+                            {
+                                Range cols = null;
+                                try
+                                {
+                                    ((_Worksheet)ws).Activate();
+                                    activeWindow.DisplayFormulas = true;
+                                    cols = ((Worksheet)ws).Columns;
+                                    cols.AutoFit();
+                                }
+                                catch (Exception) { }
+                                finally
+                                {
+                                    ReleaseCOMObject(cols);
+                                }
+                            }
+
+                            // If there is a maximum row count, make sure we check each worksheet
+                            if (maxRows > 0 && ws is _Worksheet)
+                            {
+                                // Check for a print area
+                                var pageSetup = ((Worksheet)ws).PageSetup;
+                                var printArea = pageSetup.PrintArea;
+                                ReleaseCOMObject(pageSetup);
+                                if (string.IsNullOrEmpty(printArea))
+                                {
+                                    // There is no print area, check that the row count is <= to the
+                                    // excel_max_rows value. Note that we can't just take the range last
+                                    // row, as this may return a huge value, rather find the last non-blank
+                                    // row.
+                                    var row_count = 0;
+                                    var range = ((Worksheet)ws).UsedRange;
+                                    try
+                                    {
+                                        if (range != null)
+                                        {
+                                            var rows = range.Rows;
+                                            try
+                                            {
+                                                if (rows != null && rows.Count > maxRows)
+                                                {
+                                                    var cells = range.Cells;
+                                                    try
+                                                    {
+                                                        if (cells != null)
+                                                        {
+                                                            var cellSearch = cells.Find("*", oMissing, oMissing, oMissing, oMissing, Microsoft.Office.Interop.Excel.XlSearchDirection.xlPrevious, false, oMissing, oMissing);
+                                                            try
+                                                            {
+                                                                // Make sure we actually get some results, since the worksheet may be totally blank
+                                                                if (cellSearch != null)
+                                                                {
+                                                                    row_count = cellSearch.Row;
+                                                                    found_worksheet = ((Worksheet)ws).Name;
+                                                                }
+                                                            }
+                                                            finally
+                                                            {
+                                                                ReleaseCOMObject(cellSearch);
+                                                            }
+                                                        }
+                                                    }
+                                                    finally
+                                                    {
+                                                        ReleaseCOMObject(cells);
+                                                    }
+                                                }
+                                            }
+                                            finally
+                                            {
+                                                ReleaseCOMObject(rows);
+                                            }
+                                        }
+                                    }
+                                    finally
+                                    {
+                                        ReleaseCOMObject(range);
+                                    }
+
+                                    if (row_count > maxRows)
+                                    {
+                                        // Too many rows on this worksheet - mark the workbook as unprintable
+                                        row_count_check_ok = false;
+                                        rowCountOK[wsIdx] = false;
+                                        found_rows = row_count;
+                                        Converter.ReleaseCOMObject(ws);
+                                        if (activeSheetOnMaxRows)
+                                        {
+                                            // Keep checking
+                                            continue;
+                                        }
+                                        break;
+                                    }
+                                }
+                            } // End of row check
+                        }
+                        finally
+                        {
+                            Converter.ReleaseCOMObject(ws);
+                        }
                     }
 
                     // Make sure we are not converting a document with too many rows
@@ -426,6 +473,7 @@ namespace OfficeToPDF
                         }
                         if (bailOut)
                         {
+                            ReleaseCOMObject(allSheets);
                             throw new Exception(String.Format("Too many rows to process ({0}) on worksheet {1}", found_rows, found_worksheet));
                         }
                     }
@@ -437,9 +485,9 @@ namespace OfficeToPDF
                     app.Calculation = XlCalculation.xlCalculationManual;
                     app.CalculateBeforeSave = false;
                 }
-
+                
                 workbook.SaveAs(tmpFile, fmt, Type.Missing, Type.Missing, Type.Missing, false, XlSaveAsAccessMode.xlNoChange, Type.Missing, false, Type.Missing, Type.Missing, Type.Missing);
-
+                
                 if (onlyActiveSheet)
                 {
                     // Set up a delegate function for times we want to print
@@ -452,42 +500,56 @@ namespace OfficeToPDF
                     {
                         activeSheet = allSheets.Item[sheetForConversionIdx];
                     }
+                    ReleaseCOMObject(allSheets);
+                    
                     if (activeSheet is _Worksheet)
                     {
-                        var wps = ((_Worksheet)activeSheet).PageSetup;
-                        SetPageSetupProperties(templatePageSetup, wps);
-                        if (String.IsNullOrEmpty((string)options["printer"]))
+                        PageSetup wps = ((_Worksheet)activeSheet).PageSetup;
+                        try
                         {
-                            try
+                            SetPageSetupProperties(templatePageSetup, wps);
+                            if (String.IsNullOrEmpty((string)options["printer"]))
                             {
-                                ((Worksheet)activeSheet).ExportAsFixedFormat(XlFixedFormatType.xlTypePDF,
-                                outputFile, quality, includeProps, false, Type.Missing, Type.Missing, false, Type.Missing);
+                                try
+                                {
+                                    ((Worksheet)activeSheet).ExportAsFixedFormat(XlFixedFormatType.xlTypePDF,
+                                    outputFile, quality, includeProps, false, Type.Missing, Type.Missing, false, Type.Missing);
+                                }
+                                catch (Exception)
+                                {
+                                    if (!String.IsNullOrEmpty((string)options["fallback_printer"]))
+                                    {
+                                        PrintToGhostscript((string)options["fallback_printer"], outputFile, printFunc);
+                                    }
+                                    else
+                                    {
+                                        throw;
+                                    }
+                                }
                             }
-                            catch (Exception)
+                            else
                             {
-                                if (!String.IsNullOrEmpty((string)options["fallback_printer"]))
-                                {
-                                    PrintToGhostscript((string)options["fallback_printer"], outputFile, printFunc);
-                                }
-                                else
-                                {
-                                    throw;
-                                }
+                                PrintToGhostscript((string)options["printer"], outputFile, printFunc);
                             }
                         }
-                        else
+                        finally
                         {
-                            PrintToGhostscript((string)options["printer"], outputFile, printFunc);
+                            ReleaseCOMObject(wps);
                         }
-                        ReleaseCOMObject(wps);
                     }
                     else if (activeSheet is _Chart)
                     {
                         var wps = ((_Chart)activeSheet).PageSetup;
-                        SetPageSetupProperties(templatePageSetup, wps);
-                        ((Microsoft.Office.Interop.Excel.Chart)activeSheet).ExportAsFixedFormat(XlFixedFormatType.xlTypePDF,
-                            outputFile, quality, includeProps, false, Type.Missing, Type.Missing, false, Type.Missing);
-                        ReleaseCOMObject(wps);
+                        try
+                        {
+                            SetPageSetupProperties(templatePageSetup, wps);
+                            ((Microsoft.Office.Interop.Excel.Chart)activeSheet).ExportAsFixedFormat(XlFixedFormatType.xlTypePDF,
+                                outputFile, quality, includeProps, false, Type.Missing, Type.Missing, false, Type.Missing);
+                        }
+                        finally
+                        {
+                            ReleaseCOMObject(wps);
+                        }
                     }
                     else
                     {
@@ -497,6 +559,7 @@ namespace OfficeToPDF
                 }
                 else
                 {
+                    ReleaseCOMObject(allSheets);
                     PrintDocument printFunc = delegate (string destination, string printer)
                     {
                         workbook.PrintOutEx(ActivePrinter: printer, PrintToFile: true, PrToFileName: destination);
@@ -506,15 +569,27 @@ namespace OfficeToPDF
                         // Set up the template page setup options on all the worksheets
                         // in the workbook
                         var worksheets = workbook.Worksheets;
-                        for (int wsIdx = 1; wsIdx <= worksheets.Count; wsIdx++)
+                        try
                         {
-                            var ws = worksheets[wsIdx];
-                            var wps = (ws is _Worksheet) ? ((_Worksheet)ws).PageSetup : ((_Chart)ws).PageSetup;
-                            SetPageSetupProperties(templatePageSetup, wps);
-                            ReleaseCOMObject(wps);
-                            ReleaseCOMObject(ws);
+                            for (int wsIdx = 1; wsIdx <= worksheets.Count; wsIdx++)
+                            {
+                                var ws = worksheets[wsIdx];
+                                var wps = (ws is _Worksheet) ? ((_Worksheet)ws).PageSetup : ((_Chart)ws).PageSetup;
+                                try
+                                {
+                                    SetPageSetupProperties(templatePageSetup, wps);
+                                }
+                                finally
+                                {
+                                    ReleaseCOMObject(wps);
+                                    ReleaseCOMObject(ws);
+                                }
+                            }
                         }
-                        ReleaseCOMObject(worksheets);
+                        finally
+                        {
+                            ReleaseCOMObject(worksheets);
+                        }
                     }
                     if (String.IsNullOrEmpty((string)options["printer"]))
                     {
@@ -538,10 +613,8 @@ namespace OfficeToPDF
                         PrintToGhostscript((string)options["printer"], outputFile, printFunc);
                     }
                 }
-
+                app.MapPaperSize = currentPaperMapSize;
                 ReleaseCOMObject(allSheets);
-                ReleaseCOMObject(fmt);
-                ReleaseCOMObject(quality);
 
                 return (int)ExitCode.Success;
             }
@@ -589,7 +662,7 @@ namespace OfficeToPDF
                         ((Microsoft.Office.Interop.Excel._Application)app).Quit();
                     }
                 }
-
+                
                 // Clean all the COM leftovers
                 ReleaseCOMObject(workbook);
                 ReleaseCOMObject(workbooks);
@@ -648,32 +721,47 @@ namespace OfficeToPDF
                     }
 
                     var templateSheets = template.Worksheets;
-                    if (templateSheets != null)
+                    try
                     {
-                        // Copy the page setup details from the first sheet or chart in the template
-                        if (templateSheets.Count > 0)
+                        if (templateSheets != null)
                         {
-                            PageSetup tps = null;
-                            var firstItem = templateSheets[1];
-                            if (firstItem is _Worksheet)
+                            // Copy the page setup details from the first sheet or chart in the template
+                            if (templateSheets.Count > 0)
                             {
-                                tps = ((_Worksheet)firstItem).PageSetup;
-                            }
-                            else if (firstItem is _Chart)
-                            {
-                                tps = ((_Chart)firstItem).PageSetup;
-                            }
-                            var tpsType = tps.GetType();
-                            for (int i = 0; i < templateProperties.Length; i++)
-                            {
-                                var prop = tpsType.InvokeMember(templateProperties[i], System.Reflection.BindingFlags.GetProperty, null, tps, null);
-                                if (prop != null)
+                                PageSetup tps = null;
+                                var firstItem = templateSheets[1];
+                                try
                                 {
-                                    templatePageSetup[templateProperties[i]] = prop;
+                                    if (firstItem is _Worksheet)
+                                    {
+                                        tps = ((_Worksheet)firstItem).PageSetup;
+                                    }
+                                    else if (firstItem is _Chart)
+                                    {
+                                        tps = ((_Chart)firstItem).PageSetup;
+                                    }
+                                    var tpsType = tps.GetType();
+                                    for (int i = 0; i < templateProperties.Length; i++)
+                                    {
+                                        var prop = tpsType.InvokeMember(templateProperties[i], System.Reflection.BindingFlags.GetProperty, null, tps, null);
+                                        if (prop != null)
+                                        {
+                                            templatePageSetup[templateProperties[i]] = prop;
+                                        }
+                                        ReleaseCOMObject(prop);
+                                    }
+                                    ReleaseCOMObject(tpsType);
+                                }
+                                finally
+                                {
+                                    ReleaseCOMObject(firstItem);
+                                    ReleaseCOMObject(tps);
                                 }
                             }
-                            Converter.ReleaseCOMObject(firstItem);
                         }
+                    }
+                    finally
+                    {
                         ReleaseCOMObject(templateSheets);
                     }
                     CloseExcelWorkbook(template);
@@ -715,6 +803,7 @@ namespace OfficeToPDF
                     Console.WriteLine("Unable to set property {0}", templateProperties[i]);
                 }
             }
+            ReleaseCOMObject(wpsType);
         }
 
         private static bool CloseExcelWorkbook(Workbook workbook)

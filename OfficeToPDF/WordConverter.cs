@@ -121,7 +121,7 @@ namespace OfficeToPDF
                 word.DisplayDocumentInformationPanel = false;
                 word.FeatureInstall = Microsoft.Office.Core.MsoFeatureInstall.msoFeatureInstallNone;
                 wordVersion = (float)System.Convert.ToDecimal(word.Version, new CultureInfo("en-US"));
-
+                
                 // Set the Word options in a way that allows us to reset the options when we finish
                 try
                 {
@@ -155,6 +155,7 @@ namespace OfficeToPDF
                     wordOptionList.Add(new AppOption("ShowMarkupOpenSave", false, ref wdOptions));
                     wordOptionList.Add(new AppOption("SaveInterval", 0, ref wdOptions));
                     wordOptionList.Add(new AppOption("PrintHiddenText", (Boolean)options["word_show_hidden"], ref wdOptions));
+                    wordOptionList.Add(new AppOption("MapPaperSize", !(Boolean)options["word_no_map_papersize"], ref wdOptions));
                 }
                 catch (SystemException)
                 {
@@ -215,7 +216,7 @@ namespace OfficeToPDF
                     nowrite = true;
                     openAndRepair = false;
                 }
-
+                
                 Document doc = null;
                 try
                 {
@@ -661,7 +662,13 @@ namespace OfficeToPDF
                 {
                     if (f.Type == WdFieldType.wdFieldFillIn)
                     {
-                        f.Unlink();
+                        try
+                        {
+                            f.Unlink();
+                        }
+                        catch (Exception) {
+                            f.Delete();
+                        }
                     }
                 }
                 fields.Update();

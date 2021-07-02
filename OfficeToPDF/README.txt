@@ -70,6 +70,7 @@ The following optional switches can be used:
                                than this number of rows, do not attempt to convert
                                the file. Applies when converting with Excel
   /excel_no_link_update      - do not update links when opening Excel files
+  /excel_no_map_papersize    - do not map papersize to A4/letter
   /excel_no_recalculate      - skip automatic re-calculation of formulas in the workbook
   /excel_template_macros     - run Auto_Open macros in the /template document before conversion by Excel
   /excel_worksheet <num>     - only convert worksheet <num> in the workbook. First sheet is 1
