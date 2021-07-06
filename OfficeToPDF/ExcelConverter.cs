@@ -322,16 +322,11 @@ namespace OfficeToPDF
                                     if (wsIdx != activeSheetIdx)
                                     {
                                         // If we are not the active sheet, then skip to the next
-                                        ReleaseCOMObject(ws);
                                         continue;
                                     }
                                 }
                                 catch (Exception)
                                 {
-                                    if (ws != null)
-                                    {
-                                        ReleaseCOMObject(ws);
-                                    }
                                     continue;
                                 }
                                 sheetForConversionIdx = wsIdx;
@@ -344,7 +339,6 @@ namespace OfficeToPDF
                                 {
                                     pageSetup = ((Worksheet)ws).PageSetup;
                                     pageSetup.PrintHeadings = true;
-
                                 }
                                 catch (Exception) { }
                                 finally
@@ -439,7 +433,6 @@ namespace OfficeToPDF
                                         row_count_check_ok = false;
                                         rowCountOK[wsIdx] = false;
                                         found_rows = row_count;
-                                        Converter.ReleaseCOMObject(ws);
                                         if (activeSheetOnMaxRows)
                                         {
                                             // Keep checking
@@ -455,7 +448,6 @@ namespace OfficeToPDF
                             Converter.ReleaseCOMObject(ws);
                         }
                     }
-
                     // Make sure we are not converting a document with too many rows
                     if (row_count_check_ok == false)
                     {
