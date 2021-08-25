@@ -287,7 +287,7 @@ namespace OfficeToPDF
                     {
                         // There is an issue here that if a document has fill-in fields, they'll
                         // prompt for input as the view type changes.
-                        RemoveFillInFields(doc);
+                        RemoveFillInFields(doc, false);
                         docWinView.Type = WdViewType.wdPrintPreview;
                     }
                     catch (Exception) { }
@@ -653,7 +653,7 @@ namespace OfficeToPDF
         }
 
         // Remove fill-in fields which can cause blocking dialogs
-        private static void RemoveFillInFields(Microsoft.Office.Interop.Word.Document doc)
+        private static void RemoveFillInFields(Microsoft.Office.Interop.Word.Document doc, bool updateField)
         {
             bool altered = false;
             var ranges = doc.StoryRanges;
@@ -684,6 +684,10 @@ namespace OfficeToPDF
                                 ReleaseCOMObject(f);
                             }
                         }
+                        if (updateField)
+                        {
+                            fields.Update();
+                        }
                     }
                     finally
                     {
@@ -710,7 +714,7 @@ namespace OfficeToPDF
             if ((Boolean)options["word_field_quick_update"] ||
                 ((Boolean)options["word_field_quick_update_safe"] && !HasBrokenLinks(doc)))
             {
-                RemoveFillInFields(doc);
+                RemoveFillInFields(doc, true);
                 return;
             }
 
