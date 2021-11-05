@@ -119,12 +119,6 @@ namespace OfficeToPDF
                 XlFileFormat fmt = XlFileFormat.xlOpenXMLWorkbook;
                 XlFixedFormatQuality quality = XlFixedFormatQuality.xlQualityStandard;
 
-                // turn off macros for non-macro workbooks
-                if (fmt == XlFileFormat.xlOpenXMLWorkbook || fmt == XlFileFormat.xlOpenXMLTemplate)
-                {
-                    runMacros = false;
-                }
-
                 if (isHidden)
                 {
                     // Try and at least minimise it
@@ -185,6 +179,13 @@ namespace OfficeToPDF
                 {
                     return (int)ExitCode.FileOpenFailure;
                 }
+
+                // Turn off macros for non-macro workbooks
+                fmt = workbook.FileFormat;
+                if (fmt == XlFileFormat.xlOpenXMLWorkbook || fmt == XlFileFormat.xlOpenXMLTemplate)
+                {
+                    runMacros = false;
+                }
                 
                 if (runMacros)
                 {
@@ -213,7 +214,7 @@ namespace OfficeToPDF
                 
                 // Get the sheets
                 allSheets = workbook.Sheets;
-
+                
                 // If a worksheet has been specified, try and use just the one
                 if (worksheetNum > 0)
                 {
@@ -269,6 +270,7 @@ namespace OfficeToPDF
                     if (null != activeWindow)
                     {
                         activeWindow.Visible = false;
+                        activeWindow.View = XlWindowView.xlNormalView;
                     }
                 }
                 
@@ -354,7 +356,11 @@ namespace OfficeToPDF
                                 try
                                 {
                                     ((_Worksheet)ws).Activate();
-                                    activeWindow.DisplayFormulas = true;
+                                    if (null != activeWindow)
+                                    {
+                                        activeWindow.DisplayFormulas = true;
+                                        activeWindow.View = XlWindowView.xlNormalView;
+                                    }
                                     cols = ((Worksheet)ws).Columns;
                                     cols.AutoFit();
                                 }
@@ -631,6 +637,8 @@ namespace OfficeToPDF
             {
                 if (workbook != null)
                 {
+                    // We don't want code to interfere with closing, so disable events
+                    app.EnableEvents = false;
                     ReleaseCOMObject(activeSheet);
                     ReleaseCOMObject(activeWindow);
                     ReleaseCOMObject(wbWin);
@@ -646,6 +654,8 @@ namespace OfficeToPDF
                 {
                     if (workbooks != null)
                     {
+                        // We don't want code to interfere with closing, so disable events
+                        app.EnableEvents = false;
                         workbooks.Close();
                     }
 
