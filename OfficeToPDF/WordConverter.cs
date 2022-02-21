@@ -41,7 +41,7 @@ namespace OfficeToPDF
         /// <param name="inputFile">Full path of the input Word file</param>
         /// <param name="outputFile">Full path of the output PDF</param>
         /// <returns></returns>
-        public static new int Convert(String inputFile, String outputFile, Hashtable options)
+        public static int Convert(String inputFile, String outputFile, Hashtable options)
         {
             Boolean running = (Boolean)options["noquit"];
             Application word = null;

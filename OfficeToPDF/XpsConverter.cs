@@ -27,7 +27,7 @@ namespace OfficeToPDF
     /// </summary>
     class XpsConverter: Converter
     {
-        public static new int Convert(String inputFile, String outputFile, Hashtable options)
+        public static int Convert(String inputFile, String outputFile, Hashtable options)
         {
             try
             {

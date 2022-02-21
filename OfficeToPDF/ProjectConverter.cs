@@ -32,7 +32,7 @@ namespace OfficeToPDF
     /// </summary>
     class ProjectConverter: Converter
     {
-        public static new int Convert(String inputFile, String outputFile, Hashtable options)
+        public static int Convert(String inputFile, String outputFile, Hashtable options)
         {
             Boolean running = (Boolean)options["noquit"];
             MSProject.Application app = null;

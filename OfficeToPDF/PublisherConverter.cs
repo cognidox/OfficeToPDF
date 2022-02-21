@@ -30,13 +30,13 @@ namespace OfficeToPDF
     /// </summary>
     class PublisherConverter: Converter
     {
-        public static new int Convert(String inputFile, String outputFile, Hashtable options)
+        public static int Convert(String inputFile, String outputFile, Hashtable options)
         {
             List<PDFBookmark> bookmarks = new List<PDFBookmark>();
             return Convert(inputFile, outputFile, options, ref bookmarks);
         }
 
-        public static new int Convert(String inputFile, String outputFile, Hashtable options, ref List<PDFBookmark> bookmarks)
+        public static int Convert(String inputFile, String outputFile, Hashtable options, ref List<PDFBookmark> bookmarks)
         {
             Boolean running = (Boolean)options["noquit"];
             Microsoft.Office.Interop.Publisher.Application app = null;

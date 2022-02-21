@@ -32,13 +32,13 @@ namespace OfficeToPDF
     /// </summary>
     class PowerpointConverter : Converter
     {
-        public static new int Convert(String inputFile, String outputFile, Hashtable options)
+        public static int Convert(String inputFile, String outputFile, Hashtable options)
         {
             List<PDFBookmark> bookmarks = new List<PDFBookmark>();
             return Convert(inputFile, outputFile, options, ref bookmarks);
         }
 
-        public static new int Convert(String inputFile, String outputFile, Hashtable options, ref List<PDFBookmark> bookmarks)
+        public static int Convert(String inputFile, String outputFile, Hashtable options, ref List<PDFBookmark> bookmarks)
         {
             // Check for password protection
             if (IsPasswordProtected(inputFile))
