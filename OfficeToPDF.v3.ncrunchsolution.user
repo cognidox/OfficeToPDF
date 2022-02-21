@@ -1,0 +1,11 @@
+﻿<SolutionConfiguration>
+  <Settings>
+    <AutoEnable>True</AutoEnable>
+    <CurrentEngineMode>Run all tests automatically [Global]</CurrentEngineMode>
+    <DisabledNodes>
+      <Value>172.16.0.7</Value>
+    </DisabledNodes>
+    <StatusIndicatorSplitterDistance>14.9659852981567%</StatusIndicatorSplitterDistance>
+    <TestsWindowSplitterDistance>50%</TestsWindowSplitterDistance>
+  </Settings>
+</SolutionConfiguration>
