@@ -29,7 +29,6 @@ using Ghostscript.NET.Processor;
 using OpenMcdf;
 using OpenMcdf.Extensions;
 using System.IO.Packaging;
-using DocumentFormat.OpenXml.Presentation;
 using DocumentFormat.OpenXml.Packaging;
 
 namespace OfficeToPDF

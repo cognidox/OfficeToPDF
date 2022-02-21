@@ -20,11 +20,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
 using System.Runtime.InteropServices;
-using MSCore = Microsoft.Office.Core;
 using Microsoft.Office.Interop.Publisher;
 
 namespace OfficeToPDF
