@@ -7,16 +7,16 @@
 #ifndef PCH_H
 #define PCH_H
 
-// add headers that you want to pre-compile here
-
-#define WIN32_LEAN_AND_MEAN
-
 #include <atlbase.h>
-#include <windows.h>
 
-#include <combaseapi.h>
-#include <objbase.h>
-#include <objidl.h>
+// add headers that you want to pre-compile here
+#include "framework.h"
+
+
+//#include <combaseapi.h>
+//#include <objbase.h>
+//#include <objidl.h>
 #include <rpcdce.h>
+
 
 #endif //PCH_H

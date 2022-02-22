@@ -74,7 +74,7 @@ inline HRESULT CoGetServerPID(IUnknown* punk, DWORD* pdwPID, OXID* oxid)
     IUnknown* pProxyManager = NULL;
     IStream* pMarshalStream = NULL;
     HGLOBAL hg = NULL;
-    OBJREF* pObjRefHdr = NULL;
+    OBJREF* pObjRef = NULL;
     LARGE_INTEGER zero = { 0 };
 
     if (pdwPID == NULL) return E_POINTER;
@@ -107,27 +107,27 @@ inline HRESULT CoGetServerPID(IUnknown* punk, DWORD* pdwPID, OXID* oxid)
         /* Start out pessimistic. */
         hr = RPC_E_INVALID_OBJREF;
 
-        pObjRefHdr = (OBJREF*)GlobalLock(hg);
-        if (pObjRefHdr != NULL)
+        pObjRef = (OBJREF*)GlobalLock(hg);
+        if (pObjRef != NULL)
         {
             /* Validate what we can. */
-            if (pObjRefHdr->signature == OBJREF_SIGNATURE) /* 'MEOW' */
+            if (pObjRef->signature == OBJREF_SIGNATURE) /* 'MEOW' */
             {
                 IPID ipid;
 
-                switch (pObjRefHdr->flags)
+                switch (pObjRef->flags)
                 {
                 case OBJREF_STANDARD:
-                    ipid = pObjRefHdr->u_objref.u_standard.std.ipid;
-                    *oxid = pObjRefHdr->u_objref.u_standard.std.oxid;
+                    ipid = pObjRef->u_objref.u_standard.std.ipid;
+                    *oxid = pObjRef->u_objref.u_standard.std.oxid;
                     break;
                 case OBJREF_HANDLER:
-                    ipid = pObjRefHdr->u_objref.u_handler.std.ipid;
-                    *oxid = pObjRefHdr->u_objref.u_handler.std.oxid;
+                    ipid = pObjRef->u_objref.u_handler.std.ipid;
+                    *oxid = pObjRef->u_objref.u_handler.std.oxid;
                     break;
                 case OBJREF_EXTENDED:
-                    ipid = pObjRefHdr->u_objref.u_extended.std.ipid;
-                    *oxid = pObjRefHdr->u_objref.u_extended.std.oxid;
+                    ipid = pObjRef->u_objref.u_extended.std.ipid;
+                    *oxid = pObjRef->u_objref.u_extended.std.oxid;
                     break;
                 default:
                     ipid = GUID_NULL;

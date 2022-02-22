@@ -24,7 +24,7 @@ namespace OfficeToPDF.Tests
 
                     var app = new COMInterop.OfficeApp();
 
-                    uint processId = app.GetProcessId(iunknown);
+                    uint processId = app.GetProcessId2(iunknown);
 
                     Marshal.Release(iunknown);
 
