@@ -5,7 +5,14 @@
     <DisabledNodes>
       <Value>172.16.0.7</Value>
     </DisabledNodes>
-    <StatusIndicatorSplitterDistance>14.9659852981567%</StatusIndicatorSplitterDistance>
+    <StatusIndicatorSplitterDistance>14.5534725189209%</StatusIndicatorSplitterDistance>
+    <TestsWindowMenuOptions>
+      <VerticalSplitMenuOption>false</VerticalSplitMenuOption>
+      <ShowPassingTestsMenuOption>false</ShowPassingTestsMenuOption>
+      <ShowFailingTestsMenuOption>true</ShowFailingTestsMenuOption>
+      <ShowUnexecutedTestsMenuOption>true</ShowUnexecutedTestsMenuOption>
+      <ShowIgnoredTestsMenuOption>false</ShowIgnoredTestsMenuOption>
+    </TestsWindowMenuOptions>
     <TestsWindowSplitterDistance>50%</TestsWindowSplitterDistance>
   </Settings>
 </SolutionConfiguration>

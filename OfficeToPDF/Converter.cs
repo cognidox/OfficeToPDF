@@ -54,7 +54,7 @@ namespace OfficeToPDF
         /// <remarks>
         /// See https://support.microsoft.com/en-gb/help/317109/office-application-does-not-exit-after-automation-from-visual-studio-n
         /// </remarks>
-        protected static void ReleaseCOMObject(object obj)
+        internal static void ReleaseCOMObject(object obj)
         {
             try
             {

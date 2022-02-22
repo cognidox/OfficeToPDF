@@ -33,8 +33,45 @@ namespace OfficeToPDF
     /// <summary>
     /// Handle conversion of Word files
     /// </summary>
-    class WordConverter : Converter
+    internal class WordConverter : Converter
     {
+        public static ExitCode StartWord(ref Boolean running, ref Application word)
+        {
+            try
+            {
+                word = (Microsoft.Office.Interop.Word.Application)Marshal.GetActiveObject("Word.Application");
+            }
+            catch (System.Exception)
+            {
+                int tries = 10;
+                word = new Microsoft.Office.Interop.Word.Application();
+                running = false;
+                while (tries > 0)
+                {
+                    try
+                    {
+                        // Try to set a property on the object
+                        word.ScreenUpdating = false;
+                    }
+                    catch (COMException)
+                    {
+                        // Decrement the number of tries and have a bit of a snooze
+                        tries--;
+                        Thread.Sleep(500);
+                        continue;
+                    }
+                    // Looks ok, so bail out of the loop
+                    break;
+                }
+                if (tries == 0)
+                {
+                    ReleaseCOMObject(word);
+                    return ExitCode.ApplicationError;
+                }
+            }
+            return ExitCode.Success;
+        }
+
         /// <summary>
         /// Convert a Word file to PDF
         /// </summary>
@@ -78,38 +115,9 @@ namespace OfficeToPDF
                 Template normalTemplate = null;
                 
                 tmpl = null;
-                try
-                {
-                    word = (Microsoft.Office.Interop.Word.Application)Marshal.GetActiveObject("Word.Application");
-                }
-                catch (System.Exception)
-                {
-                    int tries = 10;
-                    word = new Microsoft.Office.Interop.Word.Application();
-                    running = false;
-                    while (tries > 0)
-                    {
-                        try
-                        {
-                            // Try to set a property on the object
-                            word.ScreenUpdating = false;
-                        }
-                        catch (COMException)
-                        {
-                            // Decrement the number of tries and have a bit of a snooze
-                            tries--;
-                            Thread.Sleep(500);
-                            continue;
-                        }
-                        // Looks ok, so bail out of the loop
-                        break;
-                    }
-                    if (tries == 0)
-                    {
-                        ReleaseCOMObject(word);
-                        return (int)ExitCode.ApplicationError;
-                    }
-                }
+                ExitCode result = StartWord(ref running, ref word);
+                if (result != ExitCode.Success)
+                    return (int)result;
 
                 wdOptions = word.Options;
                 word.DisplayAlerts = WdAlertLevel.wdAlertsNone;
@@ -563,7 +571,7 @@ namespace OfficeToPDF
 
         // Try and close Word, giving time for Office to get
         // itself in order
-        private static bool CloseWordApplication(Microsoft.Office.Interop.Word.Application word)
+        internal static bool CloseWordApplication(Microsoft.Office.Interop.Word.Application word)
         {
             object oMissing = System.Reflection.Missing.Value;
             int tries = 20;
