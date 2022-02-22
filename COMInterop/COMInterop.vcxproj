@@ -121,6 +121,7 @@
   <ItemGroup>
     <ClInclude Include="cogetserverpid.h" />
     <ClInclude Include="COMInterop.h" />
+    <ClInclude Include="dcom_h.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Resource.h" />
   </ItemGroup>
@@ -144,6 +145,9 @@
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="dcom.idl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

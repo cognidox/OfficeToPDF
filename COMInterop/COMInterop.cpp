@@ -2,101 +2,81 @@
 
 #include "COMInterop.h"
 #include "cogetserverpid.h"
+#include "dcom_h.h"
 
 namespace COMInterop {
 
-    #define OBJREF_STANDARD 0x00000001
-    #define OBJREF_HANDLER 0x00000002
-    #define OBJREF_CUSTOM 0x00000004
-    #define OBJREF_EXTENDED 0x00000008
+    #define TCP_PROTOCOL_ID 6
 
-    typedef unsigned __int64 OXID;
-    typedef unsigned __int64 OID;
-    typedef GUID           IPID;
+    DWORD OfficeApp::GetProcessId2(System::IntPtr application) {
+        // https://www.apriorit.com/dev-blog/724-windows-three-ways-to-get-com-server-process-id
 
-#pragma pack(push, 1)
-    typedef struct tagSTDOBJREF {
-        unsigned long flags;
-        unsigned long cPublicRefs;
-        OXID oxid;
-        OID  oid;
-        IPID ipid;
-    } STDOBJREF;
-#pragma pack(pop)
+        // OXID Resolver server listens to TCP port 135
+        // https://docs.microsoft.com/en-us/troubleshoot/windows-server/networking/service-overview-and-network-port-requirements
 
-#pragma pack(push, 1)
-    typedef struct tagDUALSTRINGARRAY {
-        unsigned short wNumEntries;
-        unsigned short wSecurityOffset;
-        [size_is(wNumEntries)] unsigned short* aStringArray;
-    } DUALSTRINGARRAY;
-#pragma pack(pop)
+        //RPC_WSTR OXIDResolverStringBinding = 0;
 
-#pragma pack(push, 1)
-    typedef struct tagDATAELEMENT {
-        GUID dataID;
-        WORD cbSize;
-        WORD cbRounded;
-        [size_is(cbSize)] byte* Data;
-    } DATAELEMENT;
-#pragma pack(pop)
+        //RpcStringBindingComposeW(
+        //    NULL,
+        //    RPC_WSTR(L"ncacn_ip_tcp"),
+        //    RPC_WSTR(L"127.0.0.1"),
+        //    RPC_WSTR(L"135"),
+        //    NULL,
+        //    &OXIDResolverStringBinding
+        //);
 
-#pragma pack(push, 1)
-    typedef struct tagOBJREF {
-        unsigned long signature;
-        unsigned long flags;
-        GUID        iid;
-        union {
-            struct {
-                STDOBJREF     std;
-                DUALSTRINGARRAY saResAddr;
-            } u_standard;
-            struct {
-                STDOBJREF     std;
-                CLSID         clsid;
-                DUALSTRINGARRAY saResAddr;
-            } u_handler;
-            struct {
-                CLSID         clsid;
-                unsigned long   cbExtension;
-                unsigned long   size;
-                byte* pData;
-            } u_custom;
-            struct {
-                STDOBJREF     std;
-                unsigned long   Signature1;
-                DUALSTRINGARRAY saResAddr;
-                unsigned long   nElms;
-                unsigned long   Signature2;
-                DATAELEMENT   ElmArray;
-            } u_extended;
-        } u_objref;
-    } OBJREF, * LPOBJREF;
-#pragma pack(pop)
+        //RPC_BINDING_HANDLE OXIDResolverBinding = 0;
 
+        //RpcBindingFromStringBindingW(
+        //    OXIDResolverStringBinding,
+        //    &OXIDResolverBinding
+        //);
+
+        ////Make OXID Resolver authenticate without a password
+
+        //RpcBindingSetOption(OXIDResolverBinding, RPC_C_OPT_BINDING_NONCAUSAL, 1);
+
+        //RPC_SECURITY_QOS securityQualityOfServiceSettings;
+        //securityQualityOfServiceSettings.Version = 1;
+        //securityQualityOfServiceSettings.Capabilities = RPC_C_QOS_CAPABILITIES_MUTUAL_AUTH;
+        //securityQualityOfServiceSettings.IdentityTracking = RPC_C_QOS_IDENTITY_STATIC;
+        //securityQualityOfServiceSettings.ImpersonationType = RPC_C_IMP_LEVEL_IMPERSONATE;
+
+        //RpcBindingSetAuthInfoExW(
+        //    OXIDResolverBinding,
+        //    RPC_WSTR(L"NT Authority\\NetworkService"),
+        //    RPC_C_AUTHN_LEVEL_PKT_PRIVACY,
+        //    RPC_C_AUTHN_WINNT,
+        //    NULL,
+        //    RPC_C_AUTHZ_NONE,
+        //    &securityQualityOfServiceSettings
+        //);
+
+        //unsigned short requestedProtocols[] = { TCP_PROTOCOL_ID };
+
+        //DUALSTRINGARRAY*  COMServerStringBindings = NULL;
+        //IPID            remoteUnknownIPID = GUID_NULL;
+        //DWORD           authHint = 0;
+
+        //ResolveOxid(
+        //    OXIDResolverBinding,
+        //    &oxid,
+        //    _countof(requestedProtocols),
+        //    requestedProtocols,
+        //    &COMServerStringBindings,
+        //    &remoteUnknownIPID,
+        //    &authHint
+        //);
+
+        return 0;
+    }
 
     DWORD OfficeApp::GetProcessId(System::IntPtr application) {
 
-        //CComPtr<IStream> marshalStream;
-        //CreateStreamOnHGlobal(NULL, TRUE, &marshalStream);
-
-        //CoMarshalInterface(
-        //    marshalStream, // Where to write the marshaled interface
-        //    IID_IUnknown, // ID of the marshaled interface
-        //    excelInterface, // The interface to be marshaled
-        //    MSHCTX_INPROC, // Unmarshaling will be done in the same process
-        //    NULL, // Reserved and must be NULL
-        //    MSHLFLAGS_NORMAL // The data packet produced by the marshaling process will be unmarshaled in the destination process
-        //);
-
-        //HGLOBAL memoryHandleFromStream = NULL;
-        //GetHGlobalFromStream(marshalStream, &memoryHandleFromStream);
-
-        //LPOBJREF objef = reinterpret_cast <LPOBJREF> (GlobalLock(memoryHandleFromStream)); // It was originally published on https://www.apriorit.com/
-
         LPUNKNOWN iunknown = reinterpret_cast<LPUNKNOWN>(application.ToPointer());
         DWORD value;
-        HRESULT hr = CoGetServerPID(iunknown, &value);
+        OXID oxid;
+        HRESULT hr = CoGetServerPID(iunknown, &value, &oxid);
         if (SUCCEEDED(hr))
             return value;
 

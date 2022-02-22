@@ -27,6 +27,9 @@
     <ClInclude Include="cogetserverpid.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="dcom_h.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="COMInterop.cpp">
@@ -48,5 +51,8 @@
     <Image Include="app.ico">
       <Filter>Resource Files</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="dcom.idl" />
   </ItemGroup>
 </Project>
