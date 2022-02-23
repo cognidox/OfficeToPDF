@@ -128,7 +128,6 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="COMInteropTests.cs" />
     <Compile Include="OXIDTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -136,10 +135,6 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\COMInterop\COMInterop.vcxproj">
-      <Project>{0ffb2b6c-ae97-46b0-83db-641aaad30127}</Project>
-      <Name>COMInterop</Name>
-    </ProjectReference>
     <ProjectReference Include="..\OfficeToPDF\OfficeToPDF.csproj">
       <Project>{13f3bab7-27ff-4391-a0fa-b56e84a12a20}</Project>
       <Name>OfficeToPDF</Name>
