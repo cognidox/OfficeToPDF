@@ -152,7 +152,21 @@
     <Error Condition="!Exists('..\packages\MSTest.TestAdapter.2.2.8\build\net45\MSTest.TestAdapter.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\MSTest.TestAdapter.2.2.8\build\net45\MSTest.TestAdapter.targets'))" />
   </Target>
   <Import Project="..\packages\MSTest.TestAdapter.2.2.8\build\net45\MSTest.TestAdapter.targets" Condition="Exists('..\packages\MSTest.TestAdapter.2.2.8\build\net45\MSTest.TestAdapter.targets')" />
-  <PropertyGroup>
-    <PostBuildEvent>copy "$(SolutionDir)$(PlatformName)\$(ConfigurationName)\OXID.*" "$(TargetDir)"</PostBuildEvent>
-  </PropertyGroup>
+  <Target Name="CopyDependents" AfterTargets="Build">
+  	<ItemGroup>
+  		<DependentFile Include="OXID.dll;OXID.pdb" />
+  	</ItemGroup>
+	  <PropertyGroup Condition="'$(Platform)' == 'AnyCPU'">
+		  <DependentDir>x64\$(Configuration)</DependentDir>
+	  </PropertyGroup>
+	  <PropertyGroup Condition="'$(Platform)' != 'AnyCPU'" >
+		  <DependentDir>$(Platform)\$(Configuration)</DependentDir>
+	  </PropertyGroup>
+  	<Copy
+        SourceFiles="@(DependentFile -> '$(SolutionDir)OXID\$(DependentDir)\%(Identity)')"
+        DestinationFolder="$(TargetDir)"
+  		SkipUnchangedFiles="true"
+  		Condition="'$(NCrunch)' != '1'"
+      />
+  </Target>
 </Project>
