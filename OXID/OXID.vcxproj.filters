@@ -24,7 +24,7 @@
     <ClInclude Include="dcom_h.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CoGetServerOxid.h">
+    <ClInclude Include="CoGetServerObjRefInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="oxid.h">

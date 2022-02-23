@@ -12,11 +12,10 @@
 // add headers that you want to pre-compile here
 #include "framework.h"
 
-
-//#include <combaseapi.h>
-//#include <objbase.h>
-//#include <objidl.h>
 #include <rpcdce.h>
-
+#include <ws2tcpip.h>
+#include <iphlpapi.h>
+#include <list>
+#include <string>
 
 #endif //PCH_H

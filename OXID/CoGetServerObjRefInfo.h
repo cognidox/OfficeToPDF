@@ -43,6 +43,19 @@ typedef struct tagOBJREF {
 } OBJREF, * LPOBJREF;
 #pragma pack(pop)
 
+
+inline BOOL GetCOMServerPID(__in IPID ipid, __out DWORD* pid)
+{
+    static const int COM_SERVER_PID_OFFSET = 4;
+
+    *pid = *reinterpret_cast<LPWORD>(
+        (reinterpret_cast<LPBYTE>(&ipid) + COM_SERVER_PID_OFFSET)
+        );
+
+    // IPID contains only 16 - bit for PID, and if the PID > 0xffff, then it's clapped to 0xffff
+    return *pid != 0xffff;
+}
+
 // Based on https://github.com/kimgr/cogetserverpid
 
 inline HRESULT EnsureStandardProxy(LPUNKNOWN punk)
@@ -57,10 +70,11 @@ inline HRESULT EnsureStandardProxy(LPUNKNOWN punk)
     return hr;
 }
 
-inline HRESULT CoGetServerOXID(LPUNKNOWN punk, OXID* oxid)
+inline HRESULT CoGetServerObjRefInfo(LPUNKNOWN punk, OXID* oxid, IPID* ipid)
 {
     if (punk == NULL) return E_INVALIDARG;
     if (oxid == NULL) return E_POINTER;
+    if (ipid == NULL) return E_POINTER;
 
     /* Make sure this is a standard proxy, otherwise we can't make any
        assumptions about OBJREF wire format. */
@@ -94,14 +108,17 @@ inline HRESULT CoGetServerOXID(LPUNKNOWN punk, OXID* oxid)
                 case OBJREF_STANDARD:
                     hr = S_OK;
                     *oxid = pObjRef->u_objref.u_standard.std.oxid;
+                    *ipid = pObjRef->u_objref.u_standard.std.ipid;
                     break;
                 case OBJREF_HANDLER:
                     hr = S_OK;
                     *oxid = pObjRef->u_objref.u_handler.std.oxid;
+                    *ipid = pObjRef->u_objref.u_handler.std.ipid;
                     break;
                 case OBJREF_EXTENDED:
                     hr = S_OK;
                     *oxid = pObjRef->u_objref.u_extended.std.oxid;
+                    *ipid = pObjRef->u_objref.u_extended.std.ipid;
                     break;
                 default:
                     *oxid = 0;

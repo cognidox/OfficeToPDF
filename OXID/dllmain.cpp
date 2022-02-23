@@ -1,6 +1,6 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 #include "pch.h"
-#include "CoGetServerOxid.h"
+#include "CoGetServerObjRefInfo.h"
 #include "oxid.h"
 
 BOOL APIENTRY DllMain( HMODULE hModule,
@@ -24,17 +24,21 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 
 #define TCP_PROTOCOL_ID 7
 
-__declspec(dllexport) DWORD __cdecl GetCOMProcessId(LPVOID ptr) {
+#define MALLOC(x) HeapAlloc(GetProcessHeap(), 0, (x))
+#define FREE(x) HeapFree(GetProcessHeap(), 0, (x))
 
-    // Source: https://www.apriorit.com/dev-blog/724-windows-three-ways-to-get-com-server-process-id
+#pragma pack(push, 1)
+typedef struct tagSTRINGBINDING {
+    unsigned short wTowerId;
+    wchar_t* aNetworkAddr;
+} STRINGBINDING, * LPSTRINGBINDING;
+#pragma pack(pop)
 
-    OXID oxid;
-    HRESULT hr = CoGetServerOXID(reinterpret_cast<LPUNKNOWN>(ptr), &oxid);
-    if (FAILED(hr)) return 0;
-
-
+BOOL GetOXIDResolverBinding(RPC_BINDING_HANDLE& handle) {
     // OXID Resolver server listens to TCP port 135
     // https://docs.microsoft.com/en-us/troubleshoot/windows-server/networking/service-overview-and-network-port-requirements
+
+    handle = 0;
 
     RPC_WSTR OXIDResolverStringBinding = 0;
 
@@ -45,7 +49,7 @@ __declspec(dllexport) DWORD __cdecl GetCOMProcessId(LPVOID ptr) {
         RPC_WSTR(L"135"),
         NULL,
         &OXIDResolverStringBinding
-    ) != RPC_S_OK) return 0;
+    ) != RPC_S_OK) return FALSE;
 
 
     RPC_BINDING_HANDLE OXIDResolverBinding = 0;
@@ -53,7 +57,7 @@ __declspec(dllexport) DWORD __cdecl GetCOMProcessId(LPVOID ptr) {
     if (RpcBindingFromStringBindingW(
         OXIDResolverStringBinding,
         &OXIDResolverBinding
-    ) != RPC_S_OK) return 0;
+    ) != RPC_S_OK) return FALSE;
 
 
     //Make OXID Resolver authenticate without a password
@@ -74,8 +78,31 @@ __declspec(dllexport) DWORD __cdecl GetCOMProcessId(LPVOID ptr) {
         NULL,
         RPC_C_AUTHZ_NONE,
         &securityQualityOfServiceSettings
-    ) != RPC_S_OK) return 0;
+    ) != RPC_S_OK) return FALSE;
 
+    handle = OXIDResolverBinding;
+
+    return TRUE;
+}
+
+__declspec(dllexport) DWORD __cdecl GetCOMProcessId(LPVOID ptr) {
+
+    // Source: https://www.apriorit.com/dev-blog/724-windows-three-ways-to-get-com-server-process-id
+
+    OXID oxid;
+    IPID ipid;
+    HRESULT hr = CoGetServerObjRefInfo(reinterpret_cast<LPUNKNOWN>(ptr), &oxid, &ipid);
+    if (FAILED(hr)) return 0;
+
+    DWORD pid;
+    if (GetCOMServerPID(ipid, &pid))
+        return pid;
+
+    // Fallback to second way ...
+
+    RPC_BINDING_HANDLE OXIDResolverBinding;
+    
+    if(!GetOXIDResolverBinding(OXIDResolverBinding)) return 0;
 
     unsigned short requestedProtocols[] = { TCP_PROTOCOL_ID };
 
@@ -96,6 +123,7 @@ __declspec(dllexport) DWORD __cdecl GetCOMProcessId(LPVOID ptr) {
     {
         if (COMServerStringBindings != NULL)
         {
+            std::list<std::wstring> ports;
             unsigned short* p = COMServerStringBindings->aStringArray;
             for (size_t index = 0; index < COMServerStringBindings->wNumEntries;)
             {
@@ -113,6 +141,8 @@ __declspec(dllexport) DWORD __cdecl GetCOMProcessId(LPVOID ptr) {
                     while (token != NULL)
                     {
                         token = wcstok_s(NULL, L"[]", &ctx);
+                        if(token != NULL)
+                            ports.push_back(std::wstring(token));
                     }
 
                 }
