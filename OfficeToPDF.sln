@@ -28,6 +28,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OfficeToPDF.Tests", "OfficeToPDF.Tests\OfficeToPDF.Tests.csproj", "{B9CA6971-F458-49D9-A06F-45040EE52966}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A240B9E5-3E14-4002-AE22-75A2277508A0} = {A240B9E5-3E14-4002-AE22-75A2277508A0}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OXID", "OXID\OXID.vcxproj", "{A240B9E5-3E14-4002-AE22-75A2277508A0}"
 EndProject

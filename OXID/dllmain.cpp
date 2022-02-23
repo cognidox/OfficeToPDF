@@ -75,25 +75,26 @@ BOOL GetOXIDResolverBinding(RPC_BINDING_HANDLE& handle) {
     return TRUE;
 }
 
-std::wstring GetPort(const wchar_t* netaddr) {
+std::wstring GetPort(__in const wchar_t* netaddr) {
 
-    std::list<std::wstring> ports;
+    std::list<std::wstring> parts;
     wchar_t copy[256];
     memset(copy, 0, sizeof(copy));
 
     size_t number = (sizeof(copy) / sizeof(copy[0])) - 1;
     wcsncpy_s(copy, netaddr, number);
     
+    const wchar_t* delimiters = L"[]";
     wchar_t* ctx = NULL;
-    wchar_t* token = wcstok_s(copy, L"[]", &ctx);
+    wchar_t* token = wcstok_s(copy, delimiters, &ctx);
     while (token != NULL)
     {
-        token = wcstok_s(NULL, L"[]", &ctx);
+        token = wcstok_s(NULL, delimiters, &ctx);
         if (token != NULL)
-            ports.push_back(std::wstring(token));
+            parts.push_back(std::wstring(token));
     }
 
-    return ports.size() > 0 ? ports.front() : std::wstring();
+    return parts.size() > 0 ? parts.front() : std::wstring();
 }
 
 #define TABLE_CLASS TCP_TABLE_CLASS::TCP_TABLE_OWNER_PID_ALL
@@ -102,24 +103,24 @@ std::wstring GetPort(const wchar_t* netaddr) {
 #define ALLOC(x) (TABLE_TYPE*)HeapAlloc(GetProcessHeap(), 0, (x))
 #define FREE(x) HeapFree(GetProcessHeap(), 0, (x))
 
-
-DWORD GetProcessIdFromPort(DWORD localport) {
+DWORD GetProcessIdFromPort(__in DWORD localport) {
     ULONG size = 0;
     TABLE_TYPE* tcpTable = NULL;
 
+#pragma warning(push)
+#pragma warning(disable: 28020)
+    // Pass NULL and length 0 to get the required size to allocate
     DWORD result = GetExtendedTcpTable(tcpTable, &size, TRUE, AF_INET, TABLE_CLASS, 0);
     if (result != ERROR_INSUFFICIENT_BUFFER) return 0;
+#pragma warning(pop)
 
     tcpTable = ALLOC(size);
     if (tcpTable == NULL) return 0;
 
     std::list<TABLE_ENTRY> entries;
 
-    DWORD dwNumEntries = 0;
-
     if ((result = GetExtendedTcpTable(tcpTable, &size, TRUE, AF_INET, TABLE_CLASS, 0)) == NO_ERROR) {
-        dwNumEntries = tcpTable->dwNumEntries;
-        for (size_t index = 0; index < dwNumEntries; ++index) {
+        for (size_t index = 0; index < tcpTable->dwNumEntries; ++index) {
             TABLE_ENTRY* value = tcpTable->table + index;
             TABLE_ENTRY entry = *value;
             // The local port number in network byte order for the TCP connection on the local computer.
@@ -140,7 +141,7 @@ DWORD GetProcessIdFromPort(DWORD localport) {
     return 0;
 }
 
-__declspec(dllexport) DWORD __cdecl GetCOMProcessId(LPVOID ptr) {
+__declspec(dllexport) DWORD __cdecl GetCOMProcessId(const LPVOID ptr) {
 
     // Source: https://www.apriorit.com/dev-blog/724-windows-three-ways-to-get-com-server-process-id
 
@@ -153,7 +154,7 @@ __declspec(dllexport) DWORD __cdecl GetCOMProcessId(LPVOID ptr) {
     if (GetCOMServerPID(ipid, &pid))
         return pid;
 
-    // Fallback to second way ...
+    // Fallback to second of three ways ...
 
     RPC_BINDING_HANDLE OXIDResolverBinding;
     
@@ -187,10 +188,10 @@ __declspec(dllexport) DWORD __cdecl GetCOMProcessId(LPVOID ptr) {
             if (index + offset >= COMServerStringBindings->wNumEntries)
                 break;
 
-            wchar_t* netaddr = reinterpret_cast<wchar_t*>(values);
+            const wchar_t* netaddr = reinterpret_cast<wchar_t*>(values);
             if (protocol == TCP_PROTOCOL_ID)
             {
-                std::wstring port = GetPort(netaddr);
+                std::wstring port = GetPort(netaddr); // Sample netaddr: "192.168.1.10[3000]"
                 if (!port.empty())
                     ports.push_back(port);
             }

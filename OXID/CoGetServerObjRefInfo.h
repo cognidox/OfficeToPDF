@@ -58,7 +58,7 @@ inline BOOL GetCOMServerPID(__in IPID ipid, __out DWORD* pid)
 
 // Based on https://github.com/kimgr/cogetserverpid
 
-inline HRESULT EnsureStandardProxy(LPUNKNOWN punk)
+inline HRESULT EnsureStandardProxy(__in const LPUNKNOWN punk)
 {
     /* Make sure this is a standard proxy, otherwise we can't make any
        assumptions about OBJREF wire format. */
@@ -70,7 +70,7 @@ inline HRESULT EnsureStandardProxy(LPUNKNOWN punk)
     return hr;
 }
 
-inline HRESULT CoGetServerObjRefInfo(LPUNKNOWN punk, OXID* oxid, IPID* ipid)
+inline HRESULT CoGetServerObjRefInfo(__in const LPUNKNOWN punk, __out OXID* oxid, __out IPID* ipid)
 {
     if (punk == NULL) return E_INVALIDARG;
     if (oxid == NULL) return E_POINTER;
@@ -139,4 +139,3 @@ inline HRESULT CoGetServerObjRefInfo(LPUNKNOWN punk, OXID* oxid, IPID* ipid)
 
     return hr;
 }
-
