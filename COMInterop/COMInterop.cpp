@@ -13,9 +13,7 @@ namespace COMInterop {
 
         LPUNKNOWN punk = reinterpret_cast<LPUNKNOWN>(application.ToPointer());
 
-        GetCOMProcessId(punk);
-
-        return 0;
+        return GetCOMProcessId(punk);
     }
 
     DWORD OfficeApp::GetProcessId(System::IntPtr application) {
