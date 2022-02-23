@@ -7,8 +7,11 @@ using System.Diagnostics;
 namespace OfficeToPDF.Tests
 {
     [TestFixture]
-    public class COMInteropTests
+    public class OXIDTests
     {
+        [DllImport("OXID.dll", SetLastError = true)]
+        static extern uint GetCOMProcessId(IntPtr unknown);
+
         [Test, Explicit("Starts and stops the Word office application")]
         public void GetProcessIdReturnsTheCorrectValue()
         {
@@ -22,9 +25,7 @@ namespace OfficeToPDF.Tests
                 {
                     IntPtr iunknown = Marshal.GetIUnknownForObject(word);
 
-                    var app = new COMInterop.OfficeApp();
-
-                    uint processId = app.GetProcessId2(iunknown);
+                    var processId = GetCOMProcessId(iunknown);
 
                     Marshal.Release(iunknown);
 
