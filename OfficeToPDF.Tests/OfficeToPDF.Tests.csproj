@@ -128,7 +128,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="OXIDTests.cs" />
+    <Compile Include="COMServerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -153,20 +153,15 @@
   </Target>
   <Import Project="..\packages\MSTest.TestAdapter.2.2.8\build\net45\MSTest.TestAdapter.targets" Condition="Exists('..\packages\MSTest.TestAdapter.2.2.8\build\net45\MSTest.TestAdapter.targets')" />
   <Target Name="CopyDependents" AfterTargets="Build">
-  	<ItemGroup>
-  		<DependentFile Include="OXID.dll;OXID.pdb" />
-  	</ItemGroup>
-	  <PropertyGroup Condition="'$(Platform)' == 'AnyCPU'">
-		  <DependentDir>x64\$(Configuration)</DependentDir>
-	  </PropertyGroup>
-	  <PropertyGroup Condition="'$(Platform)' != 'AnyCPU'" >
-		  <DependentDir>$(Platform)\$(Configuration)</DependentDir>
-	  </PropertyGroup>
-  	<Copy
-        SourceFiles="@(DependentFile -> '$(SolutionDir)OXID\$(DependentDir)\%(Identity)')"
-        DestinationFolder="$(TargetDir)"
-  		SkipUnchangedFiles="true"
-  		Condition="'$(NCrunch)' != '1'"
-      />
+    <ItemGroup>
+      <DependentFile Include="COMServer.dll;COMServer.pdb" />
+    </ItemGroup>
+    <PropertyGroup Condition="'$(Platform)' == 'AnyCPU'">
+      <DependentDir>x64\$(Configuration)</DependentDir>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Platform)' != 'AnyCPU'">
+      <DependentDir>$(Platform)\$(Configuration)</DependentDir>
+    </PropertyGroup>
+    <Copy SourceFiles="@(DependentFile -> '$(SolutionDir)COMServer\$(DependentDir)\%(Identity)')" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" Condition="'$(NCrunch)' != '1'" />
   </Target>
 </Project>

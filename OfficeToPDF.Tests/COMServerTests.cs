@@ -7,9 +7,9 @@ using System.Diagnostics;
 namespace OfficeToPDF.Tests
 {
     [TestFixture]
-    public class OXIDTests
+    public class COMServerTests
     {
-        [DllImport("OXID.dll", SetLastError = true)]
+        [DllImport("COMServer.dll", SetLastError = true)]
         static extern uint GetCOMProcessId(IntPtr unknown);
 
         [Test, Explicit("Starts and stops the Word office application")]
