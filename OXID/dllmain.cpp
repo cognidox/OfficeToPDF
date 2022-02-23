@@ -27,13 +27,6 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 #define MALLOC(x) HeapAlloc(GetProcessHeap(), 0, (x))
 #define FREE(x) HeapFree(GetProcessHeap(), 0, (x))
 
-#pragma pack(push, 1)
-typedef struct tagSTRINGBINDING {
-    unsigned short wTowerId;
-    wchar_t* aNetworkAddr;
-} STRINGBINDING, * LPSTRINGBINDING;
-#pragma pack(pop)
-
 BOOL GetOXIDResolverBinding(RPC_BINDING_HANDLE& handle) {
     // OXID Resolver server listens to TCP port 135
     // https://docs.microsoft.com/en-us/troubleshoot/windows-server/networking/service-overview-and-network-port-requirements
@@ -85,6 +78,26 @@ BOOL GetOXIDResolverBinding(RPC_BINDING_HANDLE& handle) {
     return TRUE;
 }
 
+std::wstring GetPort(const wchar_t* netaddr) {
+
+    std::list<std::wstring> ports;
+    wchar_t copy[256];
+    memset(copy, 0, sizeof(copy));
+
+    wcsncpy_s(copy, netaddr, 255);
+    
+    wchar_t* ctx = NULL;
+    wchar_t* token = wcstok_s(copy, L"[]", &ctx);
+    while (token != NULL)
+    {
+        token = wcstok_s(NULL, L"[]", &ctx);
+        if (token != NULL)
+            ports.push_back(std::wstring(token));
+    }
+
+    return ports.size() > 0 ? ports.front() : std::wstring();
+}
+
 __declspec(dllexport) DWORD __cdecl GetCOMProcessId(LPVOID ptr) {
 
     // Source: https://www.apriorit.com/dev-blog/724-windows-three-ways-to-get-com-server-process-id
@@ -134,17 +147,9 @@ __declspec(dllexport) DWORD __cdecl GetCOMProcessId(LPVOID ptr) {
                 wchar_t* netaddr = reinterpret_cast<wchar_t*>(p + index + 1);
                 if (protocol == TCP_PROTOCOL_ID)
                 {
-                    wchar_t copy[256] = { 0 };
-                    wcsncpy_s(copy, netaddr, 255);
-                    wchar_t* ctx = NULL;
-                    wchar_t* token = wcstok_s(copy, L"[]", &ctx);
-                    while (token != NULL)
-                    {
-                        token = wcstok_s(NULL, L"[]", &ctx);
-                        if(token != NULL)
-                            ports.push_back(std::wstring(token));
-                    }
-
+                    std::wstring port = GetPort(netaddr);
+                    if (!port.empty())
+                        ports.push_back(port);
                 }
                 index += wcslen(netaddr) + 2;
             }
