@@ -137,14 +137,18 @@ namespace OfficeToPDF.Tests
             Assert.That(captured.StartsWith("Converts Office documents to PDF from the command line."));
         }
 
-        [Test]
-        public void WhenParsingTimeoutArgThenResultIsSuccess()
+        [TestCase("100", ExitCode.Success)]
+        [TestCase("foo", ExitCode.Failed|ExitCode.InvalidArguments)]
+        [TestCase("_", ExitCode.Failed | ExitCode.InvalidArguments)]
+        [TestCase("de012", ExitCode.Failed | ExitCode.InvalidArguments)]
+        [TestCase("752xoq", ExitCode.Failed | ExitCode.InvalidArguments)]
+        public void WhenParsingTimeoutArgThenResultIsExpectedExitCode(string value, ExitCode expected)
         {
             ArgParser parser = new ArgParser();
 
-            var result = parser.Parse(new[] { "/timeout", "100" }, new Dictionary<string, bool>());
+            var result = parser.Parse(new[] { "/timeout", value }, new Dictionary<string, bool>());
 
-            Assert.That(result, Is.EqualTo(ExitCode.Success));
+            Assert.That(result, Is.EqualTo(expected));
         }
 
         [Test]
