@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Security.AccessControl;
 using System.Text.RegularExpressions;
 using PdfSharp.Pdf;
@@ -40,13 +41,13 @@ namespace OfficeToPDF
                 { "excel_max_rows", "Maximum number of rows" },
                 { "excel_worksheet", "Excel worksheet" },
                 { "word_max_pages", "Maximum number of pages" },
-                { "excel_delay", "Excel delay milliseconds" }
+                { "excel_delay", "Excel delay milliseconds" },
+                { "timeout", "Timeout in seconds to wait for generation of the pdf" }
             };
 
         public ArgParser()
             : this(Environment.Exit, (format, args) => Console.WriteLine(format, args))
         { }
-
 
         private void WriteLine(string msg) => Output(msg, Array.Empty<object>());
 
@@ -125,6 +126,7 @@ namespace OfficeToPDF
             this["pdf_restrict_print"] = false;
             this["pdf_restrict_accessibility_extraction"] = false;
             this["pdf_restrict_full_quality"] = false;
+            this["timeout"] = 0;
         }
 
         public string[] files = new string[2];
@@ -132,19 +134,22 @@ namespace OfficeToPDF
         public Boolean postProcessPDF = false;
         public Boolean postProcessPDFSecurity = false;
 
+        public int timeout => TryGetKeyValue<int>();
 
-        ExitCode CheckOptionIsInteger(string optionKey, string optionName, string optionValue)
+        private T TryGetKeyValue<T>([CallerMemberName] string key = null) =>
+            this.ContainsKey(Normalise(key)) ? (T)this[Normalise(key)] : default(T);
+
+        private static string Normalise(string key) => key.ToLowerInvariant();
+
+        private ExitCode CheckOptionIsInteger(string optionKey, string optionName, string optionValue)
         {
             if (Regex.IsMatch(optionValue, @"^\d+$"))
             {
-                this[optionKey] = (int)Convert.ToInt32(optionValue);
+                this[optionKey] = Convert.ToInt32(optionValue);
                 return ExitCode.Success;
             }
-            else
-            {
-                WriteLine("{0} ({1}) is invalid", optionName, optionValue);
-                return ExitCode.Failed | ExitCode.InvalidArguments;
-            }
+            WriteLine("{0} ({1}) is invalid", optionName, optionValue);
+            return ExitCode.Failed | ExitCode.InvalidArguments;
         }
 
 
@@ -152,7 +157,7 @@ namespace OfficeToPDF
         {
             // Loop through the input, grabbing switches off the command line
 
-            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|(fallback_)?printer|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_(delay|max_rows|show_formulas|show_headings|auto_macros|template_macros|active_sheet|active_sheet_on_max_rows|worksheet|no_recalculate|no_link_update|no_map_papersize)|powerpoint_(output)|word_(show_hidden|header_dist|footer_dist|ref_fonts|no_field_update|field_quick_update(_safe)?|max_pages|keep_history|no_repair|fix_table_columns|show_(comments|revs_comments|format_changes|ink_annot|ins_del|all_markup)|markup_balloon|no_map_papersize)|pdf_(page_mode|append|prepend|layout|clean_meta|owner_pass|user_pass|restrict_(annotation|extraction|assembly|forms|modify|print|accessibility_extraction|full_quality))|working_dir|\?)$", RegexOptions.IgnoreCase);
+            Regex switches = new Regex(@"^/(version|hidden|markup|readonly|bookmarks|merge|noquit|print|(fallback_)?printer|screen|pdfa|template|writepassword|password|help|verbose|exclude(props|tags)|excel_(delay|max_rows|show_formulas|show_headings|auto_macros|template_macros|active_sheet|active_sheet_on_max_rows|worksheet|no_recalculate|no_link_update|no_map_papersize)|powerpoint_(output)|word_(show_hidden|header_dist|footer_dist|ref_fonts|no_field_update|field_quick_update(_safe)?|max_pages|keep_history|no_repair|fix_table_columns|show_(comments|revs_comments|format_changes|ink_annot|ins_del|all_markup)|markup_balloon|no_map_papersize)|pdf_(page_mode|append|prepend|layout|clean_meta|owner_pass|user_pass|restrict_(annotation|extraction|assembly|forms|modify|print|accessibility_extraction|full_quality))|working_dir|timeout|\?)$", RegexOptions.IgnoreCase);
             for (int argIdx = 0; argIdx < args.Length; argIdx++)
             {
                 string item = args[argIdx];
@@ -457,6 +462,17 @@ namespace OfficeToPDF
                             case "pdf_restrict_accessibility_extraction":
                                 postProcessPDFSecurity = true;
                                 this[itemMatch.Groups[1].Value.ToLower()] = true;
+                                break;
+                            case "timeout":
+                                // Only accept the next option if there are enough options
+                                if (argIdx + 1 < args.Length)
+                                {
+                                    ExitCode result = CheckOptionIsInteger(itemMatch.Groups[1].Value.ToLower(), optionNameMap[itemMatch.Groups[1].Value.ToLower()], args[argIdx + 1]);
+                                    if (result != ExitCode.Success)
+                                        return result;
+
+                                    argIdx++;
+                                }
                                 break;
                             default:
                                 this[itemMatch.Groups[1].Value.ToLower()] = true;

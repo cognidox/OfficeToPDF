@@ -12,7 +12,7 @@ namespace OfficeToPDF.Tests
         {
             ArgParser parser = new ArgParser();
 
-            Assert.That(parser.Count, Is.EqualTo(66));
+            Assert.That(parser.Count, Is.EqualTo(67));
         }
 
         [Test]
@@ -66,6 +66,7 @@ namespace OfficeToPDF.Tests
                 "readonly",
                 "screen",
                 "template",
+                "timeout",
                 "verbose",
                 "word_field_quick_update_safe",
                 "word_field_quick_update",
@@ -123,7 +124,7 @@ namespace OfficeToPDF.Tests
 
         [Test]
         public void WhenParsingHelpArgThenHelpShown()
-{
+        {
             var exit = false;
             var captured = "";
 
@@ -133,6 +134,38 @@ namespace OfficeToPDF.Tests
 
             Assert.That(exit, Is.True);
             Assert.That(captured.StartsWith("Converts Office documents to PDF from the command line."));
+        }
+
+        [Test]
+        public void WhenParsingTimeoutArgThenResultIsSuccess()
+        {
+            ArgParser parser = new ArgParser();
+
+            var result = parser.Parse(new[] { "/timeout", "100" }, new Dictionary<string, bool>());
+
+            Assert.That(result, Is.EqualTo(ExitCode.Success));
+        }
+
+        [Test]
+        public void WhenParsingTimeoutArgThenValueCaptured()
+        {
+            ArgParser parser = new ArgParser();
+
+            parser.Parse(new[] { "/timeout", "100" }, new Dictionary<string, bool>());
+
+            Assert.That(parser.ContainsKey("timeout"), Is.True);
+            Assert.That(parser["timeout"], Is.EqualTo(100));
+        }
+
+        [Test]
+        public void WhenParsingTimeoutArgThenPropertyContainsValue()
+        {
+            ArgParser parser = new ArgParser();
+
+            parser.Parse(new[] { "/timeout", "100" }, new Dictionary<string, bool>());
+
+            Assert.That(parser.ContainsKey("timeout"), Is.True);
+            Assert.That(parser.timeout, Is.EqualTo(100));
         }
     }
 }
