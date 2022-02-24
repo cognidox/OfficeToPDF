@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using PdfSharp.Pdf;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -166,6 +167,41 @@ namespace OfficeToPDF.Tests
 
             Assert.That(parser.ContainsKey("timeout"), Is.True);
             Assert.That(parser.timeout, Is.EqualTo(100));
+        }
+
+        public static IEnumerable<object[]> PdfPageModeArgs =>
+            new[]
+            {
+                new object[] { "full", PdfPageMode.FullScreen },
+                new object[] { "none", PdfPageMode.UseNone },
+                new object[] { "bookmarks", PdfPageMode.UseOutlines },
+                new object[] { "thumbs", PdfPageMode.UseThumbs },
+                new object[] { default(string), default(PdfPageMode?) }
+            };
+
+        [TestCaseSource(nameof(PdfPageModeArgs))]
+        public void WhenParsingPdfPageModeArgThenPropertyContainsCorrectValue(string option, PdfPageMode? expected)
+        {
+            ArgParser parser = new ArgParser();
+
+            if (!string.IsNullOrEmpty(option))
+                parser.Parse(new[] { "/pdf_page_mode", option }, new Dictionary<string, bool>());
+
+            Assert.That(parser.ContainsKey("pdf_page_mode"), Is.True);
+            Assert.That(parser.pdf_page_mode, Is.EqualTo(expected));
+        }
+
+        [TestCase("/readonly", true)]
+        [TestCase(default(string), false)]
+        public void WhenParsingReadonlyArgThenPropertyContainsCorrectValue(string option, bool expected)
+        {
+            ArgParser parser = new ArgParser();
+
+            if (!string.IsNullOrEmpty(option))
+                parser.Parse(new[] { option }, new Dictionary<string, bool>());
+
+            Assert.That(parser.ContainsKey("readonly"), Is.True);
+            Assert.That(parser.@readonly, Is.EqualTo(expected));
         }
     }
 }

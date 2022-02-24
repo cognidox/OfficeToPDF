@@ -141,6 +141,27 @@ namespace OfficeToPDF
 
         private static string Normalise(string key) => key.ToLowerInvariant();
 
+        public bool hidden => TryGetKeyValue<bool>();
+        public bool markup => TryGetKeyValue<bool>();
+        public bool @readonly => TryGetKeyValue<bool>();
+        public bool bookmarks => TryGetKeyValue<bool>();
+        public bool print => TryGetKeyValue<bool>();
+        public bool screen => TryGetKeyValue<bool>();
+        public bool pdfa => TryGetKeyValue<bool>();
+        public bool verbose => TryGetKeyValue<bool>();
+        public bool excludeprops => TryGetKeyValue<bool>();
+        public bool excludetags => TryGetKeyValue<bool>();
+        public bool noquit => TryGetKeyValue<bool>();
+        public bool merge => TryGetKeyValue<bool>();
+        public string template => TryGetKeyValue<string>();
+        public string password => TryGetKeyValue<string>();
+        public string printer => TryGetKeyValue<string>();
+        public string fallback_printer => TryGetKeyValue<string>();
+        public string working_dir => TryGetKeyValue<string>();
+        public bool has_working_dir => TryGetKeyValue<bool>();
+        public PdfPageMode? pdf_page_mode => TryGetKeyValue<PdfPageMode?>();
+
+
         private ExitCode CheckOptionIsInteger(string optionKey, string optionName, string optionValue)
         {
             if (Regex.IsMatch(optionValue, @"^\d+$"))
