@@ -203,5 +203,16 @@ namespace OfficeToPDF.Tests
             Assert.That(parser.ContainsKey("readonly"), Is.True);
             Assert.That(parser.@readonly, Is.EqualTo(expected));
         }
+
+        [TestCase(true)]
+        [TestCase(false)]
+        public void WhenSettingPropertyValueThenCorrectValueSeen(bool value)
+        {
+            ArgParser parser = new ArgParser();
+
+            parser.word_show_comments = value;
+
+            Assert.That(parser.word_show_comments, Is.EqualTo(value));
+        }
     }
 }

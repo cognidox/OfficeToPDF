@@ -139,6 +139,9 @@ namespace OfficeToPDF
         private T TryGetKeyValue<T>([CallerMemberName] string key = null) =>
             this.ContainsKey(Normalise(key)) ? (T)this[Normalise(key)] : default(T);
 
+        private void SetKeyValue<T>(T value, [CallerMemberName] string key = null) =>
+            this[Normalise(key)] = value;
+
         private static string Normalise(string key) => key.ToLowerInvariant();
 
         public bool hidden => TryGetKeyValue<bool>();
@@ -165,6 +168,43 @@ namespace OfficeToPDF
         public bool word_no_repair => TryGetKeyValue<bool>();
         public string writepassword => TryGetKeyValue<string>();
         public int word_max_pages => TryGetKeyValue<int>();
+        public bool word_ref_fonts => TryGetKeyValue<bool>();
+        public bool IsTempWord => TryGetKeyValue<bool>();
+        public bool word_show_hidden => TryGetKeyValue<bool>();
+        public bool word_no_map_papersize => TryGetKeyValue<bool>();
+        public bool word_show_all_markup => TryGetKeyValue<bool>();
+        public bool word_show_comments
+        {
+            get => TryGetKeyValue<bool>();
+            set => SetKeyValue(value);
+        }
+        public bool word_show_revs_comments
+        {
+            get => TryGetKeyValue<bool>();
+            set => SetKeyValue(value);
+        }
+        public bool word_show_format_changes
+        {
+            get => TryGetKeyValue<bool>();
+            set => SetKeyValue(value);
+        }
+        public bool word_show_ink_annot
+        {
+            get => TryGetKeyValue<bool>();
+            set => SetKeyValue(value);
+        }
+        public bool word_show_ins_del
+        {
+            get => TryGetKeyValue<bool>();
+            set => SetKeyValue(value);
+        }
+        public bool word_markup_balloon => TryGetKeyValue<bool>();
+        public bool word_fix_table_columns => TryGetKeyValue<bool>();
+        public bool word_no_field_update => TryGetKeyValue<bool>();
+        public float word_header_dist => TryGetKeyValue<float>();
+        public float word_footer_dist => TryGetKeyValue<float>();
+        public bool word_field_quick_update => TryGetKeyValue<bool>();
+        public bool word_field_quick_update_safe => TryGetKeyValue<bool>();
 
         private ExitCode CheckOptionIsInteger(string optionKey, string optionName, string optionValue)
         {

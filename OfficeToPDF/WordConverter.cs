@@ -93,12 +93,12 @@ namespace OfficeToPDF
                 Boolean hasSignatures = WordConverter.HasDigitalSignatures(filename);
                 Boolean fileIsCorrupt = WordConverter.IsFileCorrupt(filename);
                 Boolean visible = !options.hidden;
-                Boolean openAndRepair = !(Boolean)options["word_no_repair"];
+                Boolean openAndRepair = !options.word_no_repair;
                 Boolean nowrite = options.@readonly || fileIsCorrupt;
-                Boolean includeProps = !(Boolean)options["excludeprops"];
-                Boolean includeTags = !(Boolean)options["excludetags"];
-                Boolean bitmapMissingFonts = !(Boolean)options["word_ref_fonts"];
-                Boolean isTempWord = (options.ContainsKey("IsTempWord") && (Boolean)options["IsTempWord"]);
+                Boolean includeProps = !options.excludeprops;
+                Boolean includeTags = !options.excludetags;
+                Boolean bitmapMissingFonts = !options.word_ref_fonts;
+                Boolean isTempWord = options.IsTempWord;
                 
                 String writePassword = "";
                 String readPassword = "";
@@ -161,8 +161,8 @@ namespace OfficeToPDF
                     wordOptionList.Add(new AppOption("BackgroundOpen", false, ref wdOptions));
                     wordOptionList.Add(new AppOption("ShowMarkupOpenSave", false, ref wdOptions));
                     wordOptionList.Add(new AppOption("SaveInterval", 0, ref wdOptions));
-                    wordOptionList.Add(new AppOption("PrintHiddenText", (Boolean)options["word_show_hidden"], ref wdOptions));
-                    wordOptionList.Add(new AppOption("MapPaperSize", !(Boolean)options["word_no_map_papersize"], ref wdOptions));
+                    wordOptionList.Add(new AppOption("PrintHiddenText", options.word_show_hidden, ref wdOptions));
+                    wordOptionList.Add(new AppOption("MapPaperSize", !options.word_no_map_papersize, ref wdOptions));
                 }
                 catch (SystemException)
                 {
@@ -302,31 +302,31 @@ namespace OfficeToPDF
                     // Handle markup
                     try
                     {
-                        if ((Boolean)options["word_show_all_markup"])
+                        if (options.word_show_all_markup)
                         {
-                            options["word_show_comments"] = true;
-                            options["word_show_revs_comments"] = true;
-                            options["word_show_format_changes"] = true;
-                            options["word_show_ink_annot"] = true;
-                            options["word_show_ins_del"] = true;
+                            options.word_show_comments = true;
+                            options.word_show_revs_comments = true;
+                            options.word_show_format_changes = true;
+                            options.word_show_ink_annot = true;
+                            options.word_show_ins_del = true;
                         }
-                        if ((Boolean)options["word_show_comments"] ||
-                            (Boolean)options["word_show_revs_comments"] ||
-                            (Boolean)options["word_show_format_changes"] ||
-                            (Boolean)options["word_show_ink_annot"] ||
-                            (Boolean)options["word_show_ins_del"] ||
+                        if (options.word_show_comments ||
+                            options.word_show_revs_comments ||
+                            options.word_show_format_changes ||
+                            options.word_show_ink_annot ||
+                            options.word_show_ins_del ||
                             showMarkup == WdExportItem.wdExportDocumentWithMarkup)
                         {
-                            docWinView.MarkupMode = (Boolean)options["word_markup_balloon"] ?
+                            docWinView.MarkupMode = options.word_markup_balloon ?
                                 WdRevisionsMode.wdBalloonRevisions : WdRevisionsMode.wdInLineRevisions;
                         }
                         word.PrintPreview = false;
                         docWinView.RevisionsView = WdRevisionsView.wdRevisionsViewFinal;
-                        docWinView.ShowRevisionsAndComments = (Boolean)options["word_show_revs_comments"];
-                        docWinView.ShowComments = (Boolean)options["word_show_comments"];
-                        docWinView.ShowFormatChanges = (Boolean)options["word_show_format_changes"];
-                        docWinView.ShowInkAnnotations = (Boolean)options["word_show_ink_annot"];
-                        docWinView.ShowInsertionsAndDeletions = (Boolean)options["word_show_ins_del"];
+                        docWinView.ShowRevisionsAndComments = options.word_show_revs_comments;
+                        docWinView.ShowComments = options.word_show_comments;
+                        docWinView.ShowFormatChanges = options.word_show_format_changes;
+                        docWinView.ShowInkAnnotations = options.word_show_ink_annot;
+                        docWinView.ShowInsertionsAndDeletions = options.word_show_ins_del;
                     }
                     catch (SystemException e) {
                         Console.WriteLine("Failed to set revision settings {0}", e.Message);
@@ -344,7 +344,7 @@ namespace OfficeToPDF
                         doc.TrackRevisions = false;
                         doc.TrackFormatting = false;
 
-                        if ((Boolean)options["word_fix_table_columns"])
+                        if (options.word_fix_table_columns)
                         {
                             FixWordTableColumnWidths(doc);
                         }
@@ -353,7 +353,7 @@ namespace OfficeToPDF
                     normalTemplate.Saved = true;
 
                     // Hide the document window if need be
-                    if ((Boolean)options["hidden"])
+                    if (options.hidden)
                     {
                         word.Visible = false;
                         var activeWin = word.ActiveWindow;
@@ -364,9 +364,9 @@ namespace OfficeToPDF
 
                     // Check if we have a template file to apply to this document
                     // The template must be a file and must end in .dot, .dotx or .dotm
-                    if (!String.IsNullOrEmpty((String)options["template"]) && !(bool)options["merge"])
+                    if (!String.IsNullOrEmpty(options.template) && !options.merge)
                     {
-                        string template = (string)options["template"];
+                        string template = options.template;
                         if (File.Exists(template) && System.Text.RegularExpressions.Regex.IsMatch(template, @"^.*\.dot[mx]?$"))
                         {
                             doc.set_AttachedTemplate(template);
@@ -380,19 +380,19 @@ namespace OfficeToPDF
                     }
 
                     // See if we have to update fields
-                    if (!(Boolean)options["word_no_field_update"])
+                    if (! options.word_no_field_update)
                     {
                         UpdateDocumentFields(doc, word, inputFile, options);
                     }
 
                     var pageSetup = doc.PageSetup;
-                    if ((float)options["word_header_dist"] >= 0)
+                    if (options.word_header_dist >= 0)
                     {
-                        pageSetup.HeaderDistance = (float)options["word_header_dist"];
+                        pageSetup.HeaderDistance = options.word_header_dist;
                     }
-                    if ((float)options["word_footer_dist"] >= 0)
+                    if (options.word_footer_dist >= 0)
                     {
-                        pageSetup.FooterDistance = (float)options["word_footer_dist"];
+                        pageSetup.FooterDistance = options.word_footer_dist;
                     }
                     ReleaseCOMObject(pageSetup);
                     try
@@ -424,7 +424,7 @@ namespace OfficeToPDF
                 // renders borders correctly
                 word.ScreenUpdating = true;
 
-                if (String.IsNullOrEmpty((string)options["printer"])) {
+                if (String.IsNullOrEmpty(options.printer)) {
                     // No printer given, so export
                     try
                     {
@@ -434,8 +434,8 @@ namespace OfficeToPDF
                     } catch (Exception)
                     {
                         // Couldn't export, so see if there is a fallback printer
-                        if (!String.IsNullOrEmpty((string)options["fallback_printer"])) {
-                            PrintToGhostscript((string)options["fallback_printer"], outputFile, printFunc);
+                        if (!String.IsNullOrEmpty(options.fallback_printer)) {
+                            PrintToGhostscript(options.fallback_printer, outputFile, printFunc);
                         }
                         else
                         {
@@ -444,7 +444,7 @@ namespace OfficeToPDF
                     }
                 } else
                 {
-                    PrintToGhostscript((string)options["printer"], outputFile, printFunc);
+                    PrintToGhostscript(options.printer, outputFile, printFunc);
                 }
 
                 if (tmpl != null)
@@ -723,12 +723,12 @@ namespace OfficeToPDF
         }
 
         // Update all the fields in a document
-        private static void UpdateDocumentFields(Microsoft.Office.Interop.Word.Document doc, Microsoft.Office.Interop.Word.Application word, String inputFile, Hashtable options)
+        private static void UpdateDocumentFields(Microsoft.Office.Interop.Word.Document doc, Microsoft.Office.Interop.Word.Application word, String inputFile, ArgParser options)
         {
             // Update fields quickly if it is safe to do so. We have
             // to check for broken links as they may raise Word dialogs or leave broken content
-            if ((Boolean)options["word_field_quick_update"] ||
-                ((Boolean)options["word_field_quick_update_safe"] && !HasBrokenLinks(doc)))
+            if (options.word_field_quick_update ||
+                (options.word_field_quick_update_safe && !HasBrokenLinks(doc)))
             {
                 RemoveFillInFields(doc, true);
                 return;
