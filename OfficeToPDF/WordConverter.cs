@@ -666,7 +666,16 @@ namespace OfficeToPDF
                         {
                             try
                             {
-                                if (f.Type == WdFieldType.wdFieldFillIn)
+                                bool isBrokenLink = false;
+                                // Break included files that may cause a dialog
+                                if (f.Type == WdFieldType.wdFieldIncludePicture || f.Type == WdFieldType.wdFieldInclude)
+                                {
+                                    if (!File.Exists(f.LinkFormat.SourceFullName))
+                                    {
+                                        isBrokenLink = true;
+                                    }
+                                }
+                                if (f.Type == WdFieldType.wdFieldFillIn || isBrokenLink)
                                 {
                                     try
                                     {
