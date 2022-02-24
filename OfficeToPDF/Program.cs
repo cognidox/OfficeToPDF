@@ -218,6 +218,7 @@ namespace OfficeToPDF
 
             // Now, do the cleverness of determining what the extension is, and so, which
             // conversion class to pass it to
+            ConverterFactory factory = new ConverterFactory();
             int converted = (int)ExitCode.UnknownError;
             Match extMatch = fileMatch.Match(inputFile);
             if (extMatch.Success)
@@ -231,113 +232,12 @@ namespace OfficeToPDF
                 {
                     Console.WriteLine("Converting {0} to {1}", inputFile, finalOutputFile);
                 }
-                switch (extMatch.Groups[1].ToString().ToLower())
-                {
-                    case "rtf":
-                    case "odt":
-                    case "doc":
-                    case "dot":
-                    case "docx":
-                    case "dotx":
-                    case "docm":
-                    case "dotm":
-                    case "txt":
-                    case "html":
-                    case "htm":
-                    case "wpd":
-                        // Word
-                        if (options.verbose)
-                        {
-                            Console.WriteLine("Converting with Word converter");
-                        }
-                        converted = WordConverter.Convert(inputFile, outputFile, options);
-                        break;
-                    case "csv":
-                    case "ods":
-                    case "xls":
-                    case "xlsx":
-                    case "xlt":
-                    case "xltx":
-                    case "xlsm":
-                    case "xltm":
-                    case "xlsb":
-                        // Excel
-                        if (options.verbose)
-                        {
-                            Console.WriteLine("Converting with Excel converter");
-                        }
-                        converted = ExcelConverter.Convert(inputFile, outputFile, options);
-                        break;
-                    case "odp":
-                    case "ppt":
-                    case "pptx":
-                    case "pptm":
-                    case "pot":
-                    case "potm":
-                    case "potx":
-                    case "pps":
-                    case "ppsx":
-                    case "ppsm":
-                        // Powerpoint
-                        if (options.verbose)
-                        {
-                            Console.WriteLine("Converting with Powerpoint converter");
-                        }
-                        converted = PowerpointConverter.Convert(inputFile, outputFile, options, ref documentBookmarks);
-                        break;
-                    case "vsd":
-                    case "vsdm":
-                    case "vsdx":
-                    case "vdx":
-                    case "vdw":
-                    case "svg":
-                    case "emf":
-                    case "emz":
-                    case "dwg":
-                    case "dxf":
-                    case "wmf":
-                        // Visio
-                        if (options.verbose)
-                        {
-                            Console.WriteLine("Converting with Visio converter");
-                        }
-                        converted = VisioConverter.Convert(inputFile, outputFile, options);
-                        break;
-                    case "pub":
-                        // Publisher
-                        if (options.verbose)
-                        {
-                            Console.WriteLine("Converting with Publisher converter");
-                        }
-                        converted = PublisherConverter.Convert(inputFile, outputFile, options, ref documentBookmarks);
-                        break;
-                    case "xps":
-                        // XPS
-                        if (options.verbose)
-                        {
-                            Console.WriteLine("Converting with XPS converter");
-                        }
-                        converted = XpsConverter.Convert(inputFile, outputFile, options);
-                        break;
-                    case "msg":
-                    case "vcf":
-                    case "ics":
-                        // Outlook
-                        if (options.verbose)
-                        {
-                            Console.WriteLine("Converting with Outlook converter");
-                        }
-                        converted = OutlookConverter.Convert(inputFile, outputFile, options);
-                        break;
-                    case "mpp":
-                        // Project
-                        if (options.verbose)
-                        {
-                            Console.WriteLine("Converting with Project converter");
-                        }
-                        converted = ProjectConverter.Convert(inputFile, outputFile, options);
-                        break;
-                }
+
+                string extension = extMatch.Groups[1].ToString().ToLower();
+
+                IConverter converter = factory.Create(extension);
+
+                converted = converter.Convert(inputFile, outputFile, options, ref documentBookmarks);
             }
 
             // Clear up the working directory and restore the expected output
@@ -350,8 +250,7 @@ namespace OfficeToPDF
                         Console.WriteLine("Copying working file {0} to {1}", outputFile, options.working_orig_dest);
                     }
                     File.Copy(outputFile, options.working_orig_dest);
-                    outputFile = options.working_orig_dest;
-                    
+                    outputFile = options.working_orig_dest;   
                 }
                 Directory.Delete(options.working_dir, true);
             }

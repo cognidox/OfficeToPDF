@@ -23,17 +23,27 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
 using Microsoft.Office.Interop.Visio;
+using System.Collections.Generic;
 
 namespace OfficeToPDF
 {
     /// <summary>
     /// Handle conversion of Visio files
     /// </summary>
-    class VisioConverter: Converter
+    class VisioConverter: Converter, IConverter
     {
-        public static int Convert(String inputFile, String outputFile, Hashtable options)
+        int IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
         {
-            Boolean running = (Boolean)options["noquit"];
+            if (options.verbose)
+            {
+                Console.WriteLine("Converting with Visio converter");
+            }
+            return Convert(inputFile, outputFile, options);
+        }
+
+        public static int Convert(String inputFile, String outputFile, ArgParser options)
+        {
+            Boolean running = options.noquit;
             Microsoft.Office.Interop.Visio.InvisibleApp app = null;
             String tmpFile = null;
             String extension = "vsd";

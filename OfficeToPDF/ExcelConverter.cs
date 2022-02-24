@@ -23,14 +23,24 @@ using System.IO;
 using System.Threading;
 using System.Runtime.InteropServices;
 using Microsoft.Office.Interop.Excel;
+using System.Collections.Generic;
 
 namespace OfficeToPDF
 {
     /// <summary>
     /// Handle conversion of Excel files
     /// </summary>
-    class ExcelConverter: Converter
+    class ExcelConverter: Converter, IConverter
     {
+        int IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
+        {
+            if (options.verbose)
+            {
+                Console.WriteLine("Converting with Excel converter");
+            }
+            return Convert(inputFile, outputFile, options);
+        }
+
         // These are the properties we will extract from the first worksheet of any template document
         private static string[] templateProperties = 
         {
@@ -45,9 +55,9 @@ namespace OfficeToPDF
         };
 
         // Main conversion routine
-        public static int Convert(String inputFile, String outputFile, Hashtable options)
+        public static int Convert(String inputFile, String outputFile, ArgParser options)
         {
-            Boolean running = (Boolean)options["noquit"];
+            Boolean running = options.noquit;
             Microsoft.Office.Interop.Excel.Application app = null;
             Microsoft.Office.Interop.Excel.Workbooks workbooks = null;
             Microsoft.Office.Interop.Excel.Workbook workbook = null;

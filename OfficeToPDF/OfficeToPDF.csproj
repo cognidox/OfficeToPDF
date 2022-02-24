@@ -179,6 +179,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ArgParser.cs" />
+    <Compile Include="ConverterFactory.cs" />
+    <Compile Include="IConverter.cs" />
+    <Compile Include="NullConverter.cs" />
     <Compile Include="XpsConverter.cs" />
     <Compile Include="PDFBookmark.cs" />
     <Compile Include="Converter.cs" />

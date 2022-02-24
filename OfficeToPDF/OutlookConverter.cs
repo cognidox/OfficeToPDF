@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using Microsoft.Office.Interop.Outlook;
@@ -28,11 +29,20 @@ namespace OfficeToPDF
     /// <summary>
     /// Handle conversion of Outlook msg files
     /// </summary>
-    class OutlookConverter: Converter
+    class OutlookConverter: Converter, IConverter
     {
+        int IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
+        {
+            if (options.verbose)
+            {
+                Console.WriteLine("Converting with Outlook converter");
+            }
+            return Convert(inputFile, outputFile, options);
+        }
+
         public static int Convert(String inputFile, String outputFile, ArgParser options)
         {
-            Boolean running = (Boolean)options["noquit"];
+            Boolean running = options.noquit;
             Microsoft.Office.Interop.Outlook.Application app = null;
             String tmpDocFile = null;
             try

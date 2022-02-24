@@ -19,14 +19,24 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace OfficeToPDF
 {
     /// <summary>
     /// Handle conversion of XPS files
     /// </summary>
-    class XpsConverter: Converter
+    class XpsConverter: Converter, IConverter
     {
+        int IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
+        {
+            if (options.verbose)
+            {
+                Console.WriteLine("Converting with XPS converter");
+            }
+            return Convert(inputFile, outputFile, options);
+        }
+
         public static int Convert(String inputFile, String outputFile, Hashtable options)
         {
             try

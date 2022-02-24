@@ -28,17 +28,20 @@ namespace OfficeToPDF
     /// <summary>
     /// Handle conversion of Microsoft Publisher files
     /// </summary>
-    class PublisherConverter: Converter
+    class PublisherConverter: Converter, IConverter
     {
-        public static int Convert(String inputFile, String outputFile, Hashtable options)
+        int IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
         {
-            List<PDFBookmark> bookmarks = new List<PDFBookmark>();
+            if (options.verbose)
+            {
+                Console.WriteLine("Converting with Publisher converter");
+            }
             return Convert(inputFile, outputFile, options, ref bookmarks);
         }
 
-        public static int Convert(String inputFile, String outputFile, Hashtable options, ref List<PDFBookmark> bookmarks)
+        public static int Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
         {
-            Boolean running = (Boolean)options["noquit"];
+            Boolean running = options.noquit;
             Microsoft.Office.Interop.Publisher.Application app = null;
             String tmpFile = null;
             try

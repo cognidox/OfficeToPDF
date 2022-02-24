@@ -136,6 +136,7 @@
   <ItemGroup>
     <Compile Include="ArgParserTests.cs" />
     <Compile Include="COMServerTests.cs" />
+    <Compile Include="ConverterFactoryTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

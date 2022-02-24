@@ -30,15 +30,18 @@ namespace OfficeToPDF
     /// <summary>
     /// Handle conversion of Powerpoint files
     /// </summary>
-    class PowerpointConverter : Converter
+    class PowerpointConverter : Converter, IConverter
     {
-        public static int Convert(String inputFile, String outputFile, Hashtable options)
+        int IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
         {
-            List<PDFBookmark> bookmarks = new List<PDFBookmark>();
+            if (options.verbose)
+            {
+                Console.WriteLine("Converting with Powerpoint converter");
+            }
             return Convert(inputFile, outputFile, options, ref bookmarks);
         }
 
-        public static int Convert(String inputFile, String outputFile, Hashtable options, ref List<PDFBookmark> bookmarks)
+        public static int Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
         {
             // Check for password protection
             if (IsPasswordProtected(inputFile))
@@ -47,7 +50,7 @@ namespace OfficeToPDF
                 return (int)ExitCode.PasswordFailure;
             }
             
-            Boolean running = (Boolean)options["noquit"];
+            Boolean running = options.noquit;
             try
             {
                 Microsoft.Office.Interop.PowerPoint.Application app = null;

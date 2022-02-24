@@ -33,8 +33,17 @@ namespace OfficeToPDF
     /// <summary>
     /// Handle conversion of Word files
     /// </summary>
-    internal class WordConverter : Converter
+    internal class WordConverter : Converter, IConverter
     {
+        int IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
+        {
+            if (options.verbose)
+            {
+                Console.WriteLine("Converting with Word converter");
+            }
+            return Convert(inputFile, outputFile, options);
+        }
+
         public static ExitCode StartWord(ref Boolean running, ref Application word)
         {
             try

@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -30,11 +31,20 @@ namespace OfficeToPDF
     /// <summary>
     /// Handle conversion of Project mpp files
     /// </summary>
-    class ProjectConverter: Converter
+    class ProjectConverter: Converter, IConverter
     {
-        public static int Convert(String inputFile, String outputFile, Hashtable options)
+        int IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
         {
-            Boolean running = (Boolean)options["noquit"];
+            if (options.verbose)
+            {
+                Console.WriteLine("Converting with Project converter");
+            }
+            return Convert(inputFile, outputFile, options);
+        }
+
+        public static int Convert(String inputFile, String outputFile, ArgParser options)
+        {
+            Boolean running = options.noquit;
             MSProject.Application app = null;
             object missing = System.Reflection.Missing.Value;
             try
@@ -60,8 +70,8 @@ namespace OfficeToPDF
                 app.DisplayPlanningWizard = false;
                 app.DisplayWizardErrors = false;
 
-                Boolean includeProps = !(Boolean)options["excludeprops"];
-                Boolean markup = (Boolean)options["markup"];
+                Boolean includeProps = !options.excludeprops;
+                Boolean markup = options.markup;
                 
                 FileInfo fi = new FileInfo(inputFile);
                 switch(fi.Extension)
