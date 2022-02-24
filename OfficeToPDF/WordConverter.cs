@@ -78,9 +78,9 @@ namespace OfficeToPDF
         /// <param name="inputFile">Full path of the input Word file</param>
         /// <param name="outputFile">Full path of the output PDF</param>
         /// <returns></returns>
-        public static int Convert(String inputFile, String outputFile, Hashtable options)
+        public static int Convert(String inputFile, String outputFile, ArgParser options)
         {
-            Boolean running = (Boolean)options["noquit"];
+            Boolean running = options.noquit;
             Application word = null;
             object oMissing = System.Reflection.Missing.Value;
             Template tmpl;
@@ -92,22 +92,21 @@ namespace OfficeToPDF
                 String filename = (String)inputFile;
                 Boolean hasSignatures = WordConverter.HasDigitalSignatures(filename);
                 Boolean fileIsCorrupt = WordConverter.IsFileCorrupt(filename);
-                Boolean visible = !(Boolean)options["hidden"];
+                Boolean visible = !options.hidden;
                 Boolean openAndRepair = !(Boolean)options["word_no_repair"];
-                Boolean nowrite = (Boolean)options["readonly"] || fileIsCorrupt;
+                Boolean nowrite = options.@readonly || fileIsCorrupt;
                 Boolean includeProps = !(Boolean)options["excludeprops"];
                 Boolean includeTags = !(Boolean)options["excludetags"];
                 Boolean bitmapMissingFonts = !(Boolean)options["word_ref_fonts"];
                 Boolean isTempWord = (options.ContainsKey("IsTempWord") && (Boolean)options["IsTempWord"]);
                 
-                bool pdfa = (Boolean)options["pdfa"] ? true : false;
                 String writePassword = "";
                 String readPassword = "";
                 int maxPages = 0;
 
                 WdExportOptimizeFor quality = WdExportOptimizeFor.wdExportOptimizeForPrint;
                 WdExportItem showMarkup = WdExportItem.wdExportDocumentContent;
-                WdExportCreateBookmarks bookmarks = (Boolean)options["bookmarks"] ?
+                WdExportCreateBookmarks bookmarks = options.bookmarks ?
                     WdExportCreateBookmarks.wdExportCreateHeadingBookmarks :
                     WdExportCreateBookmarks.wdExportCreateNoBookmarks;
                 Options wdOptions = null;
@@ -122,7 +121,7 @@ namespace OfficeToPDF
                 wdOptions = word.Options;
                 word.DisplayAlerts = WdAlertLevel.wdAlertsNone;
                 // Issue #48 - we should allow control over whether the history is lost
-                if (!(Boolean)options["word_keep_history"])
+                if (!options.word_keep_history)
                 {
                     word.DisplayRecentFiles = false;
                 }
@@ -170,34 +169,34 @@ namespace OfficeToPDF
                 }
 
                 // Set up the PDF output quality
-                if ((Boolean)options["print"])
+                if (options.print)
                 {
                     quality = WdExportOptimizeFor.wdExportOptimizeForPrint;
                 }
-                if ((Boolean)options["screen"])
+                if (options.screen)
                 {
                     quality = WdExportOptimizeFor.wdExportOptimizeForOnScreen;
                 }
 
-                if ((Boolean)options["markup"])
+                if (options.markup)
                 {
                     showMarkup = WdExportItem.wdExportDocumentWithMarkup;
                 }
 
-                if (!String.IsNullOrEmpty((String)options["password"]))
+                if (!String.IsNullOrEmpty(options.password))
                 {
-                    readPassword = (String)options["password"];
+                    readPassword = options.password;
                 }
 
-                if (!String.IsNullOrEmpty((String)options["writepassword"]))
+                if (!String.IsNullOrEmpty(options.writepassword))
                 {
-                    writePassword = (String)options["writepassword"];
+                    writePassword = options.writepassword;
                 }
 
                 // Large Word files may simply not print reliably - if the word_max_pages
                 // configuration option is set, then we must close up and forget about 
                 // converting the file.
-                maxPages = (int)options[@"word_max_pages"];
+                maxPages = options.word_max_pages;
 
                 documents = word.Documents;
                 normalTemplate = word.NormalTemplate;
@@ -228,12 +227,12 @@ namespace OfficeToPDF
                 Document doc = null;
                 try
                 {
-                    if ((bool)options["merge"] && !String.IsNullOrEmpty((string)options["template"]) &&
-                        File.Exists((string)options["template"]) &&
-                        System.Text.RegularExpressions.Regex.IsMatch((string)options["template"], @"^.*\.dot[mx]?$", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                    if (options.merge && !String.IsNullOrEmpty(options.template) &&
+                        File.Exists(options.template) &&
+                        System.Text.RegularExpressions.Regex.IsMatch(options.template, @"^.*\.dot[mx]?$", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
                     {
                         // Create a new document based on a template
-                        doc = documents.Add((string)options["template"]);
+                        doc = documents.Add(options.template);
                         Object rStart = 0;
                         Object rEnd = 0;
                         Range range = doc.Range(rStart, rEnd);
@@ -431,7 +430,7 @@ namespace OfficeToPDF
                     {
                         doc.ExportAsFixedFormat(outputFile, WdExportFormat.wdExportFormatPDF, false,
                         quality, WdExportRange.wdExportAllDocument,
-                        1, 1, showMarkup, includeProps, true, bookmarks, includeTags, bitmapMissingFonts, pdfa);
+                        1, 1, showMarkup, includeProps, true, bookmarks, includeTags, bitmapMissingFonts, options.pdfa);
                     } catch (Exception)
                     {
                         // Couldn't export, so see if there is a fallback printer

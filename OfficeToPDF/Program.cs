@@ -210,7 +210,7 @@ namespace OfficeToPDF
                 File.Copy(inputFile, workingSource);
                 inputFile = workingSource;
                 outputFile = workingDest;
-                if ((Boolean)options["verbose"])
+                if (options.verbose)
                 {
                     Console.WriteLine("Created working directory: {0}", (string)options["working_dir"]);
                 }
@@ -227,7 +227,7 @@ namespace OfficeToPDF
                 // blocking dialogs
                 Environment.SetEnvironmentVariable("OFFICE2PDF_AUTO_CONVERT", "1");
 
-                if ((Boolean)options["verbose"])
+                if (options.verbose)
                 {
                     Console.WriteLine("Converting {0} to {1}", inputFile, finalOutputFile);
                 }
@@ -246,7 +246,7 @@ namespace OfficeToPDF
                     case "htm":
                     case "wpd":
                         // Word
-                        if ((Boolean)options["verbose"])
+                        if (options.verbose)
                         {
                             Console.WriteLine("Converting with Word converter");
                         }
@@ -262,7 +262,7 @@ namespace OfficeToPDF
                     case "xltm":
                     case "xlsb":
                         // Excel
-                        if ((Boolean)options["verbose"])
+                        if (options.verbose)
                         {
                             Console.WriteLine("Converting with Excel converter");
                         }
@@ -279,7 +279,7 @@ namespace OfficeToPDF
                     case "ppsx":
                     case "ppsm":
                         // Powerpoint
-                        if ((Boolean)options["verbose"])
+                        if (options.verbose)
                         {
                             Console.WriteLine("Converting with Powerpoint converter");
                         }
@@ -297,7 +297,7 @@ namespace OfficeToPDF
                     case "dxf":
                     case "wmf":
                         // Visio
-                        if ((Boolean)options["verbose"])
+                        if (options.verbose)
                         {
                             Console.WriteLine("Converting with Visio converter");
                         }
@@ -305,7 +305,7 @@ namespace OfficeToPDF
                         break;
                     case "pub":
                         // Publisher
-                        if ((Boolean)options["verbose"])
+                        if (options.verbose)
                         {
                             Console.WriteLine("Converting with Publisher converter");
                         }
@@ -313,7 +313,7 @@ namespace OfficeToPDF
                         break;
                     case "xps":
                         // XPS
-                        if ((Boolean)options["verbose"])
+                        if (options.verbose)
                         {
                             Console.WriteLine("Converting with XPS converter");
                         }
@@ -323,7 +323,7 @@ namespace OfficeToPDF
                     case "vcf":
                     case "ics":
                         // Outlook
-                        if ((Boolean)options["verbose"])
+                        if (options.verbose)
                         {
                             Console.WriteLine("Converting with Outlook converter");
                         }
@@ -331,7 +331,7 @@ namespace OfficeToPDF
                         break;
                     case "mpp":
                         // Project
-                        if ((Boolean)options["verbose"])
+                        if (options.verbose)
                         {
                             Console.WriteLine("Converting with Project converter");
                         }
@@ -345,7 +345,7 @@ namespace OfficeToPDF
             {
                 if (File.Exists(outputFile))
                 {
-                    if ((Boolean)options["verbose"])
+                    if (options.verbose)
                     {
                         Console.WriteLine("Copying working file {0} to {1}", outputFile, (string)options["working_orig_dest"]);
                     }
@@ -364,7 +364,7 @@ namespace OfficeToPDF
             }
             else
             {
-                if ((Boolean)options["verbose"])
+                if (options.verbose)
                 {
                     Console.WriteLine("Completed Conversion");
                 }
@@ -385,10 +385,10 @@ namespace OfficeToPDF
         }
 
         // Add any bookmarks returned by the conversion process
-        private static void AddPDFBookmarks(String generatedFile, List<PDFBookmark> bookmarks, Hashtable options, PdfOutline parent)
+        private static void AddPDFBookmarks(String generatedFile, List<PDFBookmark> bookmarks, ArgParser options, PdfOutline parent)
         {
             var hasParent = parent != null;
-            if ((Boolean)options["verbose"])
+            if (options.verbose)
             {
                 Console.WriteLine("Adding {0} bookmarks {1}", bookmarks.Count, (hasParent ? "as a sub-bookmark" : "to the PDF"));
             }
@@ -416,14 +416,14 @@ namespace OfficeToPDF
         // There can be issues if we're copying the generated PDF to a location
         // that may lock files (e.g. for virus scanning) that prevents us from 
         // immediately opening the PDF in PDFSharp
-        private static PdfDocument OpenPDFFile(string file, Hashtable options, PdfDocumentOpenMode mode = PdfDocumentOpenMode.Modify, string password = null)
+        private static PdfDocument OpenPDFFile(string file, ArgParser options, PdfDocumentOpenMode mode = PdfDocumentOpenMode.Modify, string password = null)
         {
             int tries = 10;
             while (tries-- > 0)
             {
                 try
                 {
-                    if ((Boolean)options["verbose"])
+                    if (options.verbose)
                     {
                         Console.WriteLine("Opening {0} in PDF Reader", file);
                     }
@@ -438,7 +438,7 @@ namespace OfficeToPDF
                 }
                 catch (System.UnauthorizedAccessException)
                 {
-                    if ((Boolean)options["verbose"])
+                    if (options.verbose)
                     {
                         Console.WriteLine("Re-trying PDF open of {0}", file);
                     }
@@ -449,12 +449,12 @@ namespace OfficeToPDF
         }
 
         // Perform some post-processing on the generated PDF
-        private static void PostProcessPDFFile(String generatedFile, String finalFile, Hashtable options, Boolean postProcessPDFSecurity)
+        private static void PostProcessPDFFile(String generatedFile, String finalFile, ArgParser options, Boolean postProcessPDFSecurity)
         {
             // Handle PDF merging
             if ((MergeMode)options["pdf_merge"] != MergeMode.None)
             {
-                if ((Boolean)options["verbose"])
+                if (options.verbose)
                 {
                     Console.WriteLine("Merging with existing PDF");
                 }
@@ -488,7 +488,7 @@ namespace OfficeToPDF
 
                 if (options["pdf_page_mode"] != null)
                 {
-                    if ((Boolean)options["verbose"])
+                    if (options.verbose)
                     {
                         Console.WriteLine("Setting PDF Page mode");
                     }
@@ -496,7 +496,7 @@ namespace OfficeToPDF
                 }
                 if (options["pdf_layout"] != null)
                 {
-                    if ((Boolean)options["verbose"])
+                    if (options.verbose)
                     {
                         Console.WriteLine("Setting PDF layout");
                     }
@@ -505,7 +505,7 @@ namespace OfficeToPDF
 
                 if ((MetaClean)options["pdf_clean_meta"] != MetaClean.None)
                 {
-                    if ((Boolean)options["verbose"])
+                    if (options.verbose)
                     {
                         Console.WriteLine("Cleaning PDF meta-data");
                     }
@@ -530,7 +530,7 @@ namespace OfficeToPDF
                     {
                         
                         // Set the owner password
-                        if ((Boolean)options["verbose"])
+                        if (options.verbose)
                         {
                             Console.WriteLine("Setting PDF owner password");
                         }
@@ -540,7 +540,7 @@ namespace OfficeToPDF
                     {
                         // Set the user password
                         // Set the owner password
-                        if ((Boolean)options["verbose"])
+                        if (options.verbose)
                         {
                             Console.WriteLine("Setting PDF user password");
                         }
@@ -574,7 +574,7 @@ namespace OfficeToPDF
             }
         }
 
-        static PdfDocument ReadExistingPDFDocument(String filename, String generatedFilename, String password, PdfDocumentOpenMode mode, Hashtable options)
+        static PdfDocument ReadExistingPDFDocument(String filename, String generatedFilename, String password, PdfDocumentOpenMode mode, ArgParser options)
         {
             PdfDocument dstDoc = null;
             try

@@ -161,6 +161,10 @@ namespace OfficeToPDF
         public bool has_working_dir => TryGetKeyValue<bool>();
         public PdfPageMode? pdf_page_mode => TryGetKeyValue<PdfPageMode?>();
 
+        public bool word_keep_history => TryGetKeyValue<bool>();
+        public bool word_no_repair => TryGetKeyValue<bool>();
+        public string writepassword => TryGetKeyValue<string>();
+        public int word_max_pages => TryGetKeyValue<int>();
 
         private ExitCode CheckOptionIsInteger(string optionKey, string optionName, string optionValue)
         {
