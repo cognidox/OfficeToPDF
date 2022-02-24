@@ -206,6 +206,12 @@ namespace OfficeToPDF
         public bool word_field_quick_update => TryGetKeyValue<bool>();
         public bool word_field_quick_update_safe => TryGetKeyValue<bool>();
 
+        public string working_orig_dest
+        {
+            get => TryGetKeyValue<string>();
+            set => SetKeyValue(value);
+        }
+
         private ExitCode CheckOptionIsInteger(string optionKey, string optionName, string optionValue)
         {
             if (Regex.IsMatch(optionValue, @"^\d+$"))

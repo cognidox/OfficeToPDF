@@ -196,23 +196,23 @@ namespace OfficeToPDF
 
             // We want the input and output files copied to a working area where
             // we can manipulate them
-            if ((bool)options["has_working_dir"])
+            if (options.has_working_dir)
             {
                 // Create a local temporary area and put the input and output in separate
                 // areas
-                string workingInput = Path.Combine((string)options["working_dir"], "input");
-                string workingOutput = Path.Combine((string)options["working_dir"], "output");
+                string workingInput = Path.Combine(options.working_dir, "input");
+                string workingOutput = Path.Combine(options.working_dir, "output");
                 System.IO.Directory.CreateDirectory(workingInput);
                 System.IO.Directory.CreateDirectory(workingOutput);
                 string workingSource = Path.Combine(workingInput, Path.GetFileName(inputFile));
                 string workingDest = Path.Combine(workingOutput, Path.GetFileName(outputFile));
-                options["working_orig_dest"] = outputFile;
+                options.working_orig_dest = outputFile;
                 File.Copy(inputFile, workingSource);
                 inputFile = workingSource;
                 outputFile = workingDest;
                 if (options.verbose)
                 {
-                    Console.WriteLine("Created working directory: {0}", (string)options["working_dir"]);
+                    Console.WriteLine("Created working directory: {0}", options.working_dir);
                 }
             }
 
@@ -341,19 +341,19 @@ namespace OfficeToPDF
             }
 
             // Clear up the working directory and restore the expected output
-            if ((bool)options["has_working_dir"])
+            if (options.has_working_dir)
             {
                 if (File.Exists(outputFile))
                 {
                     if (options.verbose)
                     {
-                        Console.WriteLine("Copying working file {0} to {1}", outputFile, (string)options["working_orig_dest"]);
+                        Console.WriteLine("Copying working file {0} to {1}", outputFile, options.working_orig_dest);
                     }
-                    File.Copy(outputFile, (string)options["working_orig_dest"]);
-                    outputFile = (string)options["working_orig_dest"];
+                    File.Copy(outputFile, options.working_orig_dest);
+                    outputFile = options.working_orig_dest;
                     
                 }
-                Directory.Delete((string)options["working_dir"], true);
+                Directory.Delete(options.working_dir, true);
             }
 
             if (converted != (int)ExitCode.Success)
