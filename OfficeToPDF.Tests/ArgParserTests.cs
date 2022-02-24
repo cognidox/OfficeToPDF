@@ -1,4 +1,6 @@
 ﻿using NUnit.Framework;
+using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace OfficeToPDF.Tests
 {
@@ -91,6 +93,46 @@ namespace OfficeToPDF.Tests
             ArgParser parser = new ArgParser();
 
             Assert.That(parser.Keys, Is.EquivalentTo(expected));
+        }
+
+        [Test]
+        public void WhenParsingVersionArgThenExitCalled()
+        {
+            var exit = false;
+
+            ArgParser parser = new ArgParser(_ => exit = true, (format, args) => Trace.WriteLine(string.Format(format, args)));
+
+            parser.Parse(new[] { "/version" }, new Dictionary<string, bool>());
+
+            Assert.That(exit, Is.True);
+        }
+
+        [Test]
+        public void WhenParsingQueryArgThenHelpShown()
+        {
+            var exit = false;
+            var captured = "";
+
+            ArgParser parser = new ArgParser(_ => exit = true, (format, args) => { captured = format; Trace.WriteLine(string.Format(format, args)); });
+
+            parser.Parse(new[] { "/?" }, new Dictionary<string, bool>());
+
+            Assert.That(exit, Is.True);
+            Assert.That(captured.StartsWith("Converts Office documents to PDF from the command line."));
+        }
+
+        [Test]
+        public void WhenParsingHelpArgThenHelpShown()
+{
+            var exit = false;
+            var captured = "";
+
+            ArgParser parser = new ArgParser(_ => exit = true, (format, args) => { captured = format; Trace.WriteLine(string.Format(format, args)); });
+
+            parser.Parse(new[] { "/help" }, new Dictionary<string, bool>());
+
+            Assert.That(exit, Is.True);
+            Assert.That(captured.StartsWith("Converts Office documents to PDF from the command line."));
         }
     }
 }

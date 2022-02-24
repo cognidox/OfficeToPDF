@@ -31,6 +31,9 @@ namespace OfficeToPDF
 {
     internal class ArgParser : Hashtable
     {
+        public Action<int> Exit { get; private set; }
+        public Action<string, object[]> Output { get; private set; }
+
         // Strings used in error messages for different options
         public readonly Dictionary<string, string> optionNameMap = new Dictionary<string, string>()
             {
@@ -41,7 +44,21 @@ namespace OfficeToPDF
             };
 
         public ArgParser()
+            : this(Environment.Exit, (format, args) => Console.WriteLine(format, args))
+        { }
+
+
+        private void WriteLine(string msg) => Output(msg, Array.Empty<object>());
+
+        private void WriteLine(string format, object arg0) => Output(format, new [] { arg0 });
+
+        private void WriteLine(string format, object arg0, object arg1) => Output(format, new[] { arg0, arg1 });
+
+        public ArgParser(Action<int> exit, Action<string, object[]> output)
         {
+            Exit = exit;
+            Output = output;
+
             this["hidden"] = false;
             this["markup"] = false;
             this["readonly"] = false;
@@ -106,7 +123,6 @@ namespace OfficeToPDF
             this["pdf_restrict_forms"] = false;
             this["pdf_restrict_modify"] = false;
             this["pdf_restrict_print"] = false;
-            this["pdf_restrict_annotation"] = false;
             this["pdf_restrict_accessibility_extraction"] = false;
             this["pdf_restrict_full_quality"] = false;
         }
@@ -126,7 +142,7 @@ namespace OfficeToPDF
             }
             else
             {
-                Console.WriteLine("{0} ({1}) is invalid", optionName, optionValue);
+                WriteLine("{0} ({1}) is invalid", optionName, optionValue);
                 return ExitCode.Failed | ExitCode.InvalidArguments;
             }
         }
@@ -176,7 +192,7 @@ namespace OfficeToPDF
                                             this["pdf_page_mode"] = PdfPageMode.UseThumbs;
                                             break;
                                         default:
-                                            Console.WriteLine("Invalid PDF page mode ({0}). It must be one of full, none, outline or thumbs", args[argIdx + 1]);
+                                            WriteLine("Invalid PDF page mode ({0}). It must be one of full, none, outline or thumbs", args[argIdx + 1]);
                                             return ExitCode.Failed | ExitCode.InvalidArguments;
                                     }
                                     argIdx++;
@@ -197,7 +213,7 @@ namespace OfficeToPDF
                                             this["pdf_clean_meta"] = MetaClean.Full;
                                             break;
                                         default:
-                                            Console.WriteLine("Invalid PDF meta-data clean value ({0}). It must be one of full or basic", args[argIdx + 1]);
+                                            WriteLine("Invalid PDF meta-data clean value ({0}). It must be one of full or basic", args[argIdx + 1]);
                                             return ExitCode.Failed | ExitCode.InvalidArguments;
                                     }
                                     argIdx++;
@@ -230,7 +246,7 @@ namespace OfficeToPDF
                                             this["pdf_layout"] = PdfPageLayout.TwoPageRight;
                                             break;
                                         default:
-                                            Console.WriteLine("Invalid PDF layout ({0}). It must be one of onecol, single, twocolleft, twocolright, twopageleft or twopageright", args[argIdx + 1]);
+                                            WriteLine("Invalid PDF layout ({0}). It must be one of onecol, single, twocolleft, twocolright, twopageleft or twopageright", args[argIdx + 1]);
                                             return ExitCode.Failed | ExitCode.InvalidArguments;
                                     }
                                     argIdx++;
@@ -259,7 +275,7 @@ namespace OfficeToPDF
                                     }
                                     else
                                     {
-                                        Console.WriteLine("Unable to find {0} {1}", itemMatch.Groups[1].Value.ToLower(), args[argIdx + 1]);
+                                        WriteLine("Unable to find {0} {1}", itemMatch.Groups[1].Value.ToLower(), args[argIdx + 1]);
                                     }
                                     argIdx++;
                                 }
@@ -272,7 +288,7 @@ namespace OfficeToPDF
                                     PowerpointConverter.GetOutputType(args[argIdx + 1], ref validOutputType);
                                     if (!validOutputType)
                                     {
-                                        Console.WriteLine("Invalid PowerPoint output type");
+                                        WriteLine("Invalid PowerPoint output type");
                                         return ExitCode.Failed | ExitCode.InvalidArguments;
                                     }
                                     this["powerpoint_output"] = args[argIdx + 1];
@@ -319,21 +335,21 @@ namespace OfficeToPDF
                                             }
                                             if (maxTries <= 0)
                                             {
-                                                Console.WriteLine("A working directory can not be created");
+                                                WriteLine("A working directory can not be created");
                                                 return ExitCode.Failed | ExitCode.InvalidArguments;
                                             }
                                         }
                                         else
                                         {
                                             // The working directory must be writable
-                                            Console.WriteLine("The working directory {0} is not writable", args[argIdx + 1]);
+                                            WriteLine("The working directory {0} is not writable", args[argIdx + 1]);
                                             return ExitCode.Failed | ExitCode.InvalidArguments;
                                         }
                                     }
                                     else
                                     {
                                         // We need a real directory to work in, so there is an error here
-                                        Console.WriteLine("Unable to find working directory {0}", args[argIdx + 1]);
+                                        WriteLine("Unable to find working directory {0}", args[argIdx + 1]);
                                         return ExitCode.Failed | ExitCode.InvalidArguments;
                                     }
                                     argIdx++;
@@ -366,13 +382,13 @@ namespace OfficeToPDF
                                         }
                                         catch (Exception)
                                         {
-                                            Console.WriteLine("Header/Footer distance ({0}) is invalid", args[argIdx + 1]);
+                                            WriteLine("Header/Footer distance ({0}) is invalid", args[argIdx + 1]);
                                             return ExitCode.Failed | ExitCode.InvalidArguments;
                                         }
                                     }
                                     else
                                     {
-                                        Console.WriteLine("Header/Footer distance ({0}) is invalid", args[argIdx + 1]);
+                                        WriteLine("Header/Footer distance ({0}) is invalid", args[argIdx + 1]);
                                         return ExitCode.Failed | ExitCode.InvalidArguments;
                                     }
                                     argIdx++;
@@ -394,7 +410,7 @@ namespace OfficeToPDF
                                     if (!installedPrinters.ContainsKey(((string)this[optname]).ToLowerInvariant()))
                                     {
                                         // The requested printer did not exists
-                                        Console.WriteLine("The printer \"{0}\" is not installed", this[optname]);
+                                        WriteLine("The printer \"{0}\" is not installed", this[optname]);
                                         return ExitCode.Failed | ExitCode.InvalidArguments;
                                     }
                                 }
@@ -409,14 +425,14 @@ namespace OfficeToPDF
                                 break;
                             case "version":
                                 Assembly asm = Assembly.GetExecutingAssembly();
-                                FileVersionInfo fv = System.Diagnostics.FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location);
-                                Console.WriteLine(String.Format("{0}", fv.FileVersion));
-                                Environment.Exit((int)ExitCode.Success);
+                                FileVersionInfo fv = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location);
+                                WriteLine("{0}", fv.FileVersion);
+                                Exit((int)ExitCode.Success);
                                 break;
                             case "pdf_append":
                                 if ((MergeMode)this["pdf_merge"] != MergeMode.None)
                                 {
-                                    Console.WriteLine("Only one of /pdf_append or /pdf_prepend can be used");
+                                    WriteLine("Only one of /pdf_append or /pdf_prepend can be used");
                                     return ExitCode.Failed | ExitCode.InvalidArguments;
                                 }
                                 postProcessPDF = true;
@@ -425,7 +441,7 @@ namespace OfficeToPDF
                             case "pdf_prepend":
                                 if ((MergeMode)this["pdf_merge"] != MergeMode.None)
                                 {
-                                    Console.WriteLine("Only one of /pdf_append or /pdf_prepend can be used");
+                                    WriteLine("Only one of /pdf_append or /pdf_prepend can be used");
                                     return ExitCode.Failed | ExitCode.InvalidArguments;
                                 }
                                 postProcessPDF = true;
@@ -449,7 +465,7 @@ namespace OfficeToPDF
                     }
                     else
                     {
-                        Console.WriteLine("Unknown option: {0}", item);
+                        WriteLine("Unknown option: {0}", item);
                         return ExitCode.Failed | ExitCode.InvalidArguments;
                     }
                 }
@@ -464,7 +480,7 @@ namespace OfficeToPDF
 
         public void ShowHelpAndExit()
         {
-            Console.Write(@"Converts Office documents to PDF from the command line.
+            WriteLine(@"Converts Office documents to PDF from the command line.
 Handles Office files:
   doc, dot, docx, dotx, docm, dotm, rtf, odt, txt, htm, html, wpd, ppt, pptx,
   pptm, pps, ppsx, ppsm, pot, potm, potx, odp, xls, xlsx, xlsm, xlt, xltm,
@@ -576,7 +592,7 @@ OfficeToPDF.exe [switches] input_file [output_file]
   output_file - The filename of the PDF to create. If not given, the input filename
                 will be used with a .pdf extension
 ");
-            Environment.Exit((int)ExitCode.Success);
+            Exit((int)ExitCode.Success);
         }
     }
 }
