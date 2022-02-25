@@ -230,6 +230,8 @@ namespace OfficeToPDF
 
         public string powerpoint_output => TryGetKeyValue<string>();
 
+        public string original_basename => TryGetKeyValue<string>();
+
         private ExitCode CheckOptionIsInteger(string optionKey, string optionName, string optionValue)
         {
             if (Regex.IsMatch(optionValue, @"^\d+$"))

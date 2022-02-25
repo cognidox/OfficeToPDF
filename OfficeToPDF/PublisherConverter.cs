@@ -18,7 +18,6 @@
  */
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Microsoft.Office.Interop.Publisher;
@@ -85,8 +84,8 @@ namespace OfficeToPDF
                 {
                     quality = PbFixedFormatIntent.pbIntentMinimum;
                 }
-                Boolean includeProps = !(Boolean)options["excludeprops"];
-                Boolean includeTags = !(Boolean)options["excludetags"];
+                Boolean includeProps = !options.excludeprops;
+                Boolean includeTags = !options.excludetags;
 
                 // Try and avoid dialogs about versions
                 tmpFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".pub";
@@ -95,10 +94,9 @@ namespace OfficeToPDF
                 activeDocument.ExportAsFixedFormat(PbFixedFormatType.pbFixedFormatTypePDF, outputFile, quality, includeProps, -1, -1, -1, -1, -1, -1, -1, true, PbPrintStyle.pbPrintStyleDefault, includeTags, true, pdfa);
 
                 // Determine if we need to make bookmarks
-                if ((bool)options["bookmarks"])
+                if (options.bookmarks)
                 {
                     LoadBookmarks(activeDocument, ref bookmarks, options);
-
                 }
                 activeDocument.Close();
 
@@ -134,7 +132,7 @@ namespace OfficeToPDF
             {
                 // Create a top-level bookmark
                 var parentBookmark = new PDFBookmark();
-                parentBookmark.title = (string)options["original_basename"];
+                parentBookmark.title = options.original_basename;
                 parentBookmark.page = 1;
                 parentBookmark.children = new List<PDFBookmark>();
 
