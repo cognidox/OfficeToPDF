@@ -1,6 +1,5 @@
 ﻿using NUnit.Framework;
 using System;
-using Microsoft.Office.Interop.Word;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 
@@ -15,37 +14,22 @@ namespace OfficeToPDF.Tests
         [Test, Explicit("Starts and stops the Word office application")]
         public void GetProcessIdReturnsTheCorrectValue()
         {
-            bool running = false;
-            Application word = null;
-
-            try
+            using (var application = new DisposableApplication())
             {
-                var result = WordConverter.StartWord(ref running, ref word);
-                if (result == ExitCode.Success)
-                {
-                    IntPtr iunknown = Marshal.GetIUnknownForObject(word);
+                IntPtr iunknown = Marshal.GetIUnknownForObject(application.Word);
 
-                    var processId = GetCOMProcessId(iunknown);
+                var processId = GetCOMProcessId(iunknown);
 
-                    Marshal.Release(iunknown);
+                Marshal.Release(iunknown);
 
-                    Trace.WriteLine($"Process id: {processId}");
+                Trace.WriteLine($"Process id: {processId}");
 
-                    if (processId == 0u)
-                        Assert.Fail("Invalid process Id returned");
+                if (processId == 0u)
+                    Assert.Fail("Invalid process Id returned");
 
-                    var process = Process.GetProcessById(Convert.ToInt32(processId));
+                var process = Process.GetProcessById(Convert.ToInt32(processId));
 
-                    Assert.That(process.ProcessName, Is.EqualTo("WINWORD"));
-                }
-            }
-            finally
-            {
-                if (word != null && !running)
-                {
-                    WordConverter.CloseWordApplication(word);
-                }
-                WordConverter.ReleaseCOMObject(word);
+                Assert.That(process.ProcessName, Is.EqualTo("WINWORD"));
             }
         }
 

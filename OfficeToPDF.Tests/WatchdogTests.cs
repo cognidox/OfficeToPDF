@@ -1,5 +1,4 @@
 ﻿using NUnit.Framework;
-using Microsoft.Office.Interop.Word;
 using System.Threading;
 using System;
 using System.Linq;
@@ -60,30 +59,5 @@ namespace OfficeToPDF.Tests
         private static RandomNumberGenerator Random { get; } = new RandomNumberGenerator();
 
         private static int RandomValue(int min, int max) => Random.NextValue(min, max);
-
-
-        private sealed class DisposableApplication : IDisposable
-        {
-            private readonly Application _word;
-
-            public DisposableApplication()
-            {
-                bool running = false;
-                try { WordConverter.StartWord(ref running, ref _word); }
-                catch { /* NOOP */ }
-            }
-
-            public Application Word => _word;
-
-            public void Dispose()
-            {
-                if (_word == null)
-                    return;
-
-                WordConverter.CloseWordApplication(_word);
-
-                Converter.ReleaseCOMObject(_word);
-            }
-        }
     }
 }
