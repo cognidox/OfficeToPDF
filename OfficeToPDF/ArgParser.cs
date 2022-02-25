@@ -36,7 +36,7 @@ namespace OfficeToPDF
         public Action<string, object[]> Output { get; private set; }
 
         // Strings used in error messages for different options
-        public readonly Dictionary<string, string> optionNameMap = new Dictionary<string, string>()
+        private readonly Dictionary<string, string> optionNameMap = new Dictionary<string, string>()
             {
                 { "excel_max_rows", "Maximum number of rows" },
                 { "excel_worksheet", "Excel worksheet" },
@@ -215,6 +215,18 @@ namespace OfficeToPDF
             get => TryGetKeyValue<string>();
             set => SetKeyValue(value);
         }
+
+        public bool excel_no_map_papersize => TryGetKeyValue<bool>();
+        public bool excel_active_sheet => TryGetKeyValue<bool>();
+        public bool excel_active_sheet_on_max_rows => TryGetKeyValue<bool>();
+        public bool excel_no_recalculate => TryGetKeyValue<bool>();
+        public bool excel_show_headings => TryGetKeyValue<bool>();
+        public bool excel_show_formulas => TryGetKeyValue<bool>();
+        public bool excel_no_link_update => TryGetKeyValue<bool>();
+        public bool excel_auto_macros => TryGetKeyValue<bool>();
+        public int excel_max_rows => TryGetKeyValue<int>();
+        public int excel_worksheet => TryGetKeyValue<int>();
+        public int excel_delay => TryGetKeyValue<int>();
 
         private ExitCode CheckOptionIsInteger(string optionKey, string optionName, string optionValue)
         {

@@ -118,23 +118,23 @@ namespace OfficeToPDF
                 excel.Interactive = false;
                 excel.FeatureInstall = Microsoft.Office.Core.MsoFeatureInstall.msoFeatureInstallNone;
                 bool currentPaperMapSize = excel.MapPaperSize;
-                if (currentPaperMapSize != !(Boolean)options["excel_no_map_papersize"])
+                if (currentPaperMapSize != !options.excel_no_map_papersize)
                 {
-                    excel.MapPaperSize = !(Boolean)options["excel_no_map_papersize"];
+                    excel.MapPaperSize = !options.excel_no_map_papersize;
                 }
 
-                var onlyActiveSheet = (Boolean)options["excel_active_sheet"];
-                Boolean activeSheetOnMaxRows = (Boolean)options["excel_active_sheet_on_max_rows"];
-                Boolean includeProps = !(Boolean)options["excludeprops"];
-                Boolean skipRecalculation = (Boolean)options["excel_no_recalculate"];
-                Boolean showHeadings = (Boolean)options["excel_show_headings"];
-                Boolean showFormulas = (Boolean)options["excel_show_formulas"];
+                var onlyActiveSheet = options.excel_active_sheet;
+                Boolean activeSheetOnMaxRows = options.excel_active_sheet_on_max_rows;
+                Boolean includeProps = !options.excludeprops;
+                Boolean skipRecalculation = options.excel_no_recalculate;
+                Boolean showHeadings = options.excel_show_headings;
+                Boolean showFormulas = options.excel_show_formulas;
                 Boolean isHidden = options.hidden;
                 Boolean screenQuality = options.screen;
-                Boolean updateLinks = !(Boolean)options["excel_no_link_update"];
-                Boolean runMacros = (Boolean)options["excel_auto_macros"];
-                int maxRows = (int)options["excel_max_rows"];
-                int worksheetNum = (int)options["excel_worksheet"];
+                Boolean updateLinks = !options.excel_no_link_update;
+                Boolean runMacros = options.excel_auto_macros;
+                int maxRows = options.excel_max_rows;;
+                int worksheetNum = options.excel_worksheet;
                 int sheetForConversionIdx = 0;
                 activeWindow = excel.ActiveWindow;
                 Sheets allSheets = null;
@@ -528,7 +528,7 @@ namespace OfficeToPDF
                         try
                         {
                             SetPageSetupProperties(templatePageSetup, wps);
-                            if (String.IsNullOrEmpty((string)options["printer"]))
+                            if (String.IsNullOrEmpty(options.printer))
                             {
                                 try
                                 {
@@ -537,9 +537,9 @@ namespace OfficeToPDF
                                 }
                                 catch (Exception)
                                 {
-                                    if (!String.IsNullOrEmpty((string)options["fallback_printer"]))
+                                    if (!String.IsNullOrEmpty(options.fallback_printer))
                                     {
-                                        PrintToGhostscript((string)options["fallback_printer"], outputFile, printFunc);
+                                        PrintToGhostscript(options.fallback_printer, outputFile, printFunc);
                                     }
                                     else
                                     {
@@ -549,7 +549,7 @@ namespace OfficeToPDF
                             }
                             else
                             {
-                                PrintToGhostscript((string)options["printer"], outputFile, printFunc);
+                                PrintToGhostscript(options.printer, outputFile, printFunc);
                             }
                         }
                         finally
@@ -611,7 +611,7 @@ namespace OfficeToPDF
                             ReleaseCOMObject(worksheets);
                         }
                     }
-                    if (String.IsNullOrEmpty((string)options["printer"]))
+                    if (String.IsNullOrEmpty(options.printer))
                     {
                         try
                         {
@@ -620,9 +620,9 @@ namespace OfficeToPDF
                         }
                         catch (Exception)
                         {
-                            if (!String.IsNullOrEmpty((string)options["fallback_printer"]))
+                            if (!String.IsNullOrEmpty(options.fallback_printer))
                             {
-                                PrintToGhostscript((string)options["fallback_printer"], outputFile, printFunc);
+                                PrintToGhostscript(options.fallback_printer, outputFile, printFunc);
                             }
                             else
                             {
@@ -630,7 +630,7 @@ namespace OfficeToPDF
                             }
                         }
                     } else {
-                        PrintToGhostscript((string)options["printer"], outputFile, printFunc);
+                        PrintToGhostscript(options.printer, outputFile, printFunc);
                     }
                 }
                 excel.MapPaperSize = currentPaperMapSize;
@@ -711,11 +711,11 @@ namespace OfficeToPDF
         }
 
         // Return true if there is a valid template option
-        protected static bool HasTemplateOption(Hashtable options)
+        protected static bool HasTemplateOption(ArgParser options)
         {
-            if (String.IsNullOrEmpty((string)options["template"]) ||
-                !File.Exists((string)options["template"]) ||
-                !System.Text.RegularExpressions.Regex.IsMatch((string)options["template"], @"^.*\.xl[st][mx]?$"))
+            if (String.IsNullOrEmpty(options.template) ||
+                !File.Exists(options.template) ||
+                !System.Text.RegularExpressions.Regex.IsMatch(options.template, @"^.*\.xl[st][mx]?$"))
             {
                 return false;
             }
@@ -724,7 +724,7 @@ namespace OfficeToPDF
 
         // Read the first worksheet from a template document and extract and store
         // the page settings for later use
-        protected static void SetPageOptionsFromTemplate(Application app, Workbooks workbooks, Hashtable options, ref Hashtable templatePageSetup)
+        protected static void SetPageOptionsFromTemplate(Application app, Workbooks workbooks, ArgParser options, ref Hashtable templatePageSetup)
         {
             if (!HasTemplateOption(options))
             {
@@ -733,7 +733,7 @@ namespace OfficeToPDF
 
             try
             {
-                var template = workbooks.Open((string)options["template"]);
+                var template = workbooks.Open(options.template);
                 AddCOMDelay(options);
                 if (template != null)
                 {
@@ -800,11 +800,11 @@ namespace OfficeToPDF
         }
 
         // Add in the required millisecond delay
-        private static void AddCOMDelay(Hashtable options)
+        private static void AddCOMDelay(ArgParser options)
         {
-            if ((int)options["excel_delay"] > 0)
+            if (options.excel_delay > 0)
             {
-                Thread.Sleep((int)options["excel_delay"]);
+                Thread.Sleep(options.excel_delay);
             }
         }
 
