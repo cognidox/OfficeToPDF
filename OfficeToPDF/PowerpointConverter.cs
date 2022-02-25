@@ -41,7 +41,45 @@ namespace OfficeToPDF
             return Convert(inputFile, outputFile, options, ref bookmarks);
         }
 
-        public static int Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
+        public static ExitCode StartPowerPoint(ref Boolean running, ref Application powerPoint)
+        {
+            try
+            {
+                powerPoint = (Microsoft.Office.Interop.PowerPoint.Application)Marshal.GetActiveObject("PowerPoint.Application");
+            }
+            catch (System.Exception)
+            {
+                int tries = 10;
+                // Create the application
+                powerPoint = new Microsoft.Office.Interop.PowerPoint.Application();
+                running = false;
+                while (tries > 0)
+                {
+                    try
+                    {
+                        // Try to set a property on the object
+                        powerPoint.DisplayAlerts = PpAlertLevel.ppAlertsNone;
+                    }
+                    catch (COMException)
+                    {
+                        // Decrement the number of tries and have a bit of a snooze
+                        tries--;
+                        Thread.Sleep(500);
+                        continue;
+                    }
+                    // Looks ok, so bail out of the loop
+                    break;
+                }
+                if (tries == 0)
+                {
+                    ReleaseCOMObject(powerPoint);
+                    return ExitCode.ApplicationError;
+                }
+            }
+            return ExitCode.Success;
+        }
+
+        static int Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
         {
             // Check for password protection
             if (IsPasswordProtected(inputFile))
@@ -53,60 +91,34 @@ namespace OfficeToPDF
             Boolean running = options.noquit;
             try
             {
-                Microsoft.Office.Interop.PowerPoint.Application app = null;
+                Microsoft.Office.Interop.PowerPoint.Application powerPoint = null;
                 Presentation activePresentation = null;
                 Presentations presentations = null;
+                IWatchdog watchdog = new NullWatchdog();
                 try
                 {
-                    try
-                    {
-                        app = (Microsoft.Office.Interop.PowerPoint.Application)Marshal.GetActiveObject("PowerPoint.Application");
-                    }
-                    catch (System.Exception)
-                    {
-                        int tries = 10;
-                        // Create the application
-                        app = new Microsoft.Office.Interop.PowerPoint.Application();
-                        running = false;
-                        while (tries > 0)
-                        {
-                            try
-                            {
-                                // Try to set a property on the object
-                                app.DisplayAlerts = PpAlertLevel.ppAlertsNone;
-                            }
-                            catch (COMException)
-                            {
-                                // Decrement the number of tries and have a bit of a snooze
-                                tries--;
-                                Thread.Sleep(500);
-                                continue;
-                            }
-                            // Looks ok, so bail out of the loop
-                            break;
-                        }
-                        if (tries == 0)
-                        {
-                            ReleaseCOMObject(app);
-                            return (int)ExitCode.ApplicationError;
-                        }
-                    }
-                    Boolean includeProps = !(Boolean)options["excludeprops"];
-                    Boolean includeTags = !(Boolean)options["excludetags"];
+                    ExitCode result = StartPowerPoint(ref running, ref powerPoint);
+                    if (result != ExitCode.Success)
+                        return (int)result;
+
+                    watchdog = WatchdogFactory.CreateStarted(powerPoint, options.timeout);
+
+                    Boolean includeProps = !options.excludeprops;
+                    Boolean includeTags = !options.excludetags;
                     PpPrintOutputType printType = PpPrintOutputType.ppPrintOutputSlides;
                     MSCore.MsoTriState nowrite = (Boolean)options["readonly"] ? MSCore.MsoTriState.msoTrue : MSCore.MsoTriState.msoFalse;
-                    bool pdfa = (Boolean)options["pdfa"] ? true : false;
-                    if ((Boolean)options["hidden"])
+                    bool pdfa = options.pdfa;
+                    if (options.hidden)
                     {
                         // Can't really hide the window, so at least minimise it
-                        app.WindowState = PpWindowState.ppWindowMinimized;
+                        powerPoint.WindowState = PpWindowState.ppWindowMinimized;
                     }
                     PpFixedFormatIntent quality = PpFixedFormatIntent.ppFixedFormatIntentScreen;
-                    if ((Boolean)options["print"])
+                    if (options.print)
                     {
                         quality = PpFixedFormatIntent.ppFixedFormatIntentPrint;
                     }
-                    if ((Boolean)options["screen"])
+                    if (options.screen)
                     {
                         quality = PpFixedFormatIntent.ppFixedFormatIntentScreen;
                     }
@@ -127,12 +139,12 @@ namespace OfficeToPDF
                         throw new Exception("Presentation has a write password - this prevents it being opened");
                     }
                     
-                    app.FeatureInstall = MSCore.MsoFeatureInstall.msoFeatureInstallNone;
-                    app.DisplayDocumentInformationPanel = false;
-                    app.DisplayAlerts = PpAlertLevel.ppAlertsNone;
-                    app.Visible = MSCore.MsoTriState.msoTrue;
-                    app.AutomationSecurity = MSCore.MsoAutomationSecurity.msoAutomationSecurityLow;
-                    presentations = app.Presentations;
+                    powerPoint.FeatureInstall = MSCore.MsoFeatureInstall.msoFeatureInstallNone;
+                    powerPoint.DisplayDocumentInformationPanel = false;
+                    powerPoint.DisplayAlerts = PpAlertLevel.ppAlertsNone;
+                    powerPoint.Visible = MSCore.MsoTriState.msoTrue;
+                    powerPoint.AutomationSecurity = MSCore.MsoAutomationSecurity.msoAutomationSecurityLow;
+                    presentations = powerPoint.Presentations;
                     String filenameWithPasswords = inputFile;
                     if (!String.IsNullOrWhiteSpace((string)options["password"]) ||
                         !String.IsNullOrWhiteSpace((string)options["writepassword"]))
@@ -238,14 +250,16 @@ namespace OfficeToPDF
                 }
                 finally
                 {
+                    watchdog.Stop();
+
                     ReleaseCOMObject(activePresentation);
                     ReleaseCOMObject(presentations);
 
-                    if (app != null && !running)
+                    if (powerPoint != null && !running)
                     {
-                        app.Quit();
+                        powerPoint.Quit();
                     }
-                    ReleaseCOMObject(app);
+                    ReleaseCOMObject(powerPoint);
                     GC.Collect();
                     GC.WaitForPendingFinalizers();
 

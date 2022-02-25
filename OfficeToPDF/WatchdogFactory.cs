@@ -2,7 +2,7 @@
 {
     internal interface IWatchdog
     {
-        void Start();
+        IWatchdog Start();
         void Stop();
     }
 
@@ -10,5 +10,8 @@
     {
         public IWatchdog Create(object com, int timeout) =>
             timeout > 0 ? (IWatchdog)new Watchdog(com, timeout) : new NullWatchdog();
+
+        public IWatchdog CreateStarted(object com, int timeout) =>
+            Create(com, timeout).Start();
     }
 }

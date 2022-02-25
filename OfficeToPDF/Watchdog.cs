@@ -15,16 +15,18 @@ namespace OfficeToPDF
         public Watchdog(object com, int timeout) =>
             (_com, _timeout) = (com, TimeSpan.FromSeconds(timeout));
 
-        public void Start()
+        public IWatchdog Start()
         {
             if (!IsComObject())
-                return;
+                return this;
 
             ProcessId = GetProcessIdForComServer();
 
             _event = new ManualResetEvent(false);
 
             StartBackgroundThread();
+
+            return this;
         }
 
         private void StartBackgroundThread()

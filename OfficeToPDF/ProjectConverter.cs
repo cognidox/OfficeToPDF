@@ -18,7 +18,6 @@
  */
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -42,22 +41,34 @@ namespace OfficeToPDF
             return Convert(inputFile, outputFile, options);
         }
 
-        public static int Convert(String inputFile, String outputFile, ArgParser options)
+        public static ExitCode StartProject(ref Boolean running, ref MSProject.Application project)
+        {
+            try
+            {
+                project = (MSProject.Application)Marshal.GetActiveObject("MSProject.Application");
+            }
+            catch (System.Exception)
+            {
+                project = new MSProject.Application();
+                running = false;
+            }
+            return ExitCode.Success;
+        }
+
+        static int Convert(String inputFile, String outputFile, ArgParser options)
         {
             Boolean running = options.noquit;
             MSProject.Application app = null;
             object missing = System.Reflection.Missing.Value;
+            IWatchdog watchdog = new NullWatchdog();
             try
             {
-                try
-                {
-                    app = (MSProject.Application)Marshal.GetActiveObject("MSProject.Application");
-                }
-                catch (System.Exception)
-                {
-                    app = new MSProject.Application();
-                    running = false;
-                }
+                ExitCode result = StartProject(ref running, ref app);
+                if (result != ExitCode.Success)
+                    return (int)result;
+
+                watchdog = WatchdogFactory.CreateStarted(app, options.timeout);
+
                 System.Type type = app.GetType();
                 if (type.GetMethod("DocumentExport") == null || System.Convert.ToDouble(app.Version.ToString(), new CultureInfo("en-US")) < 14)
                 {
@@ -98,6 +109,8 @@ namespace OfficeToPDF
             }
             finally
             {
+                watchdog.Stop();
+
                 if (app != null && !running)
                 {
                     ((MSProject.Application)app).Quit();

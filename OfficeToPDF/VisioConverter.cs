@@ -18,7 +18,6 @@
  */
 
 using System;
-using System.Collections;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
@@ -30,7 +29,7 @@ namespace OfficeToPDF
     /// <summary>
     /// Handle conversion of Visio files
     /// </summary>
-    class VisioConverter: Converter, IConverter
+    class VisioConverter : Converter, IConverter
     {
         int IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
         {
@@ -41,23 +40,35 @@ namespace OfficeToPDF
             return Convert(inputFile, outputFile, options);
         }
 
-        public static int Convert(String inputFile, String outputFile, ArgParser options)
+        public static ExitCode StartVisio(ref Boolean running, ref InvisibleApp visio)
         {
-            Boolean running = options.noquit;
-            Microsoft.Office.Interop.Visio.InvisibleApp app = null;
-            String tmpFile = null;
-            String extension = "vsd";
             try
             {
-                try
-                {
-                    app = (Microsoft.Office.Interop.Visio.InvisibleApp)Marshal.GetActiveObject("Visio.Application");
-                }
-                catch (System.Exception)
-                {
-                    app = new Microsoft.Office.Interop.Visio.InvisibleApp();
-                    running = false;
-                }
+                visio = (Microsoft.Office.Interop.Visio.InvisibleApp)Marshal.GetActiveObject("Visio.Application");
+            }
+            catch (System.Exception)
+            {
+                visio = new Microsoft.Office.Interop.Visio.InvisibleApp();
+                running = false;
+            }
+            return ExitCode.Success;
+        }
+
+        static int Convert(String inputFile, String outputFile, ArgParser options)
+        {
+            Boolean running = options.noquit;
+            Microsoft.Office.Interop.Visio.InvisibleApp visio = null;
+            String tmpFile = null;
+            String extension = "vsd";
+            IWatchdog watchdog = new NullWatchdog();
+            try
+            {
+                ExitCode result = StartVisio(ref running, ref visio);
+                if (result != ExitCode.Success)
+                    return (int)result;
+
+                watchdog = WatchdogFactory.CreateStarted(visio, options.timeout);
+
                 Regex extReg = new Regex("\\.(\\w+)$");
                 Match match = extReg.Match(inputFile);
                 if (match.Success)
@@ -66,40 +77,40 @@ namespace OfficeToPDF
                 }
 
                 // We can only convert svg, vsdx and vsdm files with Visio 2013
-                if (System.Convert.ToDouble(app.Version.ToString(), new CultureInfo("en-US")) < 15 &&
+                if (System.Convert.ToDouble(visio.Version.ToString(), new CultureInfo("en-US")) < 15 &&
                     ((String.Compare(extension, "vsdx", true) == 0) ||
                     (String.Compare(extension, "vsdm", true) == 0) ||
                     (String.Compare(extension, "vdw", true) == 0) ||
                     (String.Compare(extension, "vdx", true) == 0) ||
                     (String.Compare(extension, "svg", true) == 0)))
                 {
-                    Console.WriteLine("File type not supported in Visio version {0}", app.Version);
+                    Console.WriteLine("File type not supported in Visio version {0}", visio.Version);
                     return (int)ExitCode.UnsupportedFileFormat;
                 }
 
-                bool pdfa = (Boolean)options["pdfa"] ? true : false;
+                bool pdfa = options.pdfa;
                 short flags = 0;
-                if ((Boolean)options["readonly"])
+                if (options.@readonly)
                 {
                     flags += 2;
                 }
-                if (!(Boolean)options["hidden"])
+                if (!options.hidden)
                 {
-                    app.Visible = true;
+                    visio.Visible = true;
                 }
                 VisDocExIntent quality = VisDocExIntent.visDocExIntentPrint;
-                if ((Boolean)options["print"])
+                if (options.print)
                 {
                     quality = VisDocExIntent.visDocExIntentPrint;
                 }
-                if ((Boolean)options["screen"])
+                if (options.screen)
                 {
                     quality = VisDocExIntent.visDocExIntentScreen;
                 }
-                Boolean includeProps = !(Boolean)options["excludeprops"];
-                Boolean includeTags = !(Boolean)options["excludetags"];
+                Boolean includeProps = !options.excludeprops;
+                Boolean includeTags = !options.excludetags;
 
-                var documents = app.Documents;
+                var documents = visio.Documents;
                 documents.OpenEx(inputFile, flags);
 
                 // Try and avoid dialogs about versions and convert non-visio files to
@@ -116,8 +127,8 @@ namespace OfficeToPDF
                 var tmpDirectory = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString();
                 System.IO.Directory.CreateDirectory(tmpDirectory);
                 tmpFile = System.IO.Path.Combine(tmpDirectory, (string)options["original_basename"]) + "." + extension;
-                
-                var activeDoc = app.ActiveDocument;
+
+                var activeDoc = visio.ActiveDocument;
                 activeDoc.SaveAs(tmpFile);
                 activeDoc.ExportAsFixedFormat(VisFixedFormatTypes.visFixedFormatPDF, outputFile, quality, VisPrintOutRange.visPrintAll, 1, -1, false, true, includeProps, includeTags, pdfa);
                 activeDoc.Close();
@@ -133,16 +144,18 @@ namespace OfficeToPDF
             }
             finally
             {
+                watchdog.Stop();
+
                 if (tmpFile != null)
                 {
                     System.IO.File.Delete(tmpFile);
                     System.IO.Directory.Delete(System.IO.Path.GetDirectoryName(tmpFile));
                 }
-                if (app != null && !running)
+                if (visio != null && !running)
                 {
-                    app.Quit();
+                    visio.Quit();
                 }
-                ReleaseCOMObject(app);
+                ReleaseCOMObject(visio);
             }
         }
     }

@@ -40,6 +40,8 @@ namespace OfficeToPDF
     /// </summary>
     class Converter
     {
+        protected static WatchdogFactory WatchdogFactory { get; } = new WatchdogFactory();
+
         private enum DocumentFileTypes
         {
             Unknown = 0,

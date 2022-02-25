@@ -2,7 +2,7 @@
 {
     internal class NullWatchdog : IWatchdog
     {
-        public void Start() { /* NOOP */ }
+        public IWatchdog Start() => this;
         public void Stop() { /* NOOP */ }
     }
 }

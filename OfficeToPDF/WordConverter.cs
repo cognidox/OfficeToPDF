@@ -87,7 +87,7 @@ namespace OfficeToPDF
         /// <param name="inputFile">Full path of the input Word file</param>
         /// <param name="outputFile">Full path of the output PDF</param>
         /// <returns></returns>
-        public static int Convert(String inputFile, String outputFile, ArgParser options)
+        internal static int Convert(String inputFile, String outputFile, ArgParser options)
         {
             Boolean running = options.noquit;
             Application word = null;
@@ -96,8 +96,15 @@ namespace OfficeToPDF
             String temporaryStorageDir = null;
             float wordVersion = 0;
             List<IAppOption> wordOptionList = new List<IAppOption>();
+            IWatchdog watchdog = new NullWatchdog();
             try
             {
+                ExitCode result = StartWord(ref running, ref word);
+                if (result != ExitCode.Success)
+                    return (int)result;
+
+                watchdog = WatchdogFactory.CreateStarted(word, options.timeout);
+
                 String filename = (String)inputFile;
                 Boolean hasSignatures = WordConverter.HasDigitalSignatures(filename);
                 Boolean fileIsCorrupt = WordConverter.IsFileCorrupt(filename);
@@ -123,10 +130,6 @@ namespace OfficeToPDF
                 Template normalTemplate = null;
                 
                 tmpl = null;
-                ExitCode result = StartWord(ref running, ref word);
-                if (result != ExitCode.Success)
-                    return (int)result;
-
                 wdOptions = word.Options;
                 word.DisplayAlerts = WdAlertLevel.wdAlertsNone;
                 // Issue #48 - we should allow control over whether the history is lost
@@ -141,7 +144,7 @@ namespace OfficeToPDF
                 // Set the Word options in a way that allows us to reset the options when we finish
                 try
                 {
-                    wordOptionList.Add(AppOptionFactory.Create("AlertIfNotDefault", false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(wdOptions.AlertIfNotDefault), false, ref wdOptions));
                     wordOptionList.Add(AppOptionFactory.Create("AllowReadingMode", false, ref wdOptions));
                     wordOptionList.Add(AppOptionFactory.Create("PrecisePositioning", true, ref wdOptions));
                     wordOptionList.Add(AppOptionFactory.Create("UpdateFieldsAtPrint", false, ref wdOptions));
@@ -490,6 +493,8 @@ namespace OfficeToPDF
             }
             finally
             {
+                watchdog.Stop();
+
                 if (temporaryStorageDir != null && Directory.Exists(temporaryStorageDir))
                 {
                     try

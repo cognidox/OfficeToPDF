@@ -18,7 +18,6 @@
  */
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -40,29 +39,40 @@ namespace OfficeToPDF
             return Convert(inputFile, outputFile, options);
         }
 
-        public static int Convert(String inputFile, String outputFile, ArgParser options)
+        public static ExitCode StartOutlook(ref Boolean running, ref Application outlook)
         {
-            Boolean running = options.noquit;
-            Microsoft.Office.Interop.Outlook.Application app = null;
-            String tmpDocFile = null;
             try
             {
-                try
-                {
-                    app = (Microsoft.Office.Interop.Outlook.Application)Marshal.GetActiveObject("Outlook.Application");
-                }
-                catch(System.Exception)
-                {
-                    app = new Microsoft.Office.Interop.Outlook.Application();
-                    running = false;
-                }
-                if (app == null)
-                {
-                    Console.WriteLine("Unable to start outlook instance");
-                    return (int)ExitCode.ApplicationError;
-                }
+                outlook = (Microsoft.Office.Interop.Outlook.Application)Marshal.GetActiveObject("Outlook.Application");
+            }
+            catch (System.Exception)
+            {
+                outlook = new Microsoft.Office.Interop.Outlook.Application();
+                running = false;
+            }
+            if (outlook == null)
+            {
+                Console.WriteLine("Unable to start outlook instance");
+                return ExitCode.ApplicationError;
+            }
+            return ExitCode.Success;
+        }
 
-                var session = app.Session;
+        static int Convert(String inputFile, String outputFile, ArgParser options)
+        {
+            Boolean running = options.noquit;
+            Microsoft.Office.Interop.Outlook.Application outlook = null;
+            String tmpDocFile = null;
+            IWatchdog watchdog = new NullWatchdog();
+            try
+            {
+                ExitCode result = StartOutlook(ref running, ref outlook);
+                if (result != ExitCode.Success)
+                    return (int)result;
+
+                watchdog = WatchdogFactory.CreateStarted(outlook, options.timeout);
+
+                var session = outlook.Session;
                 FileInfo fi = new FileInfo(inputFile);
                 // Create a temporary doc file from the message
                 tmpDocFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".html";
@@ -166,6 +176,8 @@ namespace OfficeToPDF
             }
             finally
             {
+                watchdog.Stop();
+
                 if (tmpDocFile != null && File.Exists(tmpDocFile))
                 {
                     try
@@ -176,11 +188,11 @@ namespace OfficeToPDF
                     catch (System.Exception) { }
                 }
                 // If we were not already running, quit and release the outlook object
-                if (app != null && !running)
+                if (outlook != null && !running)
                 {
-                    ((Microsoft.Office.Interop.Outlook._Application)app).Quit();
+                    ((Microsoft.Office.Interop.Outlook._Application)outlook).Quit();
                 }
-                ReleaseCOMObject(app);
+                ReleaseCOMObject(outlook);
             }
         }
     }
