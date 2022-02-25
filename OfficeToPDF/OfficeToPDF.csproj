@@ -178,6 +178,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AppOption.cs" />
     <Compile Include="ArgParser.cs" />
     <Compile Include="ConverterFactory.cs" />
     <Compile Include="IConverter.cs" />
