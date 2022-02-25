@@ -18,78 +18,73 @@
  */
 
 using System;
+using System.Collections.Generic;
 using Microsoft.Office.Interop.Word;
 
 namespace OfficeToPDF
 {
+    internal interface IAppOption
+    {
+        void ResetValue(ref Options wdOptions);
+    }
+
     // We want to be able to reset the options in Word so it doesn't affect subsequent
     // usage
-    internal class AppOption
+    internal class AppOption<T> : IAppOption
     {
-        public string Name { get; set; }
-        public Boolean Value { get; set; }
-        public Boolean OriginalValue { get; set; }
-        public int IntValue { get; set; }
-        public int OriginalIntValue { get; set; }
-        protected Type VarType { get; set; }
-        public AppOption(string name, Boolean value, ref Options wdOptions)
+        public string Name { get; }
+        public T Value { get; }
+        public T OriginalValue { get; }
+
+        public AppOption(string name, T value, ref Options wdOptions)
         {
+            Name = name;
+            Value = value;
+
             try
             {
-                Name = name;
-                Value = value;
-                VarType = typeof(Boolean);
-                OriginalValue = (Boolean)wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.GetProperty, null, wdOptions, null);
+                OriginalValue = (T)wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.GetProperty, null, wdOptions, null);
 
-                if (OriginalValue != value)
-                {
-                    wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.SetProperty, null, wdOptions, new Object[] { value });
-                }
+                if (Equals(Value, OriginalValue))
+                    return;
+
+                SetProperty(ref wdOptions, Name, Value);
             }
             catch
             {
                 // We may be setting word options that are not available in the version of word
                 // being used, so just skip these errors
-            }
-        }
-        public AppOption(string name, int value, ref Options wdOptions)
-        {
-            try
-            {
-                Name = name;
-                IntValue = value;
-                VarType = typeof(int);
-                OriginalIntValue = (int)wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.GetProperty, null, wdOptions, null);
 
-                if (OriginalIntValue != value)
-                {
-                    wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.SetProperty, null, wdOptions, new Object[] { value });
-                }
-            }
-            catch
-            {
-                // We may be setting word options that are not available in the version of word
-                // being used, so just skip these errors
+                OriginalValue = Value; // Don't try and restore setting on reset
             }
         }
+
+        private static bool Equals(T lhs, T rhs) => EqualityComparer<T>.Default.Equals(lhs, rhs);
+
+        private static void SetProperty(ref Options wdOptions, string name, object value) =>
+            wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.SetProperty, null, wdOptions, new Object[] { value });
 
         // Allow the value on the options to be reset
         public void ResetValue(ref Options wdOptions)
         {
-            if (VarType == typeof(Boolean))
+            if (Equals(Value, OriginalValue))
+                return;
+
+            try
             {
-                if (Value != this.OriginalValue)
-                {
-                    wdOptions.GetType().InvokeMember(Name, System.Reflection.BindingFlags.SetProperty, null, wdOptions, new Object[] { OriginalValue });
-                }
+                SetProperty(ref wdOptions, Name, OriginalValue);
             }
-            else
+            catch
             {
-                if (IntValue != OriginalIntValue)
-                {
-                    wdOptions.GetType().InvokeMember(Name, System.Reflection.BindingFlags.SetProperty, null, wdOptions, new Object[] { OriginalIntValue });
-                }
+                // We may be setting word options that are not available in the version of word
+                // being used, so just skip these errors
             }
         }
+    }
+
+    internal static class AppOptionFactory
+    { 
+        public static AppOption<T> Create<T>(string name, T value, ref Options wdOptions) =>
+            new AppOption<T>(name, value, ref wdOptions);
     }
 }

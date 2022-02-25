@@ -95,7 +95,7 @@ namespace OfficeToPDF
             Template tmpl;
             String temporaryStorageDir = null;
             float wordVersion = 0;
-            List<AppOption> wordOptionList = new List<AppOption>();
+            List<IAppOption> wordOptionList = new List<IAppOption>();
             try
             {
                 String filename = (String)inputFile;
@@ -141,37 +141,37 @@ namespace OfficeToPDF
                 // Set the Word options in a way that allows us to reset the options when we finish
                 try
                 {
-                    wordOptionList.Add(new AppOption("AlertIfNotDefault", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("AllowReadingMode", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("PrecisePositioning", true, ref wdOptions));
-                    wordOptionList.Add(new AppOption("UpdateFieldsAtPrint", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("UpdateLinksAtPrint", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("UpdateLinksAtOpen", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("UpdateFieldsWithTrackedChangesAtPrint", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("WarnBeforeSavingPrintingSendingMarkup", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("BackgroundSave", true, ref wdOptions));
-                    wordOptionList.Add(new AppOption("SavePropertiesPrompt", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("DoNotPromptForConvert", true, ref wdOptions));
-                    wordOptionList.Add(new AppOption("PromptUpdateStyle", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("ConfirmConversions", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("CheckGrammarAsYouType", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("CheckGrammarWithSpelling", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("CheckSpellingAsYouType", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("DisplaySmartTagButtons", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("EnableLivePreview", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("ShowReadabilityStatistics", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("SuggestSpellingCorrections", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("AllowDragAndDrop", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("EnableMisusedWordsDictionary", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("ShowFormatError", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("StoreRSIDOnSave", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("SaveNormalPrompt", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("AllowFastSave", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("BackgroundOpen", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("ShowMarkupOpenSave", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("SaveInterval", 0, ref wdOptions));
-                    wordOptionList.Add(new AppOption("PrintHiddenText", options.word_show_hidden, ref wdOptions));
-                    wordOptionList.Add(new AppOption("MapPaperSize", !options.word_no_map_papersize, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("AlertIfNotDefault", false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("AllowReadingMode", false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("PrecisePositioning", true, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("UpdateFieldsAtPrint", false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("UpdateLinksAtPrint", false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("UpdateLinksAtOpen", false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("UpdateFieldsWithTrackedChangesAtPrint", false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("WarnBeforeSavingPrintingSendingMarkup", false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("BackgroundSave", true, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("SavePropertiesPrompt", false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("DoNotPromptForConvert", true, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("PromptUpdateStyle", false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("ConfirmConversions", false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("CheckGrammarAsYouType", false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("CheckGrammarWithSpelling", false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("CheckSpellingAsYouType", false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("DisplaySmartTagButtons", false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("EnableLivePreview", false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("ShowReadabilityStatistics", false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("SuggestSpellingCorrections", false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("AllowDragAndDrop", false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("EnableMisusedWordsDictionary", false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("ShowFormatError", false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("StoreRSIDOnSave", false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("SaveNormalPrompt", false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("AllowFastSave", false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("BackgroundOpen", false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("ShowMarkupOpenSave", false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("SaveInterval", 0, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("PrintHiddenText", options.word_show_hidden, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create("MapPaperSize", !options.word_no_map_papersize, ref wdOptions));
                 }
                 catch (SystemException)
                 {
@@ -470,7 +470,7 @@ namespace OfficeToPDF
                 ((_Document)doc).Close(ref saveChanges, ref oMissing, ref oMissing);
 
                 // Reset options
-                foreach (AppOption opt in wordOptionList)
+                foreach (IAppOption opt in wordOptionList)
                 {
                     opt.ResetValue(ref wdOptions);
                 }
