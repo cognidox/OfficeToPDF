@@ -126,7 +126,7 @@ namespace OfficeToPDF
                 }
                 var tmpDirectory = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString();
                 System.IO.Directory.CreateDirectory(tmpDirectory);
-                tmpFile = System.IO.Path.Combine(tmpDirectory, (string)options["original_basename"]) + "." + extension;
+                tmpFile = System.IO.Path.Combine(tmpDirectory, options.original_basename) + "." + extension;
 
                 var activeDoc = visio.ActiveDocument;
                 activeDoc.SaveAs(tmpFile);
