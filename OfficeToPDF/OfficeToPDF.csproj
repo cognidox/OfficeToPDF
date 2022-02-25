@@ -321,4 +321,16 @@ foreach (var item in filesToCleanup)
   <Target Name="AfterBuild">
   </Target>
   -->
+  <Target Name="CopyDependents" AfterTargets="Build">
+    <ItemGroup>
+      <DependentFile Include="COMServer.dll;COMServer.pdb" />
+    </ItemGroup>
+    <PropertyGroup Condition="'$(Platform)' == 'AnyCPU'">
+      <DependentDir>x64\$(Configuration)</DependentDir>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Platform)' != 'AnyCPU'">
+      <DependentDir>$(Platform)\$(Configuration)</DependentDir>
+    </PropertyGroup>
+    <Copy SourceFiles="@(DependentFile -> '$(SolutionDir)COMServer\$(DependentDir)\%(Identity)')" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" Condition="'$(NCrunch)' != '1'" />
+  </Target>
 </Project>
