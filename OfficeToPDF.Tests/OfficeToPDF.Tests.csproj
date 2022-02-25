@@ -137,7 +137,11 @@
     <Compile Include="ArgParserTests.cs" />
     <Compile Include="COMServerTests.cs" />
     <Compile Include="ConverterFactoryTests.cs" />
+    <Compile Include="Functional.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RandomNumberGenerator.cs" />
+    <Compile Include="WatchdogFactoryTests.cs" />
+    <Compile Include="WatchdogTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
