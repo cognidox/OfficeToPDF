@@ -169,7 +169,11 @@ namespace OfficeToPDF
         public string writepassword => TryGetKeyValue<string>();
         public int word_max_pages => TryGetKeyValue<int>();
         public bool word_ref_fonts => TryGetKeyValue<bool>();
-        public bool IsTempWord => TryGetKeyValue<bool>();
+        public bool IsTempWord
+        {
+            get => TryGetKeyValue<bool>();
+            set => SetKeyValue(value);
+        }
         public bool word_show_hidden => TryGetKeyValue<bool>();
         public bool word_no_map_papersize => TryGetKeyValue<bool>();
         public bool word_show_all_markup => TryGetKeyValue<bool>();

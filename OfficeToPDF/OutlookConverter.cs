@@ -61,6 +61,7 @@ namespace OfficeToPDF
                     Console.WriteLine("Unable to start outlook instance");
                     return (int)ExitCode.ApplicationError;
                 }
+
                 var session = app.Session;
                 FileInfo fi = new FileInfo(inputFile);
                 // Create a temporary doc file from the message
@@ -155,7 +156,7 @@ namespace OfficeToPDF
                     return (int)ExitCode.UnknownError;
                 }
                 // Convert the doc file to a PDF
-                options["IsTempWord"] = true;
+                options.IsTempWord = true;
                 return WordConverter.Convert(tmpDocFile, outputFile, options);
             }
             catch (System.Exception e)

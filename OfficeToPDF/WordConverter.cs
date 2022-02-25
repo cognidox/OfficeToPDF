@@ -107,7 +107,7 @@ namespace OfficeToPDF
                 Boolean includeProps = !options.excludeprops;
                 Boolean includeTags = !options.excludetags;
                 Boolean bitmapMissingFonts = !options.word_ref_fonts;
-                Boolean isTempWord = options.IsTempWord;
+                Boolean isTempWord = options.IsTempWord; // Indication of converting an Outlook message
                 
                 String writePassword = "";
                 String readPassword = "";
