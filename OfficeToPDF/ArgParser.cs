@@ -228,6 +228,8 @@ namespace OfficeToPDF
         public int excel_worksheet => TryGetKeyValue<int>();
         public int excel_delay => TryGetKeyValue<int>();
 
+        public string powerpoint_output => TryGetKeyValue<string>();
+
         private ExitCode CheckOptionIsInteger(string optionKey, string optionName, string optionValue)
         {
             if (Regex.IsMatch(optionValue, @"^\d+$"))

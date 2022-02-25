@@ -106,7 +106,7 @@ namespace OfficeToPDF
                     Boolean includeProps = !options.excludeprops;
                     Boolean includeTags = !options.excludetags;
                     PpPrintOutputType printType = PpPrintOutputType.ppPrintOutputSlides;
-                    MSCore.MsoTriState nowrite = (Boolean)options["readonly"] ? MSCore.MsoTriState.msoTrue : MSCore.MsoTriState.msoFalse;
+                    MSCore.MsoTriState nowrite = options.@readonly ? MSCore.MsoTriState.msoTrue : MSCore.MsoTriState.msoFalse;
                     bool pdfa = options.pdfa;
                     if (options.hidden)
                     {
@@ -122,10 +122,10 @@ namespace OfficeToPDF
                     {
                         quality = PpFixedFormatIntent.ppFixedFormatIntentScreen;
                     }
-                    if (!String.IsNullOrWhiteSpace((String)options["powerpoint_output"]))
+                    if (!String.IsNullOrWhiteSpace(options.powerpoint_output))
                     {
                         bool printIsValid = false;
-                        printType = GetOutputType((String)options["powerpoint_output"], ref printIsValid);
+                        printType = GetOutputType(options.powerpoint_output, ref printIsValid);
                     }
 
                     // Powerpoint files can be protected by a write password, but there's no way
@@ -146,13 +146,13 @@ namespace OfficeToPDF
                     powerPoint.AutomationSecurity = MSCore.MsoAutomationSecurity.msoAutomationSecurityLow;
                     presentations = powerPoint.Presentations;
                     String filenameWithPasswords = inputFile;
-                    if (!String.IsNullOrWhiteSpace((string)options["password"]) ||
-                        !String.IsNullOrWhiteSpace((string)options["writepassword"]))
+                    if (!String.IsNullOrWhiteSpace(options.password) ||
+                        !String.IsNullOrWhiteSpace(options.writepassword))
                     {
                         // seems we can use the passwords by appending them to the file name!
                         filenameWithPasswords = String.Format("{0}::{1}::{2}", inputFile, 
-                            (String.IsNullOrEmpty((string)options["password"]) ? "" : (string)options["password"]),
-                            (String.IsNullOrEmpty((string)options["writepassword"]) ? "" : (string)options["writepassword"]));
+                            (String.IsNullOrEmpty(options.password) ? "" : options.password),
+                            (String.IsNullOrEmpty(options.writepassword) ? "" : options.writepassword));
                         Console.WriteLine(filenameWithPasswords);
                     }
                     activePresentation = presentations.Open2007(FileName: filenameWithPasswords, ReadOnly: nowrite, Untitled: MSCore.MsoTriState.msoTrue, OpenAndRepair: MSCore.MsoTriState.msoTrue);
@@ -206,15 +206,15 @@ namespace OfficeToPDF
                         ReleaseCOMObject(activePrintOptions);
                     };
                     
-                    if (String.IsNullOrEmpty((string)options["printer"]))
+                    if (String.IsNullOrEmpty(options.printer))
                     {
                         try
                         {
                             activePresentation.ExportAsFixedFormat(outputFile, PpFixedFormatType.ppFixedFormatTypePDF, quality, MSCore.MsoTriState.msoFalse, PpPrintHandoutOrder.ppPrintHandoutVerticalFirst, printType, MSCore.MsoTriState.msoFalse, null, PpPrintRangeType.ppPrintAll, "", includeProps, true, includeTags, true, pdfa, Type.Missing);
                         }
                         catch (Exception) {
-                            if (!String.IsNullOrEmpty((string)options["fallback_printer"])) {
-                                PrintToGhostscript((string)options["fallback_printer"], outputFile, printFunc);
+                            if (!String.IsNullOrEmpty(options.fallback_printer)) {
+                                PrintToGhostscript(options.fallback_printer, outputFile, printFunc);
                             } else {
                                 throw;
                             }
@@ -227,13 +227,13 @@ namespace OfficeToPDF
                     } else
                     {
                         // Print via a delegate
-                        PrintToGhostscript((string)options["printer"], outputFile, printFunc);
+                        PrintToGhostscript(options.printer, outputFile, printFunc);
                     }
                     ReleaseCOMObject(printType);
                     ReleaseCOMObject(quality);
 
                     // Determine if we need to make bookmarks
-                    if ((bool)options["bookmarks"])
+                    if (options.bookmarks)
                     {
                         LoadBookmarks(activePresentation, ref bookmarks);
 
