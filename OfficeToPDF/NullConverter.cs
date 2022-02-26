@@ -6,6 +6,7 @@ namespace OfficeToPDF
     internal class NullConverter : IConverter
     {
         public string Extension { get; }
+
         public NullConverter(string extension) => Extension = extension;
 
         int IConverter.Convert(string inputFile, string outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)

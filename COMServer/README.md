@@ -2,7 +2,7 @@
 
 This project contains code that is responsible for locating the process id of the MsOffice Application COM Server.
 
-It use the IUnknown interface to locate the process id. A single function is exposed by the assembly which can be called
+It uses the IUnknown interface to locate the process id. A single function is exposed by the assembly which can be called
 from C# code via the standard pinvoke mechanism.
 
 ```csharp
@@ -33,7 +33,7 @@ The code is based on a number of sources found on the web, namely:
 
 * [Three ways to get the com server process id](https://www.apriorit.com/dev-blog/724-windows-three-ways-to-get-com-server-process-id)
 * [StackOverflow - get process id of com server](https://stackoverflow.com/questions/5046433/get-process-id-of-com-server)
-* [Github - kimgr/cogetserverpid](https://github.com/kimgr/cogetserverpid)
+* [GitHub - kimgr/cogetserverpid](https://github.com/kimgr/cogetserverpid)
 
 Other sources of information helped with how the OXID Resolver works:
 
@@ -54,7 +54,7 @@ Original source:
 
 But taken from:
 
-* [Github - antonioCoco/RemotePotato0](https://github.com/antonioCoco/RemotePotato0/blob/main/RogueOxidResolver.idl)
+* [GitHub - antonioCoco/RemotePotato0](https://github.com/antonioCoco/RemotePotato0/blob/main/RogueOxidResolver.idl)
 
 To generate the `dcom_c.c` and `dcom_h.h` source files that are associated with the `dcom.idl` file, right click on the `.idl` file in
 the Solution Explorer, then choose `Compile Ctrl+F7` from the pop-up menu.

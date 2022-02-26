@@ -42,8 +42,8 @@ namespace OfficeToPDF
 
         private void Work()
         {
-            var signalled = _event.WaitOne(_timeout); // Blocks until timeout of event signalled
-            Interlocked.Exchange(ref _triggered, signalled ? 0 : 1); // No support for bool so use int.
+            var signalled = _event.WaitOne(_timeout); // Blocks until timeout or event signalled
+            Interlocked.Exchange(ref _triggered, signalled ? 0 : 1); // Interlocked.Exchange: No support for bool so use int.
             if (signalled)
                 return; // Event was signalled so don't kill COM server
 
