@@ -37,8 +37,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OfficeToPDF.Tests", "Office
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "COMServer", "COMServer\COMServer.vcxproj", "{A240B9E5-3E14-4002-AE22-75A2277508A0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Netstat", "Netstat\Netstat.csproj", "{1A71CAF1-188D-40C2-8C44-936F1E45D76C}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -89,8 +87,8 @@ Global
 		{B9CA6971-F458-49D9-A06F-45040EE52966}.Debug|x86.Build.0 = Debug|x86
 		{B9CA6971-F458-49D9-A06F-45040EE52966}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B9CA6971-F458-49D9-A06F-45040EE52966}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B9CA6971-F458-49D9-A06F-45040EE52966}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{B9CA6971-F458-49D9-A06F-45040EE52966}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{B9CA6971-F458-49D9-A06F-45040EE52966}.Release|Mixed Platforms.ActiveCfg = Release|x64
+		{B9CA6971-F458-49D9-A06F-45040EE52966}.Release|Mixed Platforms.Build.0 = Release|x64
 		{B9CA6971-F458-49D9-A06F-45040EE52966}.Release|x64.ActiveCfg = Release|Any CPU
 		{B9CA6971-F458-49D9-A06F-45040EE52966}.Release|x64.Build.0 = Release|Any CPU
 		{B9CA6971-F458-49D9-A06F-45040EE52966}.Release|x86.ActiveCfg = Release|x86
@@ -127,30 +125,6 @@ Global
 		{A240B9E5-3E14-4002-AE22-75A2277508A0}.Release-signed|x64.Build.0 = Release|x64
 		{A240B9E5-3E14-4002-AE22-75A2277508A0}.Release-signed|x86.ActiveCfg = Release|Win32
 		{A240B9E5-3E14-4002-AE22-75A2277508A0}.Release-signed|x86.Build.0 = Release|Win32
-		{1A71CAF1-188D-40C2-8C44-936F1E45D76C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1A71CAF1-188D-40C2-8C44-936F1E45D76C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1A71CAF1-188D-40C2-8C44-936F1E45D76C}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{1A71CAF1-188D-40C2-8C44-936F1E45D76C}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{1A71CAF1-188D-40C2-8C44-936F1E45D76C}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{1A71CAF1-188D-40C2-8C44-936F1E45D76C}.Debug|x64.Build.0 = Debug|Any CPU
-		{1A71CAF1-188D-40C2-8C44-936F1E45D76C}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{1A71CAF1-188D-40C2-8C44-936F1E45D76C}.Debug|x86.Build.0 = Debug|Any CPU
-		{1A71CAF1-188D-40C2-8C44-936F1E45D76C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1A71CAF1-188D-40C2-8C44-936F1E45D76C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1A71CAF1-188D-40C2-8C44-936F1E45D76C}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{1A71CAF1-188D-40C2-8C44-936F1E45D76C}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{1A71CAF1-188D-40C2-8C44-936F1E45D76C}.Release|x64.ActiveCfg = Release|Any CPU
-		{1A71CAF1-188D-40C2-8C44-936F1E45D76C}.Release|x64.Build.0 = Release|Any CPU
-		{1A71CAF1-188D-40C2-8C44-936F1E45D76C}.Release|x86.ActiveCfg = Release|Any CPU
-		{1A71CAF1-188D-40C2-8C44-936F1E45D76C}.Release|x86.Build.0 = Release|Any CPU
-		{1A71CAF1-188D-40C2-8C44-936F1E45D76C}.Release-signed|Any CPU.ActiveCfg = Release|Any CPU
-		{1A71CAF1-188D-40C2-8C44-936F1E45D76C}.Release-signed|Any CPU.Build.0 = Release|Any CPU
-		{1A71CAF1-188D-40C2-8C44-936F1E45D76C}.Release-signed|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{1A71CAF1-188D-40C2-8C44-936F1E45D76C}.Release-signed|Mixed Platforms.Build.0 = Release|Any CPU
-		{1A71CAF1-188D-40C2-8C44-936F1E45D76C}.Release-signed|x64.ActiveCfg = Release|Any CPU
-		{1A71CAF1-188D-40C2-8C44-936F1E45D76C}.Release-signed|x64.Build.0 = Release|Any CPU
-		{1A71CAF1-188D-40C2-8C44-936F1E45D76C}.Release-signed|x86.ActiveCfg = Release|Any CPU
-		{1A71CAF1-188D-40C2-8C44-936F1E45D76C}.Release-signed|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
