@@ -5,7 +5,7 @@ namespace OfficeToPDF.Tests
 {
     internal static class Functional
     {
-        public static B Compose<A, B>(this A a, Func<A, B> f) => f(a);
+        public static Y Pipe<X, Y>(this X x, Func<X, Y> f) => f(x);
 
         public static void ForEach<T>(this IEnumerable<T> collection, Action<T> action)
         {
