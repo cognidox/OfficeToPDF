@@ -137,7 +137,13 @@
     <Compile Include="ArgParserTests.cs" />
     <Compile Include="COMServerTests.cs" />
     <Compile Include="ConverterFactoryTests.cs" />
-    <Compile Include="DisposableApplication.cs" />
+    <Compile Include="DisposableExcelApplication.cs" />
+    <Compile Include="DisposableOutlookApplication.cs" />
+    <Compile Include="DisposablePowerPointApplication.cs" />
+    <Compile Include="DisposableProjectApplication.cs" />
+    <Compile Include="DisposablePublisherApplication.cs" />
+    <Compile Include="DisposableVisioApplication.cs" />
+    <Compile Include="DisposableWordApplication.cs" />
     <Compile Include="Functional.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RandomNumberGenerator.cs" />

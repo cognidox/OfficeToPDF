@@ -190,10 +190,15 @@ namespace OfficeToPDF
                 // If we were not already running, quit and release the outlook object
                 if (outlook != null && !running)
                 {
-                    ((Microsoft.Office.Interop.Outlook._Application)outlook).Quit();
+                    CloseOutlookApplication(outlook);
                 }
                 ReleaseCOMObject(outlook);
             }
+        }
+
+        internal static void CloseOutlookApplication(Application outlook)
+        {
+            ((Microsoft.Office.Interop.Outlook._Application)outlook).Quit();
         }
     }
 }

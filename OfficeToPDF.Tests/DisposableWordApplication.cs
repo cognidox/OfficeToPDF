@@ -1,20 +1,19 @@
-﻿using Microsoft.Office.Interop.Word;
-using System;
+﻿using System;
 
 namespace OfficeToPDF.Tests
 {
-    internal sealed class DisposableApplication : IDisposable
+    internal sealed class DisposableWordApplication : IDisposable
     {
-        private readonly Application _word;
+        private readonly Microsoft.Office.Interop.Word.Application _word;
 
-        public DisposableApplication()
+        public DisposableWordApplication()
         {
             bool running = false;
             try { WordConverter.StartWord(ref running, ref _word); }
             catch { /* NOOP */ }
         }
 
-        public Application Word => _word;
+        public Microsoft.Office.Interop.Word.Application Word => _word;
 
         public void Dispose()
         {

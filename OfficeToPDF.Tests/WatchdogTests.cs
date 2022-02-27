@@ -11,7 +11,7 @@ namespace OfficeToPDF.Tests
         [Test, Explicit("Starts and stops word")]
         public void WhenWatchdogTimesoutsThenItIsTriggered()
         {
-            using (var application = new DisposableApplication())
+            using (var application = new DisposableWordApplication())
             {
                 var watchdog = new Watchdog(application.Word, timeout: 5);
 
@@ -28,7 +28,7 @@ namespace OfficeToPDF.Tests
         [Test, Explicit("Starts and stops word")]
         public void WhenWatchdogDoesNotTimesoutThenItIsNotTriggered()
         {
-            using (var application = new DisposableApplication())
+            using (var application = new DisposableWordApplication())
             {
                 var watchdog = new Watchdog(application.Word, timeout: 10);
 
@@ -45,7 +45,7 @@ namespace OfficeToPDF.Tests
         [Test, Explicit("Starts and stops word")]
         public void WhenWatchdogStoppedThenNoExceptionsThown()
         {
-            using (var application = new DisposableApplication())
+            using (var application = new DisposableWordApplication())
             {
                 var watchdog = new Watchdog(application.Word, timeout: 5);
 

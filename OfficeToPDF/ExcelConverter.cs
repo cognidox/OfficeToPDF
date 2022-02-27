@@ -685,7 +685,7 @@ namespace OfficeToPDF
 
                     if (excel != null)
                     {
-                        ((Microsoft.Office.Interop.Excel._Application)excel).Quit();
+                        CloseExcelApplication(excel);
                     }
                 }
                 
@@ -703,6 +703,11 @@ namespace OfficeToPDF
                     Directory.Delete(Path.GetDirectoryName(tmpFile));
                 }
             }
+        }
+
+        internal static void CloseExcelApplication(Application excel)
+        {
+            ((Microsoft.Office.Interop.Excel._Application)excel).Quit();
         }
 
         private static XlCorruptLoad GetXlRepairFile()

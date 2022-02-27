@@ -153,10 +153,15 @@ namespace OfficeToPDF
                 }
                 if (visio != null && !running)
                 {
-                    visio.Quit();
+                    CloseVisioApplication(visio);
                 }
                 ReleaseCOMObject(visio);
             }
+        }
+
+        internal static void CloseVisioApplication(InvisibleApp visio)
+        {
+            visio.Quit();
         }
     }
 }

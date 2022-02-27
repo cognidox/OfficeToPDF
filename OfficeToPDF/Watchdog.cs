@@ -60,7 +60,7 @@ namespace OfficeToPDF
             catch { return null; }
         }
 
-        private bool IsComObject() => Marshal.IsComObject(_com);
+        private bool IsComObject() => _com != null && Marshal.IsComObject(_com);
 
         public void Stop()
         {

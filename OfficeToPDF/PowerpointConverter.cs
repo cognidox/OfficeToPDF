@@ -257,7 +257,7 @@ namespace OfficeToPDF
 
                     if (powerPoint != null && !running)
                     {
-                        powerPoint.Quit();
+                        ClosePowerPointApplication(powerPoint);
                     }
                     ReleaseCOMObject(powerPoint);
                     GC.Collect();
@@ -277,6 +277,11 @@ namespace OfficeToPDF
                 Console.WriteLine(e.Message);
                 return (int)ExitCode.UnknownError;
             }
+        }
+
+        internal static void ClosePowerPointApplication(Application powerPoint)
+        {
+            powerPoint.Quit();
         }
 
         // Try and close PowerPoint presentation, giving time for Office to get

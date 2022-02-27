@@ -113,10 +113,15 @@ namespace OfficeToPDF
 
                 if (app != null && !running)
                 {
-                    ((MSProject.Application)app).Quit();
+                    CloseProjectApplication(app);
                 }
                 ReleaseCOMObject(app);
             }
+        }
+
+        internal static void CloseProjectApplication(MSProject.Application app)
+        {
+            ((MSProject.Application)app).Quit();
         }
     }
 }

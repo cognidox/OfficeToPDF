@@ -118,10 +118,15 @@ namespace OfficeToPDF
                 }
                 if (publisher != null)
                 {
-                    ((Microsoft.Office.Interop.Publisher._Application)publisher).Quit();
+                    ClosePublisherApplication(publisher);
                 }
                 ReleaseCOMObject(publisher);
             }
+        }
+
+        internal static void ClosePublisherApplication(Application publisher)
+        {
+            ((Microsoft.Office.Interop.Publisher._Application)publisher).Quit();
         }
 
         // Loop through all the pages in the document creating bookmark items for them
