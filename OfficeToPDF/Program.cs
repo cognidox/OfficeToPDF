@@ -77,12 +77,12 @@ namespace OfficeToPDF
             if (installedPrinters.Count <= 0)
             {
                 Console.WriteLine("There are no installed printers, so conversion can not proceed");
-                Environment.Exit((int)(ExitCode.Failed | ExitCode.NoPrinters));
+                Exit(ExitCode.Failed | ExitCode.NoPrinters);
             }
 
             ExitCode result = options.Parse(args, installedPrinters);
             if (result != ExitCode.Success)
-                Environment.Exit((int)result);
+                Exit(result);
 
 
             // Need to error here, as we need input and output files as the
@@ -96,7 +96,7 @@ namespace OfficeToPDF
             if ((Boolean)options["screen"] && (Boolean)options["print"])
             {
                 Console.WriteLine("You can only use one of /screen or /print - not both");
-                Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
+                Exit(ExitCode.Failed | ExitCode.InvalidArguments);
             }
 
             // Make sure the input file looks like something we can handle (i.e. has an office
@@ -105,7 +105,7 @@ namespace OfficeToPDF
             if (fileMatch.Matches(options.files[0]).Count != 1)
             {
                 Console.WriteLine("Input file can not be handled. Must be Word, PowerPoint, Excel, Outlook, Publisher, XPS or Visio");
-                Environment.Exit((int)(ExitCode.Failed | ExitCode.UnsupportedFileFormat));
+                Exit(ExitCode.Failed | ExitCode.UnsupportedFileFormat);
             }
 
             if (options.filesSeen == 1)
@@ -137,7 +137,7 @@ namespace OfficeToPDF
                 if (info == null || !info.Exists)
                 {
                     Console.WriteLine("Input file doesn't exist");
-                    Environment.Exit((int)(ExitCode.Failed | ExitCode.FileNotFound));
+                    Exit(ExitCode.Failed | ExitCode.FileNotFound);
                 }
                 inputFile = info.FullName;
                 options["original_filename"] = info.Name;
@@ -146,7 +146,7 @@ namespace OfficeToPDF
             catch
             {
                 Console.WriteLine("Unable to open input file");
-                Environment.Exit((int)(ExitCode.Failed | ExitCode.FileOpenFailure));
+                Exit(ExitCode.Failed | ExitCode.FileOpenFailure);
             }
 
             // Stop people using the template as the input file
@@ -154,7 +154,7 @@ namespace OfficeToPDF
                 inputFile.Equals((string)options["template"]))
             {
                 Console.WriteLine("Input file must be different from the template file");
-                Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
+                Exit(ExitCode.Failed | ExitCode.InvalidArguments);
             }
 
             // Make sure the destination location exists
@@ -185,13 +185,13 @@ namespace OfficeToPDF
             else
             {
                 Console.WriteLine("Unable to determine output location");
-                Environment.Exit((int)(ExitCode.Failed | ExitCode.DirectoryNotFound));
+                Exit(ExitCode.Failed | ExitCode.DirectoryNotFound);
             }
 
             if (!System.IO.Directory.Exists(outputInfo.DirectoryName))
             {
                 Console.WriteLine("Output directory does not exist");
-                Environment.Exit((int)(ExitCode.Failed | ExitCode.DirectoryNotFound));
+                Exit(ExitCode.Failed | ExitCode.DirectoryNotFound);
             }
 
             // We want the input and output files copied to a working area where
@@ -219,7 +219,7 @@ namespace OfficeToPDF
             // Now, do the cleverness of determining what the extension is, and so, which
             // conversion class to pass it to
             ConverterFactory factory = new ConverterFactory();
-            int converted = (int)ExitCode.UnknownError;
+            ExitCode converted = ExitCode.UnknownError;
             Match extMatch = fileMatch.Match(inputFile);
             if (extMatch.Success)
             {
@@ -255,11 +255,11 @@ namespace OfficeToPDF
                 Directory.Delete(options.working_dir, true);
             }
 
-            if (converted != (int)ExitCode.Success)
+            if (converted != ExitCode.Success)
             {
                 Console.WriteLine("Did not convert");
                 // Return the general failure code and the specific failure code
-                Environment.Exit((int)ExitCode.Failed | converted);
+                Exit(ExitCode.Failed | converted);
             }
             else
             {
@@ -279,9 +279,11 @@ namespace OfficeToPDF
                     PostProcessPDFFile(outputFile, finalOutputFile, options, options.postProcessPDFSecurity);
                 }
 
-                Environment.Exit((int)ExitCode.Success);
+                Exit(ExitCode.Success);
             }
         }
+
+        private static void Exit(ExitCode exit) => Environment.Exit((int)exit);
 
         // Add any bookmarks returned by the conversion process
         private static void AddPDFBookmarks(String generatedFile, List<PDFBookmark> bookmarks, ArgParser options, PdfOutline parent)
@@ -289,7 +291,7 @@ namespace OfficeToPDF
             var hasParent = parent != null;
             if (options.verbose)
             {
-                Console.WriteLine("Adding {0} bookmarks {1}", bookmarks.Count, (hasParent ? "as a sub-bookmark" : "to the PDF"));
+                Console.WriteLine("Adding {0} bookmarks {1}", bookmarks.Count, hasParent ? "as a sub-bookmark" : "to the PDF");
             }
 
             var srcPdf = hasParent ? parent.Owner : OpenPDFFile(generatedFile, options);
@@ -469,7 +471,7 @@ namespace OfficeToPDF
             else
             {
                 Console.WriteLine("{0} ({1}) is invalid", optionName, optionValue);
-                Environment.Exit((int)(ExitCode.Failed | ExitCode.InvalidArguments));
+                Exit(ExitCode.Failed | ExitCode.InvalidArguments);
             }
         }
 
@@ -497,7 +499,7 @@ namespace OfficeToPDF
                         }
                         Console.WriteLine("Unable to modify a protected PDF. Invalid owner password given.");
                         // Return the general failure code and the specific failure code
-                        Environment.Exit((int)ExitCode.PDFProtectedDocument);
+                        Exit(ExitCode.PDFProtectedDocument);
                     }
                 }
                 else
@@ -509,7 +511,7 @@ namespace OfficeToPDF
                     }
                     Console.WriteLine("Unable to modify a protected PDF. Use the /pdf_owner_pass option to specify an owner password.");
                     // Return the general failure code and the specific failure code
-                    Environment.Exit((int)ExitCode.PDFProtectedDocument);
+                    Exit(ExitCode.PDFProtectedDocument);
                 }
             }
             return dstDoc;

@@ -32,7 +32,7 @@ namespace OfficeToPDF
     /// </summary>
     class ExcelConverter: Converter, IConverter
     {
-        int IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
+        ExitCode IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
         {
             if (options.verbose)
             {
@@ -87,7 +87,7 @@ namespace OfficeToPDF
         }
 
         // Main conversion routine
-        static int Convert(String inputFile, String outputFile, ArgParser options)
+        static ExitCode Convert(String inputFile, String outputFile, ArgParser options)
         {
             Boolean running = options.noquit;
             Microsoft.Office.Interop.Excel.Application excel = null;
@@ -106,7 +106,7 @@ namespace OfficeToPDF
             {
                 ExitCode result = StartExcel(ref running, ref excel);
                 if (result != ExitCode.Success)
-                    return (int)result;
+                    return result;
 
                 watchdog = WatchdogFactory.CreateStarted(excel, options.timeout);
 
@@ -166,7 +166,7 @@ namespace OfficeToPDF
                 if (Converter.IsPasswordProtected(inputFile) && String.IsNullOrEmpty(readPassword))
                 {
                     Console.WriteLine("Unable to open password protected file");
-                    return (int)ExitCode.PasswordFailure;
+                    return ExitCode.PasswordFailure;
                 }
                 
                 workbooks = excel.Workbooks;
@@ -199,7 +199,7 @@ namespace OfficeToPDF
                 // Unable to open workbook
                 if (workbook == null)
                 {
-                    return (int)ExitCode.FileOpenFailure;
+                    return ExitCode.FileOpenFailure;
                 }
 
                 // Turn off macros for non-macro workbooks
@@ -247,7 +247,7 @@ namespace OfficeToPDF
                         if (worksheetNum > allSheets.Count)
                         {
                             // Sheet count is too big
-                            return (int)ExitCode.WorksheetNotFound;
+                            return ExitCode.WorksheetNotFound;
                         }
                         if (allSheets[worksheetNum] is _Worksheet)
                         {
@@ -264,7 +264,7 @@ namespace OfficeToPDF
                     catch (Exception)
                     {
                         ReleaseCOMObject(allSheets);
-                        return (int)ExitCode.WorksheetNotFound;
+                        return ExitCode.WorksheetNotFound;
                     }
                 }
                 
@@ -573,7 +573,7 @@ namespace OfficeToPDF
                     }
                     else
                     {
-                        return (int)ExitCode.UnknownError;
+                        return ExitCode.UnknownError;
                     }
                     AddCOMDelay(options);
                 }
@@ -636,24 +636,24 @@ namespace OfficeToPDF
                 excel.MapPaperSize = currentPaperMapSize;
                 ReleaseCOMObject(allSheets);
 
-                return (int)ExitCode.Success;
+                return ExitCode.Success;
             }
             catch (COMException ce)
             {
                 if ((uint)ce.ErrorCode == 0x800A03EC)
                 {
-                    return (int)ExitCode.EmptyWorksheet;
+                    return ExitCode.EmptyWorksheet;
                 }
                 else
                 {
                     Console.WriteLine(ce.Message);
-                    return (int)ExitCode.UnknownError;
+                    return ExitCode.UnknownError;
                 }
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
-                return (int)ExitCode.UnknownError;
+                return ExitCode.UnknownError;
             }
             finally
             {

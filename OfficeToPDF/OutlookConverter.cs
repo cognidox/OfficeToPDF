@@ -30,7 +30,7 @@ namespace OfficeToPDF
     /// </summary>
     class OutlookConverter: Converter, IConverter
     {
-        int IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
+        ExitCode IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
         {
             if (options.verbose)
             {
@@ -58,7 +58,7 @@ namespace OfficeToPDF
             return ExitCode.Success;
         }
 
-        static int Convert(String inputFile, String outputFile, ArgParser options)
+        static ExitCode Convert(String inputFile, String outputFile, ArgParser options)
         {
             Boolean running = options.noquit;
             Microsoft.Office.Interop.Outlook.Application outlook = null;
@@ -68,7 +68,7 @@ namespace OfficeToPDF
             {
                 ExitCode result = StartOutlook(ref running, ref outlook);
                 if (result != ExitCode.Success)
-                    return (int)result;
+                    return result;
 
                 watchdog = WatchdogFactory.CreateStarted(outlook, options.timeout);
 
@@ -84,7 +84,7 @@ namespace OfficeToPDF
                         {
                             ReleaseCOMObject(message);
                             ReleaseCOMObject(session);
-                            return (int)ExitCode.FileOpenFailure;
+                            return ExitCode.FileOpenFailure;
                         }
                         message.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olHTML);
                         ((_MailItem)message).Close(OlInspectorClose.olDiscard);
@@ -97,7 +97,7 @@ namespace OfficeToPDF
                         {
                             ReleaseCOMObject(contact);
                             ReleaseCOMObject(session);
-                            return (int)ExitCode.FileOpenFailure;
+                            return ExitCode.FileOpenFailure;
                         }
                         contact.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olHTML);
                         ReleaseCOMObject(contact);
@@ -163,7 +163,7 @@ namespace OfficeToPDF
 
                 if (!File.Exists(tmpDocFile))
                 {
-                    return (int)ExitCode.UnknownError;
+                    return ExitCode.UnknownError;
                 }
                 // Convert the doc file to a PDF
                 options.IsTempWord = true;
@@ -172,7 +172,7 @@ namespace OfficeToPDF
             catch (System.Exception e)
             {
                 Console.WriteLine(e.Message);
-                return (int)ExitCode.UnknownError;
+                return ExitCode.UnknownError;
             }
             finally
             {

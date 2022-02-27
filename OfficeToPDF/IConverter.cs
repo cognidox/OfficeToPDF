@@ -24,6 +24,6 @@ namespace OfficeToPDF
 {
     internal interface IConverter
     {
-        int Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks);
+        ExitCode Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks);
     }
 }

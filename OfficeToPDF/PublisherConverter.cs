@@ -29,7 +29,7 @@ namespace OfficeToPDF
     /// </summary>
     class PublisherConverter: Converter, IConverter
     {
-        int IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
+        ExitCode IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
         {
             if (options.verbose)
             {
@@ -52,7 +52,7 @@ namespace OfficeToPDF
             return ExitCode.Success;
         }
 
-        static int Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
+        static ExitCode Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
         {
             Boolean running = options.noquit;
             Microsoft.Office.Interop.Publisher.Application publisher = null;
@@ -62,7 +62,7 @@ namespace OfficeToPDF
             {
                 ExitCode result = StartPublisher(ref running, ref publisher);
                 if (result != ExitCode.Success)
-                    return (int)result;
+                    return result;
 
                 watchdog = WatchdogFactory.CreateStarted(publisher, options.timeout);
 
@@ -101,12 +101,12 @@ namespace OfficeToPDF
                 activeDocument.Close();
 
                 ReleaseCOMObject(activeDocument);
-                return (int)ExitCode.Success;
+                return ExitCode.Success;
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
-                return (int)ExitCode.UnknownError;
+                return ExitCode.UnknownError;
             }
             finally
             {

@@ -35,7 +35,7 @@ namespace OfficeToPDF
     /// </summary>
     internal class WordConverter : Converter, IConverter
     {
-        int IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
+        ExitCode IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
         {
             if (options.verbose)
             {
@@ -87,7 +87,7 @@ namespace OfficeToPDF
         /// <param name="inputFile">Full path of the input Word file</param>
         /// <param name="outputFile">Full path of the output PDF</param>
         /// <returns></returns>
-        internal static int Convert(String inputFile, String outputFile, ArgParser options)
+        internal static ExitCode Convert(String inputFile, String outputFile, ArgParser options)
         {
             Boolean running = options.noquit;
             Application word = null;
@@ -101,7 +101,7 @@ namespace OfficeToPDF
             {
                 ExitCode result = StartWord(ref running, ref word);
                 if (result != ExitCode.Success)
-                    return (int)result;
+                    return result;
 
                 watchdog = WatchdogFactory.CreateStarted(word, options.timeout);
 
@@ -219,7 +219,7 @@ namespace OfficeToPDF
                 {
                     normalTemplate.Saved = true;
                     Console.WriteLine("Unable to open password protected file");
-                    return (int)ExitCode.PasswordFailure;
+                    return ExitCode.PasswordFailure;
                 }
 
                 // If we are opening a document with a write password and no read password, and
@@ -267,7 +267,7 @@ namespace OfficeToPDF
                 catch (COMException)
                 {
                     Console.WriteLine("Unable to open file " + filename);
-                    return (int)ExitCode.FileOpenFailure;
+                    return ExitCode.FileOpenFailure;
                 }
 
                 // Check if there are signatures in the document which changes how we do things
@@ -485,12 +485,12 @@ namespace OfficeToPDF
                 ReleaseCOMObject(tmpl);
                 ReleaseCOMObject(normalTemplate);
 
-                return (int)ExitCode.Success;
+                return ExitCode.Success;
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
-                return (int)ExitCode.UnknownError;
+                return ExitCode.UnknownError;
             }
             finally
             {

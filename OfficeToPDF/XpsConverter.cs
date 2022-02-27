@@ -28,7 +28,7 @@ namespace OfficeToPDF
     /// </summary>
     class XpsConverter: Converter, IConverter
     {
-        int IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
+        ExitCode IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
         {
             if (options.verbose)
             {
@@ -37,7 +37,7 @@ namespace OfficeToPDF
             return Convert(inputFile, outputFile, options);
         }
 
-        public static int Convert(String inputFile, String outputFile, Hashtable options)
+        public static ExitCode Convert(String inputFile, String outputFile, Hashtable options)
         {
             try
             {
@@ -45,11 +45,11 @@ namespace OfficeToPDF
                 PdfSharp.Xps.XpsConverter.Convert(inputFile, outputFile, 0);
                 if (System.IO.File.Exists(outputFile))
                 {
-                    return (int)ExitCode.Success;
+                    return ExitCode.Success;
                 }
             }
             catch (Exception) { }
-            return (int)ExitCode.UnknownError;
+            return ExitCode.UnknownError;
         }
     }
 }

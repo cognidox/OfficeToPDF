@@ -32,7 +32,7 @@ namespace OfficeToPDF
     /// </summary>
     class ProjectConverter: Converter, IConverter
     {
-        int IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
+        ExitCode IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
         {
             if (options.verbose)
             {
@@ -55,7 +55,7 @@ namespace OfficeToPDF
             return ExitCode.Success;
         }
 
-        static int Convert(String inputFile, String outputFile, ArgParser options)
+        static ExitCode Convert(String inputFile, String outputFile, ArgParser options)
         {
             Boolean running = options.noquit;
             MSProject.Application app = null;
@@ -65,7 +65,7 @@ namespace OfficeToPDF
             {
                 ExitCode result = StartProject(ref running, ref app);
                 if (result != ExitCode.Success)
-                    return (int)result;
+                    return result;
 
                 watchdog = WatchdogFactory.CreateStarted(app, options.timeout);
 
@@ -73,7 +73,7 @@ namespace OfficeToPDF
                 if (type.GetMethod("DocumentExport") == null || System.Convert.ToDouble(app.Version.ToString(), new CultureInfo("en-US")) < 14)
                 {
                     Console.WriteLine("Not implemented with Office version {0}", app.Version);
-                    return (int)ExitCode.UnsupportedFileFormat;
+                    return ExitCode.UnsupportedFileFormat;
                 }
 
                 app.ShowWelcome = false;
@@ -94,18 +94,18 @@ namespace OfficeToPDF
                         }
                         if (project == null)
                         {
-                            return (int)ExitCode.UnknownError;
+                            return ExitCode.UnknownError;
                         }
                         app.DocumentExport(outputFile, MSProject.PjDocExportType.pjPDF, includeProps, markup, false, missing, missing);
                         app.FileCloseEx(MSProject.PjSaveType.pjDoNotSave, missing, missing);
                         break;
                 }
-                return File.Exists(outputFile) ? (int)ExitCode.Success : (int)ExitCode.UnknownError;
+                return File.Exists(outputFile) ? ExitCode.Success : ExitCode.UnknownError;
             }
             catch (System.Exception e)
             {
                 Console.WriteLine(e.Message);
-                return (int)ExitCode.UnknownError;
+                return ExitCode.UnknownError;
             }
             finally
             {

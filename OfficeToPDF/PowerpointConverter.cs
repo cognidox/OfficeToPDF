@@ -32,7 +32,7 @@ namespace OfficeToPDF
     /// </summary>
     class PowerpointConverter : Converter, IConverter
     {
-        int IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
+        ExitCode IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
         {
             if (options.verbose)
             {
@@ -79,13 +79,13 @@ namespace OfficeToPDF
             return ExitCode.Success;
         }
 
-        static int Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
+        static ExitCode Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
         {
             // Check for password protection
             if (IsPasswordProtected(inputFile))
             {
                 Console.WriteLine("Unable to open password protected file");
-                return (int)ExitCode.PasswordFailure;
+                return ExitCode.PasswordFailure;
             }
             
             Boolean running = options.noquit;
@@ -99,7 +99,7 @@ namespace OfficeToPDF
                 {
                     ExitCode result = StartPowerPoint(ref running, ref powerPoint);
                     if (result != ExitCode.Success)
-                        return (int)result;
+                        return result;
 
                     watchdog = WatchdogFactory.CreateStarted(powerPoint, options.timeout);
 
@@ -241,12 +241,12 @@ namespace OfficeToPDF
                     activePresentation.Saved = MSCore.MsoTriState.msoTrue;
                     ClosePowerPointPresentation(activePresentation);
 
-                    return (int)ExitCode.Success;
+                    return ExitCode.Success;
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine(e.Message);
-                    return (int)ExitCode.UnknownError;
+                    return ExitCode.UnknownError;
                 }
                 finally
                 {
@@ -270,12 +270,12 @@ namespace OfficeToPDF
             catch (COMException e)
             {
                 Console.WriteLine(e.Message);
-                return (int)ExitCode.UnknownError;
+                return ExitCode.UnknownError;
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
-                return (int)ExitCode.UnknownError;
+                return ExitCode.UnknownError;
             }
         }
 
