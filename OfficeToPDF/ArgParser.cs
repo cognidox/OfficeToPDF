@@ -32,7 +32,7 @@ namespace OfficeToPDF
 {
     internal class ArgParser : Hashtable
     {
-        public Action<int> Exit { get; private set; }
+        public Action<ExitCode> Exit { get; private set; }
         public Action<string, object[]> Output { get; private set; }
 
         // Strings used in error messages for different options
@@ -46,16 +46,16 @@ namespace OfficeToPDF
             };
 
         public ArgParser()
-            : this(Environment.Exit, (format, args) => Console.WriteLine(format, args))
+            : this(value => Environment.Exit((int)value), (format, args) => Console.WriteLine(format, args))
         { }
 
         private void WriteLine(string msg) => Output(msg, Array.Empty<object>());
 
-        private void WriteLine(string format, object arg0) => Output(format, new [] { arg0 });
+        private void WriteLine(string format, object arg0) => Output(format, new[] { arg0 });
 
         private void WriteLine(string format, object arg0, object arg1) => Output(format, new[] { arg0, arg1 });
 
-        public ArgParser(Action<int> exit, Action<string, object[]> output)
+        public ArgParser(Action<ExitCode> exit, Action<string, object[]> output)
         {
             Exit = exit;
             Output = output;
@@ -86,16 +86,16 @@ namespace OfficeToPDF
             this["excel_no_link_update"] = false;
             this["excel_no_recalculate"] = false;
             this["excel_no_map_papersize"] = false;
-            this["excel_max_rows"] = (int)0;
+            this["excel_max_rows"] = 0;
             this["excel_active_sheet_on_max_rows"] = false;
-            this["excel_worksheet"] = (int)0;
-            this["excel_delay"] = (int)0;
+            this["excel_worksheet"] = 0;
+            this["excel_delay"] = 0;
             this["word_field_quick_update"] = false;
             this["word_field_quick_update_safe"] = false;
             this["word_no_field_update"] = false;
             this["word_header_dist"] = (float)-1;
             this["word_footer_dist"] = (float)-1;
-            this["word_max_pages"] = (int)0;
+            this["word_max_pages"] = 0;
             this["word_ref_fonts"] = false;
             this["word_keep_history"] = false;
             this["word_no_repair"] = false;
@@ -114,8 +114,8 @@ namespace OfficeToPDF
             this["powerpoint_output"] = "";
             this["pdf_page_mode"] = null;
             this["pdf_layout"] = null;
-            this["pdf_merge"] = (int)MergeMode.None;
-            this["pdf_clean_meta"] = (int)MetaClean.None;
+            this["pdf_merge"] = MergeMode.None;
+            this["pdf_clean_meta"] = MetaClean.None;
             this["pdf_owner_pass"] = "";
             this["pdf_user_pass"] = "";
             this["pdf_restrict_annotation"] = false;
@@ -148,8 +148,16 @@ namespace OfficeToPDF
         public bool markup => TryGetKeyValue<bool>();
         public bool @readonly => TryGetKeyValue<bool>();
         public bool bookmarks => TryGetKeyValue<bool>();
-        public bool print => TryGetKeyValue<bool>();
-        public bool screen => TryGetKeyValue<bool>();
+        public bool print
+        {
+            get => TryGetKeyValue<bool>();
+            private set => SetKeyValue(value);
+        }
+        public bool screen
+        {
+            get => TryGetKeyValue<bool>();
+            private set => SetKeyValue(value);
+        }
         public bool pdfa => TryGetKeyValue<bool>();
         public bool verbose => TryGetKeyValue<bool>();
         public bool excludeprops => TryGetKeyValue<bool>();
@@ -160,9 +168,16 @@ namespace OfficeToPDF
         public string password => TryGetKeyValue<string>();
         public string printer => TryGetKeyValue<string>();
         public string fallback_printer => TryGetKeyValue<string>();
-        public string working_dir => TryGetKeyValue<string>();
-        public bool has_working_dir => TryGetKeyValue<bool>();
-        public PdfPageMode? pdf_page_mode => TryGetKeyValue<PdfPageMode?>();
+        public string working_dir
+        {
+            get => TryGetKeyValue<string>();
+            private set => SetKeyValue(value);
+        }
+        public bool has_working_dir
+        {
+            get => TryGetKeyValue<bool>();
+            private set => SetKeyValue(value);
+        }
 
         public bool word_keep_history => TryGetKeyValue<bool>();
         public bool word_no_repair => TryGetKeyValue<bool>();
@@ -228,9 +243,53 @@ namespace OfficeToPDF
         public int excel_worksheet => TryGetKeyValue<int>();
         public int excel_delay => TryGetKeyValue<int>();
 
-        public string powerpoint_output => TryGetKeyValue<string>();
+        public string powerpoint_output
+        {
+            get => TryGetKeyValue<string>();
+            private set => SetKeyValue(value);
+        }
 
-        public string original_basename => TryGetKeyValue<string>();
+        public PdfPageMode? pdf_page_mode
+        {
+            get => TryGetKeyValue<PdfPageMode?>();
+            private set => SetKeyValue(value);
+        }
+        public PdfPageLayout? pdf_layout
+        {
+            get => TryGetKeyValue<PdfPageLayout?>();
+            private set => SetKeyValue(value);
+        }
+        public MergeMode pdf_merge
+        {
+            get => TryGetKeyValue<MergeMode>();
+            set => SetKeyValue(value);
+        }
+        public MetaClean pdf_clean_meta
+        {
+            get => TryGetKeyValue<MetaClean>();
+            private set => SetKeyValue(value);
+        }
+        public string pdf_owner_pass => TryGetKeyValue<string>();
+        public string pdf_user_pass => TryGetKeyValue<string>();
+        public bool pdf_restrict_annotation => TryGetKeyValue<bool>();
+        public bool pdf_restrict_extraction => TryGetKeyValue<bool>();
+        public bool pdf_restrict_assembly => TryGetKeyValue<bool>();
+        public bool pdf_restrict_forms => TryGetKeyValue<bool>();
+        public bool pdf_restrict_modify => TryGetKeyValue<bool>();
+        public bool pdf_restrict_print => TryGetKeyValue<bool>();
+        public bool pdf_restrict_accessibility_extraction => TryGetKeyValue<bool>();
+        public bool pdf_restrict_full_quality => TryGetKeyValue<bool>();
+
+        public string original_filename
+        {
+            get => TryGetKeyValue<string>();
+            set => SetKeyValue(value);
+        }
+        public string original_basename
+        {
+            get => TryGetKeyValue<string>();
+            set => SetKeyValue(value);
+        }
 
         private ExitCode CheckOptionIsInteger(string optionKey, string optionName, string optionValue)
         {
@@ -276,16 +335,16 @@ namespace OfficeToPDF
                                     switch (pageMode)
                                     {
                                         case "full":
-                                            this["pdf_page_mode"] = PdfPageMode.FullScreen;
+                                            this.pdf_page_mode = PdfPageMode.FullScreen;
                                             break;
                                         case "none":
-                                            this["pdf_page_mode"] = PdfPageMode.UseNone;
+                                            this.pdf_page_mode = PdfPageMode.UseNone;
                                             break;
                                         case "bookmarks":
-                                            this["pdf_page_mode"] = PdfPageMode.UseOutlines;
+                                            this.pdf_page_mode = PdfPageMode.UseOutlines;
                                             break;
                                         case "thumbs":
-                                            this["pdf_page_mode"] = PdfPageMode.UseThumbs;
+                                            this.pdf_page_mode = PdfPageMode.UseThumbs;
                                             break;
                                         default:
                                             WriteLine("Invalid PDF page mode ({0}). It must be one of full, none, outline or thumbs", args[argIdx + 1]);
@@ -303,10 +362,10 @@ namespace OfficeToPDF
                                     switch (cleanType)
                                     {
                                         case "basic":
-                                            this["pdf_clean_meta"] = MetaClean.Basic;
+                                            this.pdf_clean_meta = MetaClean.Basic;
                                             break;
                                         case "full":
-                                            this["pdf_clean_meta"] = MetaClean.Full;
+                                            this.pdf_clean_meta = MetaClean.Full;
                                             break;
                                         default:
                                             WriteLine("Invalid PDF meta-data clean value ({0}). It must be one of full or basic", args[argIdx + 1]);
@@ -324,22 +383,22 @@ namespace OfficeToPDF
                                     switch (pdfLayout)
                                     {
                                         case "onecol":
-                                            this["pdf_layout"] = PdfPageLayout.OneColumn;
+                                            this.pdf_layout = PdfPageLayout.OneColumn;
                                             break;
                                         case "single":
-                                            this["pdf_layout"] = PdfPageLayout.SinglePage;
+                                            this.pdf_layout = PdfPageLayout.SinglePage;
                                             break;
                                         case "twocolleft":
-                                            this["pdf_layout"] = PdfPageLayout.TwoColumnLeft;
+                                            this.pdf_layout = PdfPageLayout.TwoColumnLeft;
                                             break;
                                         case "twocolright":
-                                            this["pdf_layout"] = PdfPageLayout.TwoColumnRight;
+                                            this.pdf_layout = PdfPageLayout.TwoColumnRight;
                                             break;
                                         case "twopageleft":
-                                            this["pdf_layout"] = PdfPageLayout.TwoPageLeft;
+                                            this.pdf_layout = PdfPageLayout.TwoPageLeft;
                                             break;
                                         case "twopageright":
-                                            this["pdf_layout"] = PdfPageLayout.TwoPageRight;
+                                            this.pdf_layout = PdfPageLayout.TwoPageRight;
                                             break;
                                         default:
                                             WriteLine("Invalid PDF layout ({0}). It must be one of onecol, single, twocolleft, twocolright, twopageleft or twopageright", args[argIdx + 1]);
@@ -387,7 +446,7 @@ namespace OfficeToPDF
                                         WriteLine("Invalid PowerPoint output type");
                                         return ExitCode.Failed | ExitCode.InvalidArguments;
                                     }
-                                    this["powerpoint_output"] = args[argIdx + 1];
+                                    this.powerpoint_output = args[argIdx + 1];
                                     argIdx++;
                                 }
                                 break;
@@ -411,20 +470,20 @@ namespace OfficeToPDF
                                                 }
                                             }
                                         }
-                                        catch (Exception)
-                                        { }
+                                        catch
+                                        { /* NOOP */ }
                                         if (workingDirectoryWritable)
                                         {
                                             int maxTries = 20;
                                             while (maxTries-- > 0)
                                             {
-                                                this["working_dir"] = Path.Combine(args[argIdx + 1], Guid.NewGuid().ToString());
-                                                if (!Directory.Exists((string)this["working_dir"]))
+                                                this.working_dir = Path.Combine(args[argIdx + 1], Guid.NewGuid().ToString());
+                                                if (!Directory.Exists(this.working_dir))
                                                 {
-                                                    DirectoryInfo di = Directory.CreateDirectory((string)this["working_dir"]);
+                                                    DirectoryInfo di = Directory.CreateDirectory(this.working_dir);
                                                     if (di.Exists)
                                                     {
-                                                        this["has_working_dir"] = true;
+                                                        this.has_working_dir = true;
                                                         break;
                                                     }
                                                 }
@@ -476,7 +535,7 @@ namespace OfficeToPDF
                                         {
                                             this[itemMatch.Groups[1].Value.ToLower()] = (float)Convert.ToDouble(args[argIdx + 1]);
                                         }
-                                        catch (Exception)
+                                        catch
                                         {
                                             WriteLine("Header/Footer distance ({0}) is invalid", args[argIdx + 1]);
                                             return ExitCode.Failed | ExitCode.InvalidArguments;
@@ -502,7 +561,7 @@ namespace OfficeToPDF
                                     argIdx++;
                                 }
                                 if (optname.Equals("printer") || optname.Equals("fallback_printer"))
-{
+                                {
                                     if (!installedPrinters.ContainsKey(((string)this[optname]).ToLowerInvariant()))
                                     {
                                         // The requested printer did not exists
@@ -512,36 +571,36 @@ namespace OfficeToPDF
                                 }
                                 break;
                             case "screen":
-                                this["print"] = false;
-                                this[itemMatch.Groups[1].Value.ToLower()] = true;
+                                this.print = false;
+                                this.screen = true;
                                 break;
                             case "print":
-                                this["screen"] = false;
-                                this[itemMatch.Groups[1].Value.ToLower()] = true;
+                                this.screen = false;
+                                this.print = true;
                                 break;
                             case "version":
                                 Assembly asm = Assembly.GetExecutingAssembly();
                                 FileVersionInfo fv = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location);
                                 WriteLine("{0}", fv.FileVersion);
-                                Exit((int)ExitCode.Success);
+                                Exit(ExitCode.Success);
                                 break;
                             case "pdf_append":
-                                if ((MergeMode)this["pdf_merge"] != MergeMode.None)
+                                if (this.pdf_merge != MergeMode.None)
                                 {
                                     WriteLine("Only one of /pdf_append or /pdf_prepend can be used");
                                     return ExitCode.Failed | ExitCode.InvalidArguments;
                                 }
                                 postProcessPDF = true;
-                                this["pdf_merge"] = MergeMode.Append;
+                                this.pdf_merge = MergeMode.Append;
                                 break;
                             case "pdf_prepend":
-                                if ((MergeMode)this["pdf_merge"] != MergeMode.None)
+                                if (this.pdf_merge != MergeMode.None)
                                 {
                                     WriteLine("Only one of /pdf_append or /pdf_prepend can be used");
                                     return ExitCode.Failed | ExitCode.InvalidArguments;
                                 }
                                 postProcessPDF = true;
-                                this["pdf_merge"] = MergeMode.Prepend;
+                                this.pdf_merge = MergeMode.Prepend;
                                 break;
                             case "pdf_restrict_annotation":
                             case "pdf_restrict_extraction":
@@ -699,7 +758,7 @@ OfficeToPDF.exe [switches] input_file [output_file]
   output_file - The filename of the PDF to create. If not given, the input filename
                 will be used with a .pdf extension
 ");
-            Exit((int)ExitCode.Success);
+            Exit(ExitCode.Success);
         }
     }
 }

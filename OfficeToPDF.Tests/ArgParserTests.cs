@@ -195,6 +195,52 @@ namespace OfficeToPDF.Tests
             Assert.That(parser.pdf_page_mode, Is.EqualTo(expected));
         }
 
+        public static IEnumerable<object[]> PdfPageLayoutArgs =>
+            new[]
+            {
+                new object[] { "single", PdfPageLayout.SinglePage },
+                new object[] { "onecol", PdfPageLayout.OneColumn },
+                new object[] { "twocolleft", PdfPageLayout.TwoColumnLeft },
+                new object[] { "twocolright", PdfPageLayout.TwoColumnRight },
+                new object[] { "twopageleft", PdfPageLayout.TwoPageLeft },
+                new object[] { "twopageright", PdfPageLayout.TwoPageRight },
+                new object[] { default(string), default(PdfPageLayout?) }
+            };
+
+        [TestCaseSource(nameof(PdfPageLayoutArgs))]
+        public void WhenParsingPdfPageLayoutArgThenPropertyContainsCorrectValue(string option, PdfPageLayout? expected)
+        {
+            ArgParser parser = new ArgParser();
+
+            if (!string.IsNullOrEmpty(option))
+                parser.Parse(new[] { "/pdf_layout", option }, new Dictionary<string, bool>());
+
+            Assert.That(parser.ContainsKey("pdf_layout"), Is.True);
+            Assert.That(parser.pdf_layout, Is.EqualTo(expected));
+        }
+
+
+        public static IEnumerable<object[]> MetaCleanArgs =>
+            new[]
+            {
+                new object[] { "basic", MetaClean.Basic },
+                new object[] { "full", MetaClean.Full },
+                new object[] { default(string), MetaClean.None }
+            };
+
+        [TestCaseSource(nameof(MetaCleanArgs))]
+        public void WhenParsingMetaCleanArgThenPropertyContainsCorrectValue(string option, MetaClean expected)
+        {
+            ArgParser parser = new ArgParser();
+
+            if (!string.IsNullOrEmpty(option))
+                parser.Parse(new[] { "/pdf_clean_meta", option }, new Dictionary<string, bool>());
+
+            Assert.That(parser.ContainsKey("pdf_clean_meta"), Is.True);
+            Assert.That(parser.pdf_clean_meta, Is.EqualTo(expected));
+        }
+
+
         [TestCase("/readonly", true)]
         [TestCase(default(string), false)]
         public void WhenParsingReadonlyArgThenPropertyContainsCorrectValue(string option, bool expected)

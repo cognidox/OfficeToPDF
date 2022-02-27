@@ -93,7 +93,7 @@ namespace OfficeToPDF
             }
 
             // Make sure we only choose one of /screen or /print options
-            if ((Boolean)options["screen"] && (Boolean)options["print"])
+            if (options.screen && options.print)
             {
                 Console.WriteLine("You can only use one of /screen or /print - not both");
                 Exit(ExitCode.Failed | ExitCode.InvalidArguments);
@@ -140,8 +140,8 @@ namespace OfficeToPDF
                     Exit(ExitCode.Failed | ExitCode.FileNotFound);
                 }
                 inputFile = info.FullName;
-                options["original_filename"] = info.Name;
-                options["original_basename"] = info.Name.Substring(0, info.Name.Length - info.Extension.Length);
+                options.original_filename = info.Name;
+                options.original_basename = info.Name.Substring(0, info.Name.Length - info.Extension.Length);
             }
             catch
             {
@@ -150,8 +150,8 @@ namespace OfficeToPDF
             }
 
             // Stop people using the template as the input file
-            if (!String.IsNullOrEmpty((string)options["template"]) &&
-                inputFile.Equals((string)options["template"]))
+            if (!String.IsNullOrEmpty(options.template) &&
+                inputFile.Equals(options.template))
             {
                 Console.WriteLine("Input file must be different from the template file");
                 Exit(ExitCode.Failed | ExitCode.InvalidArguments);
@@ -165,7 +165,7 @@ namespace OfficeToPDF
                 outputFile = finalOutputFile = outputInfo.FullName;
                 if (outputInfo.Exists)
                 {
-                    if ((MergeMode)options["pdf_merge"] == MergeMode.None)
+                    if (options.pdf_merge == MergeMode.None)
                     {
                         // We are not merging, so delete the final destination
                         System.IO.File.Delete(outputInfo.FullName);
@@ -179,7 +179,7 @@ namespace OfficeToPDF
                 else
                 {
                     // If there is no current output, no need to merge
-                    options["pdf_merge"] = MergeMode.None;
+                    options.pdf_merge = MergeMode.None;
                 }
             }
             else
@@ -353,7 +353,7 @@ namespace OfficeToPDF
         private static void PostProcessPDFFile(String generatedFile, String finalFile, ArgParser options, Boolean postProcessPDFSecurity)
         {
             // Handle PDF merging
-            if ((MergeMode)options["pdf_merge"] != MergeMode.None)
+            if (options.pdf_merge != MergeMode.None)
             {
                 if (options.verbose)
                 {
@@ -361,15 +361,15 @@ namespace OfficeToPDF
                 }
                 PdfDocument srcDoc;
                 PdfDocument dstDoc = null;
-                if ((MergeMode)options["pdf_merge"] == MergeMode.Append)
+                if (options.pdf_merge == MergeMode.Append)
                 {
                     srcDoc = OpenPDFFile(generatedFile, options, PdfDocumentOpenMode.Import);
-                    dstDoc = ReadExistingPDFDocument(finalFile, generatedFile, ((string)options["pdf_owner_pass"]).Trim(), PdfDocumentOpenMode.Modify, options);
+                    dstDoc = ReadExistingPDFDocument(finalFile, generatedFile, options.pdf_owner_pass.Trim(), PdfDocumentOpenMode.Modify, options);
                 }
                 else
                 {
                     dstDoc = OpenPDFFile(generatedFile, options);
-                    srcDoc = ReadExistingPDFDocument(finalFile, generatedFile, ((string)options["pdf_owner_pass"]).Trim(), PdfDocumentOpenMode.Import, options);
+                    srcDoc = ReadExistingPDFDocument(finalFile, generatedFile, options.pdf_owner_pass.Trim(), PdfDocumentOpenMode.Import, options);
                 }
                 int pages = srcDoc.PageCount;
                 for (int pi = 0; pi < pages; pi++)
@@ -381,30 +381,29 @@ namespace OfficeToPDF
                 File.Delete(generatedFile);
             }
 
-            if (options["pdf_page_mode"] != null || options["pdf_layout"] != null ||
-                (MetaClean)options["pdf_clean_meta"] != MetaClean.None || postProcessPDFSecurity)
+            if (options.pdf_page_mode != null || options.pdf_layout != null ||
+                options.pdf_clean_meta != MetaClean.None || postProcessPDFSecurity)
             {
-
                 PdfDocument pdf = OpenPDFFile(finalFile, options);
 
-                if (options["pdf_page_mode"] != null)
+                if (options.pdf_page_mode != null)
                 {
                     if (options.verbose)
                     {
                         Console.WriteLine("Setting PDF Page mode");
                     }
-                    pdf.PageMode = (PdfPageMode)options["pdf_page_mode"];
+                    pdf.PageMode = options.pdf_page_mode.Value;
                 }
-                if (options["pdf_layout"] != null)
+                if (options.pdf_layout != null)
                 {
                     if (options.verbose)
                     {
                         Console.WriteLine("Setting PDF layout");
                     }
-                    pdf.PageLayout = (PdfPageLayout)options["pdf_layout"];
+                    pdf.PageLayout = options.pdf_layout.Value;
                 }
 
-                if ((MetaClean)options["pdf_clean_meta"] != MetaClean.None)
+                if (options.pdf_clean_meta != MetaClean.None)
                 {
                     if (options.verbose)
                     {
@@ -415,7 +414,7 @@ namespace OfficeToPDF
                     pdf.Info.Author = "";
                     pdf.Info.Subject = "";
                     //pdf.Info.Producer = "";
-                    if ((MetaClean)options["pdf_clean_meta"] == MetaClean.Full)
+                    if (options.pdf_clean_meta == MetaClean.Full)
                     {
                         pdf.Info.Title = "";
                         pdf.Info.CreationDate = System.DateTime.Today;
@@ -427,7 +426,7 @@ namespace OfficeToPDF
                 if (postProcessPDFSecurity)
                 {
                     PdfSecuritySettings secSettings = pdf.SecuritySettings;
-                    if (((string)options["pdf_owner_pass"]).Trim().Length != 0)
+                    if (options.pdf_owner_pass.Trim().Length != 0)
                     {
                         
                         // Set the owner password
@@ -435,9 +434,9 @@ namespace OfficeToPDF
                         {
                             Console.WriteLine("Setting PDF owner password");
                         }
-                        secSettings.OwnerPassword = ((string)options["pdf_owner_pass"]).Trim();
+                        secSettings.OwnerPassword = options.pdf_owner_pass.Trim();
                     }
-                    if (((string)options["pdf_user_pass"]).Trim().Length != 0)
+                    if (options.pdf_user_pass.Trim().Length != 0)
                     {
                         // Set the user password
                         // Set the owner password
@@ -445,33 +444,20 @@ namespace OfficeToPDF
                         {
                             Console.WriteLine("Setting PDF user password");
                         }
-                        secSettings.UserPassword = ((string)options["pdf_user_pass"]).Trim();
+                        secSettings.UserPassword = options.pdf_user_pass.Trim();
                     }
 
-                    secSettings.PermitAccessibilityExtractContent = !(Boolean)options["pdf_restrict_accessibility_extraction"];
-                    secSettings.PermitAnnotations = !(Boolean)options["pdf_restrict_annotation"];
-                    secSettings.PermitAssembleDocument = !(Boolean)options["pdf_restrict_assembly"];
-                    secSettings.PermitExtractContent = !(Boolean)options["pdf_restrict_extraction"];
-                    secSettings.PermitFormsFill = !(Boolean)options["pdf_restrict_forms"];
-                    secSettings.PermitModifyDocument = !(Boolean)options["pdf_restrict_modify"];
-                    secSettings.PermitPrint = !(Boolean)options["pdf_restrict_print"];
-                    secSettings.PermitFullQualityPrint = !(Boolean)options["pdf_restrict_full_quality"];
+                    secSettings.PermitAccessibilityExtractContent = !options.pdf_restrict_accessibility_extraction;
+                    secSettings.PermitAnnotations = !options.pdf_restrict_annotation;
+                    secSettings.PermitAssembleDocument = !options.pdf_restrict_assembly;
+                    secSettings.PermitExtractContent = !options.pdf_restrict_extraction;
+                    secSettings.PermitFormsFill = !options.pdf_restrict_forms;
+                    secSettings.PermitModifyDocument = !options.pdf_restrict_modify;
+                    secSettings.PermitPrint = !options.pdf_restrict_print;
+                    secSettings.PermitFullQualityPrint = !options.pdf_restrict_full_quality;
                 }
                 pdf.Save(finalFile);
                 pdf.Close();
-            }
-        }
-
-        static void CheckOptionIsInteger(ref Hashtable options, string optionKey, string optionName, string optionValue)
-        {
-            if (Regex.IsMatch(optionValue, @"^\d+$"))
-            {
-                options[optionKey] = (int)Convert.ToInt32(optionValue);
-            }
-            else
-            {
-                Console.WriteLine("{0} ({1}) is invalid", optionName, optionValue);
-                Exit(ExitCode.Failed | ExitCode.InvalidArguments);
             }
         }
 
@@ -480,7 +466,6 @@ namespace OfficeToPDF
             PdfDocument dstDoc = null;
             try
             {
-
                 dstDoc = OpenPDFFile(filename, options, mode);
             }
             catch (PdfReaderException)
@@ -527,7 +512,7 @@ namespace OfficeToPDF
                     printers[name.ToLowerInvariant()] = true;
                 }
             }
-            catch (Exception) { }
+            catch { /* NOOP */ }
             return printers;
         }
     } 
