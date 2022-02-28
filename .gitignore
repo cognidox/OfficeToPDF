@@ -455,3 +455,6 @@ $RECYCLE.BIN/
 
 # NCrunch
 **/*.v3.ncrunchsolution.user
+
+# NUnit unit test results
+**/TestResults.xml

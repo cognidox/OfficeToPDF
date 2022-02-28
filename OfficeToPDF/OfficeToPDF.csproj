@@ -3,7 +3,7 @@
   <Import Project="..\packages\Costura.Fody.3.3.3\build\Costura.Fody.props" Condition="Exists('..\packages\Costura.Fody.3.3.3\build\Costura.Fody.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{13F3BAB7-27FF-4391-A0FA-B56E84A12A20}</ProjectGuid>
@@ -325,10 +325,10 @@ foreach (var item in filesToCleanup)
     <ItemGroup>
       <DependentFile Include="COMServer.dll;COMServer.pdb" />
     </ItemGroup>
-    <PropertyGroup Condition="'$(Platform)' == 'AnyCPU'">
-      <DependentDir>x64\$(Configuration)</DependentDir>
+    <PropertyGroup Condition="'$(Platform)' == 'x86'">
+      <DependentDir>$(Configuration)</DependentDir>
     </PropertyGroup>
-    <PropertyGroup Condition="'$(Platform)' != 'AnyCPU'">
+    <PropertyGroup Condition="'$(Platform)' != 'x86'">
       <DependentDir>$(Platform)\$(Configuration)</DependentDir>
     </PropertyGroup>
     <Copy SourceFiles="@(DependentFile -> '$(SolutionDir)COMServer\$(DependentDir)\%(Identity)')" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" Condition="'$(NCrunch)' != '1'" />

@@ -6,7 +6,7 @@
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
     <ProjectGuid>{B9CA6971-F458-49D9-A06F-45040EE52966}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -22,23 +22,6 @@
     <TestProjectType>UnitTest</TestProjectType>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
@@ -175,10 +158,10 @@
     <ItemGroup>
       <DependentFile Include="COMServer.dll;COMServer.pdb" />
     </ItemGroup>
-    <PropertyGroup Condition="'$(Platform)' == 'AnyCPU'">
-      <DependentDir>x64\$(Configuration)</DependentDir>
+    <PropertyGroup Condition="'$(Platform)' == 'x86'">
+      <DependentDir>$(Configuration)</DependentDir>
     </PropertyGroup>
-    <PropertyGroup Condition="'$(Platform)' != 'AnyCPU'">
+    <PropertyGroup Condition="'$(Platform)' != 'x86'">
       <DependentDir>$(Platform)\$(Configuration)</DependentDir>
     </PropertyGroup>
     <Copy SourceFiles="@(DependentFile -> '$(SolutionDir)COMServer\$(DependentDir)\%(Identity)')" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" Condition="'$(NCrunch)' != '1'" />
