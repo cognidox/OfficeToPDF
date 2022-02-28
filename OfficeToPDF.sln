@@ -4,9 +4,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.2.32210.308
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OfficeToPDF", "OfficeToPDF\OfficeToPDF.csproj", "{13F3BAB7-27FF-4391-A0FA-B56E84A12A20}"
-	ProjectSection(ProjectDependencies) = postProject
-		{A240B9E5-3E14-4002-AE22-75A2277508A0} = {A240B9E5-3E14-4002-AE22-75A2277508A0}
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{EACE67AE-B856-4DD2-8CFA-6927E0B7E9BC}"
 	ProjectSection(SolutionItems) = preProject
