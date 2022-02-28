@@ -225,7 +225,6 @@
     <None Include="FodyWeavers.xml" />
     <EmbeddedResource Include="costura64\COMServer.dll" />
     <EmbeddedResource Include="costura32\COMServer.dll" />
-    <Content Include="PdfSharp.SharpZipLib\ReadMe.txt" />
     <Content Include="README.txt" />
   </ItemGroup>
   <ItemGroup>
