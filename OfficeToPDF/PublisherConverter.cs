@@ -126,7 +126,14 @@ namespace OfficeToPDF
 
         internal static void ClosePublisherApplication(Application publisher)
         {
-            ((Microsoft.Office.Interop.Publisher._Application)publisher).Quit();
+            try
+            {
+                ((Microsoft.Office.Interop.Publisher._Application)publisher).Quit();
+            }
+            catch (COMException)
+            {
+                // NOOP - The watchdog may have gone off
+            }
         }
 
         // Loop through all the pages in the document creating bookmark items for them

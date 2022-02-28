@@ -161,7 +161,14 @@ namespace OfficeToPDF
 
         internal static void CloseVisioApplication(InvisibleApp visio)
         {
-            visio.Quit();
+            try
+            {
+                visio.Quit();
+            }
+            catch (COMException)
+            {
+                // NOOP - The watchdog may have gone off
+            }
         }
     }
 }

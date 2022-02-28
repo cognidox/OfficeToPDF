@@ -296,8 +296,10 @@ namespace OfficeToPDF
                     presentation.Close();
                     return true;
                 }
-                catch (Exception)
+                catch (COMException ce)
                 {
+                    if (ce.HResult == -2147023174) // The RPC server is unavailable. (Exception from HRESULT: 0x800706BA)
+                        break; // The watchdog may have gone off
                     Thread.Sleep(500);
                 }
             }

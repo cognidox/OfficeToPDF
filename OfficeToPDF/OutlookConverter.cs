@@ -198,7 +198,14 @@ namespace OfficeToPDF
 
         internal static void CloseOutlookApplication(Application outlook)
         {
-            ((Microsoft.Office.Interop.Outlook._Application)outlook).Quit();
+            try
+            {
+                ((Microsoft.Office.Interop.Outlook._Application)outlook).Quit();
+            }
+            catch (COMException)
+            {
+                // NOOP - The watchdog may have gone off
+            }
         }
     }
 }

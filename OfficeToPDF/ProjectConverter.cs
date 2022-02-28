@@ -121,7 +121,14 @@ namespace OfficeToPDF
 
         internal static void CloseProjectApplication(MSProject.Application app)
         {
-            ((MSProject.Application)app).Quit();
+            try
+            {
+                ((MSProject.Application)app).Quit();
+            }
+            catch (COMException)
+            {
+                // NOOP - The watchdog may have gone off
+            }
         }
     }
 }

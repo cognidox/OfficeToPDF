@@ -707,7 +707,14 @@ namespace OfficeToPDF
 
         internal static void CloseExcelApplication(Application excel)
         {
-            ((Microsoft.Office.Interop.Excel._Application)excel).Quit();
+            try
+            {
+                ((Microsoft.Office.Interop.Excel._Application)excel).Quit();
+            }
+            catch (COMException)
+            {
+                // NOOP - The watchdog may have gone off
+            }
         }
 
         private static XlCorruptLoad GetXlRepairFile()
