@@ -32,10 +32,10 @@ jobs:
       run: nuget restore OfficeToPDF.sln
  
     - name: Build
-      run: msbuild --% /target:Build /property:Platform="Any CPU";Configuration=Release /verbosity:minimal /m OfficeToPDF.sln
+      run: msbuild --% /target:Build /property:Platform=x64;Configuration=Release /verbosity:minimal /m OfficeToPDF.sln
 
     - name: Test
-      run: '& "./packages/NUnit.ConsoleRunner.3.15.0/tools/nunit3-console.exe" --skipnontestassemblies --config=Release --result="TestResults.xml;transform=nunit3-junit.xslt" OfficeToPDF.sln'
+      run: '& "./packages/NUnit.ConsoleRunner.3.15.0/tools/nunit3-console.exe" --skipnontestassemblies --config=Release --result="TestResults.xml;transform=nunit3-junit.xslt" .\OfficeToPDF.Tests\bin\x64\Release\OfficeToPDF.Tests.dll'
 
     - name: Test Report
       uses: dorny/test-reporter@v1

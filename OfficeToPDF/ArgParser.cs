@@ -347,7 +347,7 @@ namespace OfficeToPDF
                                             this.pdf_page_mode = PdfPageMode.UseThumbs;
                                             break;
                                         default:
-                                            WriteLine("Invalid PDF page mode ({0}). It must be one of full, none, outline or thumbs", args[argIdx + 1]);
+                                            WriteLine("Invalid PDF page mode ({0}). It must be one of full, none, bookmarks or thumbs", args[argIdx + 1]);
                                             return ExitCode.Failed | ExitCode.InvalidArguments;
                                     }
                                     argIdx++;

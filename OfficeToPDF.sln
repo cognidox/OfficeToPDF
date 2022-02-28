@@ -74,10 +74,10 @@ Global
 		{B9CA6971-F458-49D9-A06F-45040EE52966}.Release|x64.Build.0 = Release|x64
 		{B9CA6971-F458-49D9-A06F-45040EE52966}.Release|x86.ActiveCfg = Release|x86
 		{B9CA6971-F458-49D9-A06F-45040EE52966}.Release|x86.Build.0 = Release|x86
-		{B9CA6971-F458-49D9-A06F-45040EE52966}.Release-signed|x64.ActiveCfg = Release|Any CPU
-		{B9CA6971-F458-49D9-A06F-45040EE52966}.Release-signed|x64.Build.0 = Release|Any CPU
-		{B9CA6971-F458-49D9-A06F-45040EE52966}.Release-signed|x86.ActiveCfg = Release|Any CPU
-		{B9CA6971-F458-49D9-A06F-45040EE52966}.Release-signed|x86.Build.0 = Release|Any CPU
+		{B9CA6971-F458-49D9-A06F-45040EE52966}.Release-signed|x64.ActiveCfg = Release|x64
+		{B9CA6971-F458-49D9-A06F-45040EE52966}.Release-signed|x64.Build.0 = Release|x64
+		{B9CA6971-F458-49D9-A06F-45040EE52966}.Release-signed|x86.ActiveCfg = Release|x86
+		{B9CA6971-F458-49D9-A06F-45040EE52966}.Release-signed|x86.Build.0 = Release|x86
 		{A240B9E5-3E14-4002-AE22-75A2277508A0}.Debug|x64.ActiveCfg = Debug|x64
 		{A240B9E5-3E14-4002-AE22-75A2277508A0}.Debug|x64.Build.0 = Debug|x64
 		{A240B9E5-3E14-4002-AE22-75A2277508A0}.Debug|x86.ActiveCfg = Debug|Win32

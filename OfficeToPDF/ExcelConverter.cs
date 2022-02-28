@@ -662,7 +662,7 @@ namespace OfficeToPDF
                 if (workbook != null)
                 {
                     // We don't want code to interfere with closing, so disable events
-                    app.EnableEvents = false;
+                    excel.EnableEvents = false;
                     ReleaseCOMObject(activeSheet);
                     ReleaseCOMObject(activeWindow);
                     ReleaseCOMObject(wbWin);
@@ -679,7 +679,7 @@ namespace OfficeToPDF
                     if (workbooks != null)
                     {
                         // We don't want code to interfere with closing, so disable events
-                        app.EnableEvents = false;
+                        excel.EnableEvents = false;
                         workbooks.Close();
                     }
 
