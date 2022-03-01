@@ -9,7 +9,7 @@ from C# code via the standard pinvoke mechanism.
 using System;
 using System.Runtime.InteropServices;
 
-[DllImport("OXID.dll", SetLastError = true)]
+[DllImport("COMServer.dll", SetLastError = true)]
 static extern uint GetCOMProcessId(IntPtr unknown);
 ```
 
