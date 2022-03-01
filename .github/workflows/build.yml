@@ -28,6 +28,14 @@ jobs:
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
 
+    - name: Cache NuGet packages
+      uses: actions/cache@v2
+      with:
+        path: packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.config') }} #hash of packages files
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
     - name: Restore NuGet Packages
       run: nuget restore OfficeToPDF.sln
  
