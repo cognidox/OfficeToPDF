@@ -642,6 +642,10 @@ namespace OfficeToPDF
                                     }
                                 }
                             }
+                            catch (Exception)
+                            {
+                                f.Locked = true;
+                            }
                             finally
                             {
                                 ReleaseCOMObject(f);
