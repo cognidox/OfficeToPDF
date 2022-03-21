@@ -42,7 +42,7 @@ namespace OfficeToPDF
                 { "excel_worksheet", "Excel worksheet" },
                 { "word_max_pages", "Maximum number of pages" },
                 { "excel_delay", "Excel delay milliseconds" },
-                { "timeout", "Timeout in seconds to wait for generation of the pdf" }
+                { "timeout", "Timeout in seconds to wait for generation of the PDF" }
             };
 
         public ArgParser()
@@ -669,6 +669,7 @@ OfficeToPDF.exe [switches] input_file [output_file]
   /excludetags  - Do not include tags in the PDF
   /noquit       - Do not quit already running Office applications once the conversion is done
   /verbose      - Print out messages as it runs
+  /timeout      - Timeout in seconds to wait for generation of the PDF
   /password <pass>          - Use <pass> as the password to open the document with
   /writepassword <pass>     - Use <pass> as the write password to open the document with
   /template <template_path> - Use a .dot, .dotx or .dotm template when

@@ -458,3 +458,4 @@ $RECYCLE.BIN/
 
 # NUnit unit test results
 **/TestResults.xml
+/sign-files.bat
