@@ -162,6 +162,7 @@ namespace OfficeToPDF
                     // sneaky method of getting the presentation - create an empty presentation
                     // and insert the slides from the original file.
                     Fonts fonts = null;
+                    Boolean bitmapMissingFonts = !(Boolean)options["powerpoint_ref_fonts"];
                     try
                     {
                         fonts = activePresentation.Fonts;
@@ -195,7 +196,7 @@ namespace OfficeToPDF
                     {
                         try
                         {
-                            activePresentation.ExportAsFixedFormat(outputFile, PpFixedFormatType.ppFixedFormatTypePDF, quality, MSCore.MsoTriState.msoFalse, PpPrintHandoutOrder.ppPrintHandoutVerticalFirst, printType, MSCore.MsoTriState.msoFalse, null, PpPrintRangeType.ppPrintAll, "", includeProps, true, includeTags, true, pdfa, Type.Missing);
+                            activePresentation.ExportAsFixedFormat(outputFile, PpFixedFormatType.ppFixedFormatTypePDF, quality, MSCore.MsoTriState.msoFalse, PpPrintHandoutOrder.ppPrintHandoutVerticalFirst, printType, MSCore.MsoTriState.msoFalse, null, PpPrintRangeType.ppPrintAll, "", includeProps, true, includeTags, bitmapMissingFonts, pdfa, Type.Missing);
                         }
                         catch (Exception) {
                             if (!String.IsNullOrEmpty((string)options["fallback_printer"])) {
