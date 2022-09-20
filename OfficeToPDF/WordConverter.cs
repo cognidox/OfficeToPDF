@@ -634,7 +634,14 @@ namespace OfficeToPDF
                                     try
                                     {
                                         altered = true;
-                                        f.Unlink();
+                                        if (f.Type == WdFieldType.wdFieldIncludePicture)
+                                        {
+                                            f.Locked = true;
+                                        }
+                                        else
+                                        {
+                                            f.Unlink();
+                                        }
                                     }
                                     catch (Exception)
                                     {
