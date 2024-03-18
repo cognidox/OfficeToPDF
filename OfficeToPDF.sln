@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27428.2037
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32210.308
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OfficeToPDF", "OfficeToPDF\OfficeToPDF.csproj", "{13F3BAB7-27FF-4391-A0FA-B56E84A12A20}"
 EndProject
@@ -21,53 +21,74 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{40A85399-B
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{81412F10-6C41-4627-AEFD-DE9E41157822}"
 	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
 		LICENSE.md = LICENSE.md
 		README.md = README.md
 		sign-files.bat = sign-files.bat
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OfficeToPDF.Tests", "OfficeToPDF.Tests\OfficeToPDF.Tests.csproj", "{B9CA6971-F458-49D9-A06F-45040EE52966}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A240B9E5-3E14-4002-AE22-75A2277508A0} = {A240B9E5-3E14-4002-AE22-75A2277508A0}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "COMServer", "COMServer\COMServer.vcxproj", "{A240B9E5-3E14-4002-AE22-75A2277508A0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{06BEDB62-53CB-4AA8-9F35-A513C28F0189}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{69873690-64E5-42D0-9E72-0FC66274B0E9}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\build.yml = .github\workflows\build.yml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Any CPU = Debug|Any CPU
-		Debug|Mixed Platforms = Debug|Mixed Platforms
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
-		Release|Any CPU = Release|Any CPU
-		Release|Mixed Platforms = Release|Mixed Platforms
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
-		Release-signed|Any CPU = Release-signed|Any CPU
-		Release-signed|Mixed Platforms = Release-signed|Mixed Platforms
 		Release-signed|x64 = Release-signed|x64
 		Release-signed|x86 = Release-signed|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{13F3BAB7-27FF-4391-A0FA-B56E84A12A20}.Debug|Any CPU.ActiveCfg = Debug|x64
-		{13F3BAB7-27FF-4391-A0FA-B56E84A12A20}.Debug|Mixed Platforms.ActiveCfg = Debug|x64
-		{13F3BAB7-27FF-4391-A0FA-B56E84A12A20}.Debug|Mixed Platforms.Build.0 = Debug|x64
 		{13F3BAB7-27FF-4391-A0FA-B56E84A12A20}.Debug|x64.ActiveCfg = Debug|x64
 		{13F3BAB7-27FF-4391-A0FA-B56E84A12A20}.Debug|x64.Build.0 = Debug|x64
 		{13F3BAB7-27FF-4391-A0FA-B56E84A12A20}.Debug|x86.ActiveCfg = Debug|x86
 		{13F3BAB7-27FF-4391-A0FA-B56E84A12A20}.Debug|x86.Build.0 = Debug|x86
-		{13F3BAB7-27FF-4391-A0FA-B56E84A12A20}.Release|Any CPU.ActiveCfg = Release|x64
-		{13F3BAB7-27FF-4391-A0FA-B56E84A12A20}.Release|Any CPU.Build.0 = Release|x64
-		{13F3BAB7-27FF-4391-A0FA-B56E84A12A20}.Release|Mixed Platforms.ActiveCfg = Release|x64
-		{13F3BAB7-27FF-4391-A0FA-B56E84A12A20}.Release|Mixed Platforms.Build.0 = Release|x64
 		{13F3BAB7-27FF-4391-A0FA-B56E84A12A20}.Release|x64.ActiveCfg = Release|x64
 		{13F3BAB7-27FF-4391-A0FA-B56E84A12A20}.Release|x64.Build.0 = Release|x64
 		{13F3BAB7-27FF-4391-A0FA-B56E84A12A20}.Release|x86.ActiveCfg = Release|x86
 		{13F3BAB7-27FF-4391-A0FA-B56E84A12A20}.Release|x86.Build.0 = Release|x86
-		{13F3BAB7-27FF-4391-A0FA-B56E84A12A20}.Release-signed|Any CPU.ActiveCfg = Release-signed|x86
-		{13F3BAB7-27FF-4391-A0FA-B56E84A12A20}.Release-signed|Any CPU.Build.0 = Release-signed|x86
-		{13F3BAB7-27FF-4391-A0FA-B56E84A12A20}.Release-signed|Mixed Platforms.ActiveCfg = Release-signed|x64
-		{13F3BAB7-27FF-4391-A0FA-B56E84A12A20}.Release-signed|Mixed Platforms.Build.0 = Release-signed|x64
 		{13F3BAB7-27FF-4391-A0FA-B56E84A12A20}.Release-signed|x64.ActiveCfg = Release-signed|x64
 		{13F3BAB7-27FF-4391-A0FA-B56E84A12A20}.Release-signed|x64.Build.0 = Release-signed|x64
 		{13F3BAB7-27FF-4391-A0FA-B56E84A12A20}.Release-signed|x86.ActiveCfg = Release-signed|x86
 		{13F3BAB7-27FF-4391-A0FA-B56E84A12A20}.Release-signed|x86.Build.0 = Release-signed|x86
+		{B9CA6971-F458-49D9-A06F-45040EE52966}.Debug|x64.ActiveCfg = Debug|x64
+		{B9CA6971-F458-49D9-A06F-45040EE52966}.Debug|x64.Build.0 = Debug|x64
+		{B9CA6971-F458-49D9-A06F-45040EE52966}.Debug|x86.ActiveCfg = Debug|x86
+		{B9CA6971-F458-49D9-A06F-45040EE52966}.Debug|x86.Build.0 = Debug|x86
+		{B9CA6971-F458-49D9-A06F-45040EE52966}.Release|x64.ActiveCfg = Release|x64
+		{B9CA6971-F458-49D9-A06F-45040EE52966}.Release|x64.Build.0 = Release|x64
+		{B9CA6971-F458-49D9-A06F-45040EE52966}.Release|x86.ActiveCfg = Release|x86
+		{B9CA6971-F458-49D9-A06F-45040EE52966}.Release|x86.Build.0 = Release|x86
+		{B9CA6971-F458-49D9-A06F-45040EE52966}.Release-signed|x64.ActiveCfg = Release|x64
+		{B9CA6971-F458-49D9-A06F-45040EE52966}.Release-signed|x86.ActiveCfg = Release|x86
+		{A240B9E5-3E14-4002-AE22-75A2277508A0}.Debug|x64.ActiveCfg = Debug|x64
+		{A240B9E5-3E14-4002-AE22-75A2277508A0}.Debug|x64.Build.0 = Debug|x64
+		{A240B9E5-3E14-4002-AE22-75A2277508A0}.Debug|x86.ActiveCfg = Debug|Win32
+		{A240B9E5-3E14-4002-AE22-75A2277508A0}.Debug|x86.Build.0 = Debug|Win32
+		{A240B9E5-3E14-4002-AE22-75A2277508A0}.Release|x64.ActiveCfg = Release|x64
+		{A240B9E5-3E14-4002-AE22-75A2277508A0}.Release|x64.Build.0 = Release|x64
+		{A240B9E5-3E14-4002-AE22-75A2277508A0}.Release|x86.ActiveCfg = Release|Win32
+		{A240B9E5-3E14-4002-AE22-75A2277508A0}.Release|x86.Build.0 = Release|Win32
+		{A240B9E5-3E14-4002-AE22-75A2277508A0}.Release-signed|x64.ActiveCfg = Release|x64
+		{A240B9E5-3E14-4002-AE22-75A2277508A0}.Release-signed|x86.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{69873690-64E5-42D0-9E72-0FC66274B0E9} = {06BEDB62-53CB-4AA8-9F35-A513C28F0189}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {28AED493-F0C8-4DE2-9D3A-227F3A5CC7CF}

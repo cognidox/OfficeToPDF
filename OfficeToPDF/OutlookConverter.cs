@@ -18,13 +18,9 @@
  */
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Runtime.InteropServices;
-using MSCore = Microsoft.Office.Core;
 using Microsoft.Office.Interop.Outlook;
 
 namespace OfficeToPDF
@@ -32,30 +28,51 @@ namespace OfficeToPDF
     /// <summary>
     /// Handle conversion of Outlook msg files
     /// </summary>
-    class OutlookConverter: Converter
+    class OutlookConverter: Converter, IConverter
     {
-        public static new int Convert(String inputFile, String outputFile, Hashtable options)
+        ExitCode IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
         {
-            Boolean running = (Boolean)options["noquit"];
-            Microsoft.Office.Interop.Outlook.Application app = null;
-            String tmpDocFile = null;
+            if (options.verbose)
+            {
+                Console.WriteLine("Converting with Outlook converter");
+            }
+            return Convert(inputFile, outputFile, options);
+        }
+
+        public static ExitCode StartOutlook(ref Boolean running, ref Application outlook)
+        {
             try
             {
-                try
-                {
-                    app = (Microsoft.Office.Interop.Outlook.Application)Marshal.GetActiveObject("Outlook.Application");
-                }
-                catch(System.Exception)
-                {
-                    app = new Microsoft.Office.Interop.Outlook.Application();
-                    running = false;
-                }
-                if (app == null)
-                {
-                    Console.WriteLine("Unable to start outlook instance");
-                    return (int)ExitCode.ApplicationError;
-                }
-                var session = app.Session;
+                outlook = (Microsoft.Office.Interop.Outlook.Application)Marshal.GetActiveObject("Outlook.Application");
+            }
+            catch (System.Exception)
+            {
+                outlook = new Microsoft.Office.Interop.Outlook.Application();
+                running = false;
+            }
+            if (outlook == null)
+            {
+                Console.WriteLine("Unable to start outlook instance");
+                return ExitCode.ApplicationError;
+            }
+            return ExitCode.Success;
+        }
+
+        static ExitCode Convert(String inputFile, String outputFile, ArgParser options)
+        {
+            Boolean running = options.noquit;
+            Microsoft.Office.Interop.Outlook.Application outlook = null;
+            String tmpDocFile = null;
+            IWatchdog watchdog = new NullWatchdog();
+            try
+            {
+                ExitCode result = StartOutlook(ref running, ref outlook);
+                if (result != ExitCode.Success)
+                    return result;
+
+                watchdog = WatchdogFactory.CreateStarted(outlook, options.timeout);
+
+                var session = outlook.Session;
                 FileInfo fi = new FileInfo(inputFile);
                 // Create a temporary doc file from the message
                 tmpDocFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".html";
@@ -67,7 +84,7 @@ namespace OfficeToPDF
                         {
                             ReleaseCOMObject(message);
                             ReleaseCOMObject(session);
-                            return (int)ExitCode.FileOpenFailure;
+                            return ExitCode.FileOpenFailure;
                         }
                         message.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olHTML);
                         ((_MailItem)message).Close(OlInspectorClose.olDiscard);
@@ -80,7 +97,7 @@ namespace OfficeToPDF
                         {
                             ReleaseCOMObject(contact);
                             ReleaseCOMObject(session);
-                            return (int)ExitCode.FileOpenFailure;
+                            return ExitCode.FileOpenFailure;
                         }
                         contact.SaveAs(tmpDocFile, Microsoft.Office.Interop.Outlook.OlSaveAsType.olHTML);
                         ReleaseCOMObject(contact);
@@ -146,19 +163,21 @@ namespace OfficeToPDF
 
                 if (!File.Exists(tmpDocFile))
                 {
-                    return (int)ExitCode.UnknownError;
+                    return ExitCode.UnknownError;
                 }
                 // Convert the doc file to a PDF
-                options["IsTempWord"] = true;
+                options.IsTempWord = true;
                 return WordConverter.Convert(tmpDocFile, outputFile, options);
             }
             catch (System.Exception e)
             {
                 Console.WriteLine(e.Message);
-                return (int)ExitCode.UnknownError;
+                return ExitCode.UnknownError;
             }
             finally
             {
+                watchdog.Stop();
+
                 if (tmpDocFile != null && File.Exists(tmpDocFile))
                 {
                     try
@@ -169,11 +188,23 @@ namespace OfficeToPDF
                     catch (System.Exception) { }
                 }
                 // If we were not already running, quit and release the outlook object
-                if (app != null && !running)
+                if (outlook != null && !running)
                 {
-                    ((Microsoft.Office.Interop.Outlook._Application)app).Quit();
+                    CloseOutlookApplication(outlook);
                 }
-                ReleaseCOMObject(app);
+                ReleaseCOMObject(outlook);
+            }
+        }
+
+        internal static void CloseOutlookApplication(Application outlook)
+        {
+            try
+            {
+                ((Microsoft.Office.Interop.Outlook._Application)outlook).Quit();
+            }
+            catch (COMException)
+            {
+                // NOOP - The watchdog may have gone off
             }
         }
     }
