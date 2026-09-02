@@ -23,14 +23,24 @@ using System.IO;
 using System.Threading;
 using System.Runtime.InteropServices;
 using Microsoft.Office.Interop.Excel;
+using System.Collections.Generic;
 
 namespace OfficeToPDF
 {
     /// <summary>
     /// Handle conversion of Excel files
     /// </summary>
-    class ExcelConverter: Converter
+    class ExcelConverter: Converter, IConverter
     {
+        ExitCode IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
+        {
+            if (options.verbose)
+            {
+                Console.WriteLine("Converting with Excel converter");
+            }
+            return Convert(inputFile, outputFile, options);
+        }
+
         // These are the properties we will extract from the first worksheet of any template document
         private static string[] templateProperties = 
         {
@@ -44,11 +54,43 @@ namespace OfficeToPDF
             "ScaleWithDocHeaderFooter", "TopMargin", "Zoom"
         };
 
-        // Main conversion routine
-        public static new int Convert(String inputFile, String outputFile, Hashtable options)
+        public static ExitCode StartExcel(ref Boolean running, ref Application excel)
         {
-            Boolean running = (Boolean)options["noquit"];
-            Microsoft.Office.Interop.Excel.Application app = null;
+            // Excel can be very slow to start up, so try to get the COM
+            // object a few times
+            int tries = 10;
+            excel = new Microsoft.Office.Interop.Excel.Application();
+            running = false;
+            while (tries > 0)
+            {
+                try
+                {
+                    // Try to set a property on the object
+                    excel.ScreenUpdating = false;
+                }
+                catch (COMException)
+                {
+                    // Decrement the number of tries and have a bit of a snooze
+                    tries--;
+                    Thread.Sleep(500);
+                    continue;
+                }
+                // Looks ok, so bail out of the loop
+                break;
+            }
+            if (tries == 0)
+            {
+                ReleaseCOMObject(excel);
+                return ExitCode.ApplicationError;
+            }
+            return ExitCode.Success;
+        }
+
+        // Main conversion routine
+        static ExitCode Convert(String inputFile, String outputFile, ArgParser options)
+        {
+            Boolean running = options.noquit;
+            Microsoft.Office.Interop.Excel.Application excel = null;
             Microsoft.Office.Interop.Excel.Workbooks workbooks = null;
             Microsoft.Office.Interop.Excel.Workbook workbook = null;
             System.Object activeSheet = null;
@@ -58,63 +100,43 @@ namespace OfficeToPDF
 
             String tmpFile = null;
             object oMissing = System.Reflection.Missing.Value;
-            Boolean nowrite = (Boolean)options["readonly"];
+            Boolean nowrite = options.@readonly;
+            IWatchdog watchdog = new NullWatchdog();
             try
             {
-                // Excel can be very slow to start up, so try to get the COM
-                // object a few times
-                int tries = 10;
-                app = new Microsoft.Office.Interop.Excel.Application();
-                while (tries > 0)
+                ExitCode result = StartExcel(ref running, ref excel);
+                if (result != ExitCode.Success)
+                    return result;
+
+                watchdog = WatchdogFactory.CreateStarted(excel, options.timeout);
+
+                excel.Visible = true;
+                excel.DisplayAlerts = false;
+                excel.AskToUpdateLinks = false;
+                excel.AlertBeforeOverwriting = false;
+                excel.EnableLargeOperationAlert = false;
+                excel.Interactive = false;
+                excel.FeatureInstall = Microsoft.Office.Core.MsoFeatureInstall.msoFeatureInstallNone;
+                bool currentPaperMapSize = excel.MapPaperSize;
+                if (currentPaperMapSize != !options.excel_no_map_papersize)
                 {
-                    try
-                    {
-                        // Try to set a property on the object
-                        app.ScreenUpdating = false;
-                    }
-                    catch (COMException)
-                    {
-                        // Decrement the number of tries and have a bit of a snooze
-                        tries--;
-                        Thread.Sleep(500);
-                        continue;
-                    }
-                    // Looks ok, so bail out of the loop
-                    break;
-                }
-                if (tries == 0)
-                {
-                    ReleaseCOMObject(app);
-                    return (int)ExitCode.ApplicationError;
+                    excel.MapPaperSize = !options.excel_no_map_papersize;
                 }
 
-                app.Visible = true;
-                app.DisplayAlerts = false;
-                app.AskToUpdateLinks = false;
-                app.AlertBeforeOverwriting = false;
-                app.EnableLargeOperationAlert = false;
-                app.Interactive = false;
-                app.FeatureInstall = Microsoft.Office.Core.MsoFeatureInstall.msoFeatureInstallNone;
-                bool currentPaperMapSize = app.MapPaperSize;
-                if (currentPaperMapSize != !(Boolean)options["excel_no_map_papersize"])
-                {
-                    app.MapPaperSize = !(Boolean)options["excel_no_map_papersize"];
-                }
-
-                var onlyActiveSheet = (Boolean)options["excel_active_sheet"];
-                Boolean activeSheetOnMaxRows = (Boolean)options["excel_active_sheet_on_max_rows"];
-                Boolean includeProps = !(Boolean)options["excludeprops"];
-                Boolean skipRecalculation = (Boolean)options["excel_no_recalculate"];
-                Boolean showHeadings = (Boolean)options["excel_show_headings"];
-                Boolean showFormulas = (Boolean)options["excel_show_formulas"];
-                Boolean isHidden = (Boolean)options["hidden"];
-                Boolean screenQuality = (Boolean)options["screen"];
-                Boolean updateLinks = !(Boolean)options["excel_no_link_update"];
-                Boolean runMacros = (Boolean)options["excel_auto_macros"];
-                int maxRows = (int)options["excel_max_rows"];
-                int worksheetNum = (int)options["excel_worksheet"];
+                var onlyActiveSheet = options.excel_active_sheet;
+                Boolean activeSheetOnMaxRows = options.excel_active_sheet_on_max_rows;
+                Boolean includeProps = !options.excludeprops;
+                Boolean skipRecalculation = options.excel_no_recalculate;
+                Boolean showHeadings = options.excel_show_headings;
+                Boolean showFormulas = options.excel_show_formulas;
+                Boolean isHidden = options.hidden;
+                Boolean screenQuality = options.screen;
+                Boolean updateLinks = !options.excel_no_link_update;
+                Boolean runMacros = options.excel_auto_macros;
+                int maxRows = options.excel_max_rows;;
+                int worksheetNum = options.excel_worksheet;
                 int sheetForConversionIdx = 0;
-                activeWindow = app.ActiveWindow;
+                activeWindow = excel.ActiveWindow;
                 Sheets allSheets = null;
                 XlFileFormat fmt = XlFileFormat.xlOpenXMLWorkbook;
                 XlFixedFormatQuality quality = XlFixedFormatQuality.xlQualityStandard;
@@ -122,21 +144,21 @@ namespace OfficeToPDF
                 if (isHidden)
                 {
                     // Try and at least minimise it
-                    app.WindowState = XlWindowState.xlMinimized;
-                    app.Visible = false;
+                    excel.WindowState = XlWindowState.xlMinimized;
+                    excel.Visible = false;
                 }
 
                 String readPassword = "";
-                if (!String.IsNullOrEmpty((String)options["password"]))
+                if (!String.IsNullOrEmpty(options.password))
                 {
-                    readPassword = (String)options["password"];
+                    readPassword = options.password;
                 }
                 Object oReadPass = (Object)readPassword;
 
                 String writePassword = "";
-                if (!String.IsNullOrEmpty((String)options["writepassword"]))
+                if (!String.IsNullOrEmpty(options.writepassword))
                 {
-                    writePassword = (String)options["writepassword"];
+                    writePassword = options.writepassword;
                 }
                 Object oWritePass = (Object)writePassword;
 
@@ -144,10 +166,10 @@ namespace OfficeToPDF
                 if (Converter.IsPasswordProtected(inputFile) && String.IsNullOrEmpty(readPassword))
                 {
                     Console.WriteLine("Unable to open password protected file");
-                    return (int)ExitCode.PasswordFailure;
+                    return ExitCode.PasswordFailure;
                 }
                 
-                workbooks = app.Workbooks;
+                workbooks = excel.Workbooks;
 
                 // If we have no write password and we're attempting to open for writing, we might be
                 // caught out by an unexpected write password
@@ -177,7 +199,7 @@ namespace OfficeToPDF
                 // Unable to open workbook
                 if (workbook == null)
                 {
-                    return (int)ExitCode.FileOpenFailure;
+                    return ExitCode.FileOpenFailure;
                 }
 
                 // Turn off macros for non-macro workbooks
@@ -189,14 +211,14 @@ namespace OfficeToPDF
                 
                 if (runMacros)
                 {
-                    bool currentEnableEvents = app.EnableEvents;
-                    app.EnableEvents = true;
+                    bool currentEnableEvents = excel.EnableEvents;
+                    excel.EnableEvents = true;
                     workbook.RunAutoMacros(XlRunAutoMacro.xlAutoOpen);
-                    app.EnableEvents = currentEnableEvents;
+                    excel.EnableEvents = currentEnableEvents;
                 }
                 
                 // Get any template options
-                SetPageOptionsFromTemplate(app, workbooks, options, ref templatePageSetup);
+                SetPageOptionsFromTemplate(excel, workbooks, options, ref templatePageSetup);
 
                 // Try and avoid xls files raising a dialog
                 var temporaryStorageDir = Path.GetTempFileName();
@@ -225,7 +247,7 @@ namespace OfficeToPDF
                         if (worksheetNum > allSheets.Count)
                         {
                             // Sheet count is too big
-                            return (int)ExitCode.WorksheetNotFound;
+                            return ExitCode.WorksheetNotFound;
                         }
                         if (allSheets[worksheetNum] is _Worksheet)
                         {
@@ -242,7 +264,7 @@ namespace OfficeToPDF
                     catch (Exception)
                     {
                         ReleaseCOMObject(allSheets);
-                        return (int)ExitCode.WorksheetNotFound;
+                        return ExitCode.WorksheetNotFound;
                     }
                 }
                 
@@ -480,8 +502,8 @@ namespace OfficeToPDF
                 // Allow for re-calculation to be skipped
                 if (skipRecalculation)
                 {
-                    app.Calculation = XlCalculation.xlCalculationManual;
-                    app.CalculateBeforeSave = false;
+                    excel.Calculation = XlCalculation.xlCalculationManual;
+                    excel.CalculateBeforeSave = false;
                 }
                 
                 workbook.SaveAs(tmpFile, fmt, Type.Missing, Type.Missing, Type.Missing, false, XlSaveAsAccessMode.xlNoChange, Type.Missing, false, Type.Missing, Type.Missing, Type.Missing);
@@ -506,7 +528,7 @@ namespace OfficeToPDF
                         try
                         {
                             SetPageSetupProperties(templatePageSetup, wps);
-                            if (String.IsNullOrEmpty((string)options["printer"]))
+                            if (String.IsNullOrEmpty(options.printer))
                             {
                                 try
                                 {
@@ -515,9 +537,9 @@ namespace OfficeToPDF
                                 }
                                 catch (Exception)
                                 {
-                                    if (!String.IsNullOrEmpty((string)options["fallback_printer"]))
+                                    if (!String.IsNullOrEmpty(options.fallback_printer))
                                     {
-                                        PrintToGhostscript((string)options["fallback_printer"], outputFile, printFunc);
+                                        PrintToGhostscript(options.fallback_printer, outputFile, printFunc);
                                     }
                                     else
                                     {
@@ -527,7 +549,7 @@ namespace OfficeToPDF
                             }
                             else
                             {
-                                PrintToGhostscript((string)options["printer"], outputFile, printFunc);
+                                PrintToGhostscript(options.printer, outputFile, printFunc);
                             }
                         }
                         finally
@@ -551,7 +573,7 @@ namespace OfficeToPDF
                     }
                     else
                     {
-                        return (int)ExitCode.UnknownError;
+                        return ExitCode.UnknownError;
                     }
                     AddCOMDelay(options);
                 }
@@ -589,7 +611,7 @@ namespace OfficeToPDF
                             ReleaseCOMObject(worksheets);
                         }
                     }
-                    if (String.IsNullOrEmpty((string)options["printer"]))
+                    if (String.IsNullOrEmpty(options.printer))
                     {
                         try
                         {
@@ -598,9 +620,9 @@ namespace OfficeToPDF
                         }
                         catch (Exception)
                         {
-                            if (!String.IsNullOrEmpty((string)options["fallback_printer"]))
+                            if (!String.IsNullOrEmpty(options.fallback_printer))
                             {
-                                PrintToGhostscript((string)options["fallback_printer"], outputFile, printFunc);
+                                PrintToGhostscript(options.fallback_printer, outputFile, printFunc);
                             }
                             else
                             {
@@ -608,37 +630,39 @@ namespace OfficeToPDF
                             }
                         }
                     } else {
-                        PrintToGhostscript((string)options["printer"], outputFile, printFunc);
+                        PrintToGhostscript(options.printer, outputFile, printFunc);
                     }
                 }
-                app.MapPaperSize = currentPaperMapSize;
+                excel.MapPaperSize = currentPaperMapSize;
                 ReleaseCOMObject(allSheets);
 
-                return (int)ExitCode.Success;
+                return ExitCode.Success;
             }
             catch (COMException ce)
             {
                 if ((uint)ce.ErrorCode == 0x800A03EC)
                 {
-                    return (int)ExitCode.EmptyWorksheet;
+                    return ExitCode.EmptyWorksheet;
                 }
                 else
                 {
                     Console.WriteLine(ce.Message);
-                    return (int)ExitCode.UnknownError;
+                    return ExitCode.UnknownError;
                 }
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
-                return (int)ExitCode.UnknownError;
+                return ExitCode.UnknownError;
             }
             finally
             {
+                watchdog.Stop();
+
                 if (workbook != null)
                 {
                     // We don't want code to interfere with closing, so disable events
-                    app.EnableEvents = false;
+                    excel.EnableEvents = false;
                     ReleaseCOMObject(activeSheet);
                     ReleaseCOMObject(activeWindow);
                     ReleaseCOMObject(wbWin);
@@ -655,20 +679,20 @@ namespace OfficeToPDF
                     if (workbooks != null)
                     {
                         // We don't want code to interfere with closing, so disable events
-                        app.EnableEvents = false;
+                        excel.EnableEvents = false;
                         workbooks.Close();
                     }
 
-                    if (app != null)
+                    if (excel != null)
                     {
-                        ((Microsoft.Office.Interop.Excel._Application)app).Quit();
+                        CloseExcelApplication(excel);
                     }
                 }
                 
                 // Clean all the COM leftovers
                 ReleaseCOMObject(workbook);
                 ReleaseCOMObject(workbooks);
-                ReleaseCOMObject(app);
+                ReleaseCOMObject(excel);
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
 
@@ -681,17 +705,29 @@ namespace OfficeToPDF
             }
         }
 
+        internal static void CloseExcelApplication(Application excel)
+        {
+            try
+            {
+                ((Microsoft.Office.Interop.Excel._Application)excel).Quit();
+            }
+            catch (COMException)
+            {
+                // NOOP - The watchdog may have gone off
+            }
+        }
+
         private static XlCorruptLoad GetXlRepairFile()
         {
             return XlCorruptLoad.xlRepairFile;
         }
 
         // Return true if there is a valid template option
-        protected static bool HasTemplateOption(Hashtable options)
+        protected static bool HasTemplateOption(ArgParser options)
         {
-            if (String.IsNullOrEmpty((string)options["template"]) ||
-                !File.Exists((string)options["template"]) ||
-                !System.Text.RegularExpressions.Regex.IsMatch((string)options["template"], @"^.*\.xl[st][mx]?$"))
+            if (String.IsNullOrEmpty(options.template) ||
+                !File.Exists(options.template) ||
+                !System.Text.RegularExpressions.Regex.IsMatch(options.template, @"^.*\.xl[st][mx]?$"))
             {
                 return false;
             }
@@ -700,7 +736,7 @@ namespace OfficeToPDF
 
         // Read the first worksheet from a template document and extract and store
         // the page settings for later use
-        protected static void SetPageOptionsFromTemplate(Application app, Workbooks workbooks, Hashtable options, ref Hashtable templatePageSetup)
+        protected static void SetPageOptionsFromTemplate(Application app, Workbooks workbooks, ArgParser options, ref Hashtable templatePageSetup)
         {
             if (!HasTemplateOption(options))
             {
@@ -709,7 +745,7 @@ namespace OfficeToPDF
 
             try
             {
-                var template = workbooks.Open((string)options["template"]);
+                var template = workbooks.Open(options.template);
                 AddCOMDelay(options);
                 if (template != null)
                 {
@@ -776,11 +812,11 @@ namespace OfficeToPDF
         }
 
         // Add in the required millisecond delay
-        private static void AddCOMDelay(Hashtable options)
+        private static void AddCOMDelay(ArgParser options)
         {
-            if ((int)options["excel_delay"] > 0)
+            if (options.excel_delay > 0)
             {
-                Thread.Sleep((int)options["excel_delay"]);
+                Thread.Sleep(options.excel_delay);
             }
         }
 

@@ -18,14 +18,10 @@
  */
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Runtime.InteropServices;
-using MSCore = Microsoft.Office.Core;
 using MSProject = Microsoft.Office.Interop.MSProject;
 
 
@@ -34,29 +30,50 @@ namespace OfficeToPDF
     /// <summary>
     /// Handle conversion of Project mpp files
     /// </summary>
-    class ProjectConverter: Converter
+    class ProjectConverter: Converter, IConverter
     {
-        public static new int Convert(String inputFile, String outputFile, Hashtable options)
+        ExitCode IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
         {
-            Boolean running = (Boolean)options["noquit"];
-            MSProject.Application app = null;
-            object missing = System.Reflection.Missing.Value;
+            if (options.verbose)
+            {
+                Console.WriteLine("Converting with Project converter");
+            }
+            return Convert(inputFile, outputFile, options);
+        }
+
+        public static ExitCode StartProject(ref Boolean running, ref MSProject.Application project)
+        {
             try
             {
-                try
-                {
-                    app = (MSProject.Application)Marshal.GetActiveObject("MSProject.Application");
-                }
-                catch (System.Exception)
-                {
-                    app = new MSProject.Application();
-                    running = false;
-                }
+                project = (MSProject.Application)Marshal.GetActiveObject("MSProject.Application");
+            }
+            catch (System.Exception)
+            {
+                project = new MSProject.Application();
+                running = false;
+            }
+            return ExitCode.Success;
+        }
+
+        static ExitCode Convert(String inputFile, String outputFile, ArgParser options)
+        {
+            Boolean running = options.noquit;
+            MSProject.Application app = null;
+            object missing = System.Reflection.Missing.Value;
+            IWatchdog watchdog = new NullWatchdog();
+            try
+            {
+                ExitCode result = StartProject(ref running, ref app);
+                if (result != ExitCode.Success)
+                    return result;
+
+                watchdog = WatchdogFactory.CreateStarted(app, options.timeout);
+
                 System.Type type = app.GetType();
                 if (type.GetMethod("DocumentExport") == null || System.Convert.ToDouble(app.Version.ToString(), new CultureInfo("en-US")) < 14)
                 {
                     Console.WriteLine("Not implemented with Office version {0}", app.Version);
-                    return (int)ExitCode.UnsupportedFileFormat;
+                    return ExitCode.UnsupportedFileFormat;
                 }
 
                 app.ShowWelcome = false;
@@ -64,8 +81,8 @@ namespace OfficeToPDF
                 app.DisplayPlanningWizard = false;
                 app.DisplayWizardErrors = false;
 
-                Boolean includeProps = !(Boolean)options["excludeprops"];
-                Boolean markup = (Boolean)options["markup"];
+                Boolean includeProps = !options.excludeprops;
+                Boolean markup = options.markup;
                 
                 FileInfo fi = new FileInfo(inputFile);
                 switch(fi.Extension)
@@ -77,26 +94,40 @@ namespace OfficeToPDF
                         }
                         if (project == null)
                         {
-                            return (int)ExitCode.UnknownError;
+                            return ExitCode.UnknownError;
                         }
                         app.DocumentExport(outputFile, MSProject.PjDocExportType.pjPDF, includeProps, markup, false, missing, missing);
                         app.FileCloseEx(MSProject.PjSaveType.pjDoNotSave, missing, missing);
                         break;
                 }
-                return File.Exists(outputFile) ? (int)ExitCode.Success : (int)ExitCode.UnknownError;
+                return File.Exists(outputFile) ? ExitCode.Success : ExitCode.UnknownError;
             }
             catch (System.Exception e)
             {
                 Console.WriteLine(e.Message);
-                return (int)ExitCode.UnknownError;
+                return ExitCode.UnknownError;
             }
             finally
             {
+                watchdog.Stop();
+
                 if (app != null && !running)
                 {
-                    ((MSProject.Application)app).Quit();
+                    CloseProjectApplication(app);
                 }
                 ReleaseCOMObject(app);
+            }
+        }
+
+        internal static void CloseProjectApplication(MSProject.Application app)
+        {
+            try
+            {
+                ((MSProject.Application)app).Quit();
+            }
+            catch (COMException)
+            {
+                // NOOP - The watchdog may have gone off
             }
         }
     }

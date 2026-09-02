@@ -20,18 +20,24 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using PdfSharp.Xps;
 
 namespace OfficeToPDF
 {
     /// <summary>
     /// Handle conversion of XPS files
     /// </summary>
-    class XpsConverter: Converter
+    class XpsConverter: Converter, IConverter
     {
-        public static new int Convert(String inputFile, String outputFile, Hashtable options)
+        ExitCode IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
+        {
+            if (options.verbose)
+            {
+                Console.WriteLine("Converting with XPS converter");
+            }
+            return Convert(inputFile, outputFile, options);
+        }
+
+        public static ExitCode Convert(String inputFile, String outputFile, Hashtable options)
         {
             try
             {
@@ -39,11 +45,11 @@ namespace OfficeToPDF
                 PdfSharp.Xps.XpsConverter.Convert(inputFile, outputFile, 0);
                 if (System.IO.File.Exists(outputFile))
                 {
-                    return (int)ExitCode.Success;
+                    return ExitCode.Success;
                 }
             }
             catch (Exception) { }
-            return (int)ExitCode.UnknownError;
+            return ExitCode.UnknownError;
         }
     }
 }

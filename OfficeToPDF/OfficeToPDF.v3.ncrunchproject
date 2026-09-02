@@ -1,0 +1,7 @@
+﻿<ProjectConfiguration>
+  <Settings>
+    <HiddenComponentWarnings>
+      <Value>PostBuildEventDisabled</Value>
+    </HiddenComponentWarnings>
+  </Settings>
+</ProjectConfiguration>

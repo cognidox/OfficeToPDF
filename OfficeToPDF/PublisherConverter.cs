@@ -18,13 +18,8 @@
  */
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
 using System.Runtime.InteropServices;
-using MSCore = Microsoft.Office.Core;
 using Microsoft.Office.Interop.Publisher;
 
 namespace OfficeToPDF
@@ -32,96 +27,124 @@ namespace OfficeToPDF
     /// <summary>
     /// Handle conversion of Microsoft Publisher files
     /// </summary>
-    class PublisherConverter: Converter
+    class PublisherConverter: Converter, IConverter
     {
-        public static new int Convert(String inputFile, String outputFile, Hashtable options)
+        ExitCode IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
         {
-            List<PDFBookmark> bookmarks = new List<PDFBookmark>();
+            if (options.verbose)
+            {
+                Console.WriteLine("Converting with Publisher converter");
+            }
             return Convert(inputFile, outputFile, options, ref bookmarks);
         }
 
-        public static new int Convert(String inputFile, String outputFile, Hashtable options, ref List<PDFBookmark> bookmarks)
+        public static ExitCode StartPublisher(ref Boolean running, ref Application publisher)
         {
-            Boolean running = (Boolean)options["noquit"];
-            Microsoft.Office.Interop.Publisher.Application app = null;
-            String tmpFile = null;
             try
             {
-                try
+                publisher = (Microsoft.Office.Interop.Publisher.Application)Marshal.GetActiveObject("Publisher.Application");
+            }
+            catch (System.Exception)
+            {
+                publisher = new Microsoft.Office.Interop.Publisher.Application();
+                running = false;
+            }
+            return ExitCode.Success;
+        }
+
+        static ExitCode Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
+        {
+            Boolean running = options.noquit;
+            Microsoft.Office.Interop.Publisher.Application publisher = null;
+            String tmpFile = null;
+            IWatchdog watchdog = new NullWatchdog();
+            try
+            {
+                ExitCode result = StartPublisher(ref running, ref publisher);
+                if (result != ExitCode.Success)
+                    return result;
+
+                watchdog = WatchdogFactory.CreateStarted(publisher, options.timeout);
+
+                Boolean nowrite = options.@readonly;
+                bool pdfa = options.pdfa;
+                if (options.hidden)
                 {
-                    app = (Microsoft.Office.Interop.Publisher.Application)Marshal.GetActiveObject("Publisher.Application");
-                }
-                catch (System.Exception)
-                {
-                    app = new Microsoft.Office.Interop.Publisher.Application();
-                    running = false;
-                }
-                Boolean nowrite = (Boolean)options["readonly"];
-                bool pdfa = (Boolean)options["pdfa"] ? true : false;
-                if ((Boolean)options["hidden"])
-                {
-                    var activeWin = app.ActiveWindow;
+                    var activeWin = publisher.ActiveWindow;
                     activeWin.Visible = false;
                     ReleaseCOMObject(activeWin);
                 }
-                app.Open(inputFile, nowrite, false, PbSaveOptions.pbDoNotSaveChanges);
+                publisher.Open(inputFile, nowrite, false, PbSaveOptions.pbDoNotSaveChanges);
                 PbFixedFormatIntent quality = PbFixedFormatIntent.pbIntentStandard;
-                if ((Boolean)options["print"])
+                if (options.print)
                 {
                     quality = PbFixedFormatIntent.pbIntentPrinting;
                 }
-                if ((Boolean)options["screen"])
+                if (options.screen)
                 {
                     quality = PbFixedFormatIntent.pbIntentMinimum;
                 }
-                Boolean includeProps = !(Boolean)options["excludeprops"];
-                Boolean includeTags = !(Boolean)options["excludetags"];
+                Boolean includeProps = !options.excludeprops;
+                Boolean includeTags = !options.excludetags;
 
                 // Try and avoid dialogs about versions
                 tmpFile = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".pub";
-                var activeDocument = app.ActiveDocument;
+                var activeDocument = publisher.ActiveDocument;
                 activeDocument.SaveAs(tmpFile, PbFileFormat.pbFilePublication, false);
                 activeDocument.ExportAsFixedFormat(PbFixedFormatType.pbFixedFormatTypePDF, outputFile, quality, includeProps, -1, -1, -1, -1, -1, -1, -1, true, PbPrintStyle.pbPrintStyleDefault, includeTags, true, pdfa);
 
                 // Determine if we need to make bookmarks
-                if ((bool)options["bookmarks"])
+                if (options.bookmarks)
                 {
-                    loadBookmarks(activeDocument, ref bookmarks, options);
-
+                    LoadBookmarks(activeDocument, ref bookmarks, options);
                 }
                 activeDocument.Close();
 
                 ReleaseCOMObject(activeDocument);
-                return (int)ExitCode.Success;
+                return ExitCode.Success;
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
-                return (int)ExitCode.UnknownError;
+                return ExitCode.UnknownError;
             }
             finally
             {
+                watchdog.Stop();
+
                 if (tmpFile != null)
                 {
                     System.IO.File.Delete(tmpFile);
                 }
-                if (app != null)
+                if (publisher != null)
                 {
-                    ((Microsoft.Office.Interop.Publisher._Application)app).Quit();
+                    ClosePublisherApplication(publisher);
                 }
-                ReleaseCOMObject(app);
+                ReleaseCOMObject(publisher);
+            }
+        }
+
+        internal static void ClosePublisherApplication(Application publisher)
+        {
+            try
+            {
+                ((Microsoft.Office.Interop.Publisher._Application)publisher).Quit();
+            }
+            catch (COMException)
+            {
+                // NOOP - The watchdog may have gone off
             }
         }
 
         // Loop through all the pages in the document creating bookmark items for them
-        private static void loadBookmarks(Document activeDocument, ref List<PDFBookmark> bookmarks, Hashtable options)
+        private static void LoadBookmarks(Document activeDocument, ref List<PDFBookmark> bookmarks, ArgParser options)
         {
             var pages = activeDocument.Pages;
             if (pages.Count > 0)
             {
                 // Create a top-level bookmark
                 var parentBookmark = new PDFBookmark();
-                parentBookmark.title = (string)options["original_basename"];
+                parentBookmark.title = options.original_basename;
                 parentBookmark.page = 1;
                 parentBookmark.children = new List<PDFBookmark>();
 

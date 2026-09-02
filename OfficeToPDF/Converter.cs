@@ -29,7 +29,6 @@ using Ghostscript.NET.Processor;
 using OpenMcdf;
 using OpenMcdf.Extensions;
 using System.IO.Packaging;
-using DocumentFormat.OpenXml.Presentation;
 using DocumentFormat.OpenXml.Packaging;
 
 namespace OfficeToPDF
@@ -41,36 +40,13 @@ namespace OfficeToPDF
     /// </summary>
     class Converter
     {
+        protected static WatchdogFactory WatchdogFactory { get; } = new WatchdogFactory();
+
         private enum DocumentFileTypes
         {
             Unknown = 0,
             CDF = 1,
             OpenXML = 2
-        }
-
-        /// <summary>
-        /// Converts an input file to an output PDF
-        /// </summary>
-        /// <param name="inputFile">Full path of the input file</param>
-        /// <param name="outputFile">Full path of the file to output PDF</param>
-        /// <param name="options">A set of options passed in from the main program</param>
-        /// <returns>0 on success, or an error code on failure</returns>
-        public static int Convert(String inputFile, String outputFile, Hashtable options)
-        {
-            return (int)ExitCode.UnknownError;
-        }
-
-        /// <summary>
-        /// Converts the input file to a PDF and updates a reference to a set of bookmarks
-        /// </summary>
-        /// <param name="inputFile">Full path of the input file</param>
-        /// <param name="outputFile">Full path of the file to output PDF</param>
-        /// <param name="options">A set of options passed in from the main program</param>
-        /// <param name="bookmarks">A reference to bookmarks that need to be added to the PDF</param>
-        /// <returns>0 on success, or an error code on failure</returns>
-        public static int Convert(String inputFile, String outputFile, Hashtable options, ref List<PDFBookmark> bookmarks)
-        {
-            return (int)ExitCode.UnknownError;
         }
 
         /// <summary>
@@ -80,7 +56,7 @@ namespace OfficeToPDF
         /// <remarks>
         /// See https://support.microsoft.com/en-gb/help/317109/office-application-does-not-exit-after-automation-from-visual-studio-n
         /// </remarks>
-        protected static void ReleaseCOMObject(object obj)
+        internal static void ReleaseCOMObject(object obj)
         {
             try
             {

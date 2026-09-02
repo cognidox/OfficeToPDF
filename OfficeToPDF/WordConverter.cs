@@ -33,44 +33,96 @@ namespace OfficeToPDF
     /// <summary>
     /// Handle conversion of Word files
     /// </summary>
-    class WordConverter : Converter
+    internal class WordConverter : Converter, IConverter
     {
+        ExitCode IConverter.Convert(String inputFile, String outputFile, ArgParser options, ref List<PDFBookmark> bookmarks)
+        {
+            if (options.verbose)
+            {
+                Console.WriteLine("Converting with Word converter");
+            }
+            return Convert(inputFile, outputFile, options);
+        }
+
+        public static ExitCode StartWord(ref Boolean running, ref Application word)
+        {
+            try
+            {
+                word = (Microsoft.Office.Interop.Word.Application)Marshal.GetActiveObject("Word.Application");
+            }
+            catch (System.Exception)
+            {
+                int tries = 10;
+                word = new Microsoft.Office.Interop.Word.Application();
+                running = false;
+                while (tries > 0)
+                {
+                    try
+                    {
+                        // Try to set a property on the object
+                        word.ScreenUpdating = false;
+                    }
+                    catch (COMException)
+                    {
+                        // Decrement the number of tries and have a bit of a snooze
+                        tries--;
+                        Thread.Sleep(500);
+                        continue;
+                    }
+                    // Looks ok, so bail out of the loop
+                    break;
+                }
+                if (tries == 0)
+                {
+                    ReleaseCOMObject(word);
+                    return ExitCode.ApplicationError;
+                }
+            }
+            return ExitCode.Success;
+        }
+
         /// <summary>
         /// Convert a Word file to PDF
         /// </summary>
         /// <param name="inputFile">Full path of the input Word file</param>
         /// <param name="outputFile">Full path of the output PDF</param>
         /// <returns></returns>
-        public static new int Convert(String inputFile, String outputFile, Hashtable options)
+        internal static ExitCode Convert(String inputFile, String outputFile, ArgParser options)
         {
-            Boolean running = (Boolean)options["noquit"];
+            Boolean running = options.noquit;
             Application word = null;
             object oMissing = System.Reflection.Missing.Value;
             Template tmpl;
             String temporaryStorageDir = null;
             float wordVersion = 0;
-            List<AppOption> wordOptionList = new List<AppOption>();
+            List<IAppOption> wordOptionList = new List<IAppOption>();
+            IWatchdog watchdog = new NullWatchdog();
             try
             {
+                ExitCode result = StartWord(ref running, ref word);
+                if (result != ExitCode.Success)
+                    return result;
+
+                watchdog = WatchdogFactory.CreateStarted(word, options.timeout);
+
                 String filename = (String)inputFile;
                 Boolean hasSignatures = WordConverter.HasDigitalSignatures(filename);
                 Boolean fileIsCorrupt = WordConverter.IsFileCorrupt(filename);
-                Boolean visible = !(Boolean)options["hidden"];
-                Boolean openAndRepair = !(Boolean)options["word_no_repair"];
-                Boolean nowrite = (Boolean)options["readonly"] || fileIsCorrupt;
-                Boolean includeProps = !(Boolean)options["excludeprops"];
-                Boolean includeTags = !(Boolean)options["excludetags"];
-                Boolean bitmapMissingFonts = !(Boolean)options["word_ref_fonts"];
-                Boolean isTempWord = (options.ContainsKey("IsTempWord") && (Boolean)options["IsTempWord"]);
+                Boolean visible = !options.hidden;
+                Boolean openAndRepair = !options.word_no_repair;
+                Boolean nowrite = options.@readonly || fileIsCorrupt;
+                Boolean includeProps = !options.excludeprops;
+                Boolean includeTags = !options.excludetags;
+                Boolean bitmapMissingFonts = !options.word_ref_fonts;
+                Boolean isTempWord = options.IsTempWord; // Indication of converting an Outlook message
                 
-                bool pdfa = (Boolean)options["pdfa"] ? true : false;
                 String writePassword = "";
                 String readPassword = "";
                 int maxPages = 0;
 
                 WdExportOptimizeFor quality = WdExportOptimizeFor.wdExportOptimizeForPrint;
                 WdExportItem showMarkup = WdExportItem.wdExportDocumentContent;
-                WdExportCreateBookmarks bookmarks = (Boolean)options["bookmarks"] ?
+                WdExportCreateBookmarks bookmarks = options.bookmarks ?
                     WdExportCreateBookmarks.wdExportCreateHeadingBookmarks :
                     WdExportCreateBookmarks.wdExportCreateNoBookmarks;
                 Options wdOptions = null;
@@ -78,43 +130,10 @@ namespace OfficeToPDF
                 Template normalTemplate = null;
                 
                 tmpl = null;
-                try
-                {
-                    word = (Microsoft.Office.Interop.Word.Application)Marshal.GetActiveObject("Word.Application");
-                }
-                catch (System.Exception)
-                {
-                    int tries = 10;
-                    word = new Microsoft.Office.Interop.Word.Application();
-                    running = false;
-                    while (tries > 0)
-                    {
-                        try
-                        {
-                            // Try to set a property on the object
-                            word.ScreenUpdating = false;
-                        }
-                        catch (COMException)
-                        {
-                            // Decrement the number of tries and have a bit of a snooze
-                            tries--;
-                            Thread.Sleep(500);
-                            continue;
-                        }
-                        // Looks ok, so bail out of the loop
-                        break;
-                    }
-                    if (tries == 0)
-                    {
-                        ReleaseCOMObject(word);
-                        return (int)ExitCode.ApplicationError;
-                    }
-                }
-
                 wdOptions = word.Options;
                 word.DisplayAlerts = WdAlertLevel.wdAlertsNone;
                 // Issue #48 - we should allow control over whether the history is lost
-                if (!(Boolean)options["word_keep_history"])
+                if (!options.word_keep_history)
                 {
                     word.DisplayRecentFiles = false;
                 }
@@ -125,71 +144,72 @@ namespace OfficeToPDF
                 // Set the Word options in a way that allows us to reset the options when we finish
                 try
                 {
-                    wordOptionList.Add(new AppOption("AlertIfNotDefault", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("AllowReadingMode", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("PrecisePositioning", true, ref wdOptions));
-                    wordOptionList.Add(new AppOption("UpdateFieldsAtPrint", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("UpdateLinksAtPrint", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("UpdateLinksAtOpen", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("UpdateFieldsWithTrackedChangesAtPrint", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("WarnBeforeSavingPrintingSendingMarkup", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("BackgroundSave", true, ref wdOptions));
-                    wordOptionList.Add(new AppOption("SavePropertiesPrompt", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("DoNotPromptForConvert", true, ref wdOptions));
-                    wordOptionList.Add(new AppOption("PromptUpdateStyle", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("ConfirmConversions", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("CheckGrammarAsYouType", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("CheckGrammarWithSpelling", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("CheckSpellingAsYouType", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("DisplaySmartTagButtons", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("EnableLivePreview", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("ShowReadabilityStatistics", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("SuggestSpellingCorrections", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("AllowDragAndDrop", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("EnableMisusedWordsDictionary", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("ShowFormatError", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("StoreRSIDOnSave", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("SaveNormalPrompt", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("AllowFastSave", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("BackgroundOpen", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("ShowMarkupOpenSave", false, ref wdOptions));
-                    wordOptionList.Add(new AppOption("SaveInterval", 0, ref wdOptions));
-                    wordOptionList.Add(new AppOption("PrintHiddenText", (Boolean)options["word_show_hidden"], ref wdOptions));
-                    wordOptionList.Add(new AppOption("MapPaperSize", !(Boolean)options["word_no_map_papersize"], ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.AlertIfNotDefault), false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.AllowReadingMode), false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.PrecisePositioning), true, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.UpdateFieldsAtPrint), false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.UpdateLinksAtPrint), false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.UpdateLinksAtOpen), false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.UpdateFieldsWithTrackedChangesAtPrint), false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.WarnBeforeSavingPrintingSendingMarkup), false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.BackgroundSave), true, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.SavePropertiesPrompt), false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.DoNotPromptForConvert), true, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.PromptUpdateStyle), false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.ConfirmConversions), false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.CheckGrammarAsYouType), false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.CheckGrammarWithSpelling), false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.CheckSpellingAsYouType), false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.DisplaySmartTagButtons), false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.EnableLivePreview), false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.ShowReadabilityStatistics), false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.SuggestSpellingCorrections), false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.AllowDragAndDrop), false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.EnableMisusedWordsDictionary), false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.ShowFormatError), false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.StoreRSIDOnSave), false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.SaveNormalPrompt), false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.AllowFastSave), false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.BackgroundOpen), false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.ShowMarkupOpenSave), false, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.SaveInterval), 0, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.PrintHiddenText), options.word_show_hidden, ref wdOptions));
+                    wordOptionList.Add(AppOptionFactory.Create(nameof(Options.MapPaperSize), !options.word_no_map_papersize, ref wdOptions));
                 }
                 catch (SystemException)
                 {
+
                 }
 
                 // Set up the PDF output quality
-                if ((Boolean)options["print"])
+                if (options.print)
                 {
                     quality = WdExportOptimizeFor.wdExportOptimizeForPrint;
                 }
-                if ((Boolean)options["screen"])
+                if (options.screen)
                 {
                     quality = WdExportOptimizeFor.wdExportOptimizeForOnScreen;
                 }
 
-                if ((Boolean)options["markup"])
+                if (options.markup)
                 {
                     showMarkup = WdExportItem.wdExportDocumentWithMarkup;
                 }
 
-                if (!String.IsNullOrEmpty((String)options["password"]))
+                if (!String.IsNullOrEmpty(options.password))
                 {
-                    readPassword = (String)options["password"];
+                    readPassword = options.password;
                 }
 
-                if (!String.IsNullOrEmpty((String)options["writepassword"]))
+                if (!String.IsNullOrEmpty(options.writepassword))
                 {
-                    writePassword = (String)options["writepassword"];
+                    writePassword = options.writepassword;
                 }
 
                 // Large Word files may simply not print reliably - if the word_max_pages
                 // configuration option is set, then we must close up and forget about 
                 // converting the file.
-                maxPages = (int)options[@"word_max_pages"];
+                maxPages = options.word_max_pages;
 
                 documents = word.Documents;
                 normalTemplate = word.NormalTemplate;
@@ -199,7 +219,7 @@ namespace OfficeToPDF
                 {
                     normalTemplate.Saved = true;
                     Console.WriteLine("Unable to open password protected file");
-                    return (int)ExitCode.PasswordFailure;
+                    return ExitCode.PasswordFailure;
                 }
 
                 // If we are opening a document with a write password and no read password, and
@@ -220,12 +240,12 @@ namespace OfficeToPDF
                 Document doc = null;
                 try
                 {
-                    if ((bool)options["merge"] && !String.IsNullOrEmpty((string)options["template"]) &&
-                        File.Exists((string)options["template"]) &&
-                        System.Text.RegularExpressions.Regex.IsMatch((string)options["template"], @"^.*\.dot[mx]?$", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                    if (options.merge && !String.IsNullOrEmpty(options.template) &&
+                        File.Exists(options.template) &&
+                        System.Text.RegularExpressions.Regex.IsMatch(options.template, @"^.*\.dot[mx]?$", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
                     {
                         // Create a new document based on a template
-                        doc = documents.Add((string)options["template"]);
+                        doc = documents.Add(options.template);
                         Object rStart = 0;
                         Object rEnd = 0;
                         Range range = doc.Range(rStart, rEnd);
@@ -247,7 +267,7 @@ namespace OfficeToPDF
                 catch (COMException)
                 {
                     Console.WriteLine("Unable to open file " + filename);
-                    return (int)ExitCode.FileOpenFailure;
+                    return ExitCode.FileOpenFailure;
                 }
 
                 // Check if there are signatures in the document which changes how we do things
@@ -295,31 +315,31 @@ namespace OfficeToPDF
                     // Handle markup
                     try
                     {
-                        if ((Boolean)options["word_show_all_markup"])
+                        if (options.word_show_all_markup)
                         {
-                            options["word_show_comments"] = true;
-                            options["word_show_revs_comments"] = true;
-                            options["word_show_format_changes"] = true;
-                            options["word_show_ink_annot"] = true;
-                            options["word_show_ins_del"] = true;
+                            options.word_show_comments = true;
+                            options.word_show_revs_comments = true;
+                            options.word_show_format_changes = true;
+                            options.word_show_ink_annot = true;
+                            options.word_show_ins_del = true;
                         }
-                        if ((Boolean)options["word_show_comments"] ||
-                            (Boolean)options["word_show_revs_comments"] ||
-                            (Boolean)options["word_show_format_changes"] ||
-                            (Boolean)options["word_show_ink_annot"] ||
-                            (Boolean)options["word_show_ins_del"] ||
+                        if (options.word_show_comments ||
+                            options.word_show_revs_comments ||
+                            options.word_show_format_changes ||
+                            options.word_show_ink_annot ||
+                            options.word_show_ins_del ||
                             showMarkup == WdExportItem.wdExportDocumentWithMarkup)
                         {
-                            docWinView.MarkupMode = (Boolean)options["word_markup_balloon"] ?
+                            docWinView.MarkupMode = options.word_markup_balloon ?
                                 WdRevisionsMode.wdBalloonRevisions : WdRevisionsMode.wdInLineRevisions;
                         }
                         word.PrintPreview = false;
                         docWinView.RevisionsView = WdRevisionsView.wdRevisionsViewFinal;
-                        docWinView.ShowRevisionsAndComments = (Boolean)options["word_show_revs_comments"];
-                        docWinView.ShowComments = (Boolean)options["word_show_comments"];
-                        docWinView.ShowFormatChanges = (Boolean)options["word_show_format_changes"];
-                        docWinView.ShowInkAnnotations = (Boolean)options["word_show_ink_annot"];
-                        docWinView.ShowInsertionsAndDeletions = (Boolean)options["word_show_ins_del"];
+                        docWinView.ShowRevisionsAndComments = options.word_show_revs_comments;
+                        docWinView.ShowComments = options.word_show_comments;
+                        docWinView.ShowFormatChanges = options.word_show_format_changes;
+                        docWinView.ShowInkAnnotations = options.word_show_ink_annot;
+                        docWinView.ShowInsertionsAndDeletions = options.word_show_ins_del;
                     }
                     catch (SystemException e) {
                         Console.WriteLine("Failed to set revision settings {0}", e.Message);
@@ -337,7 +357,7 @@ namespace OfficeToPDF
                         doc.TrackRevisions = false;
                         doc.TrackFormatting = false;
 
-                        if ((Boolean)options["word_fix_table_columns"])
+                        if (options.word_fix_table_columns)
                         {
                             FixWordTableColumnWidths(doc);
                         }
@@ -346,7 +366,7 @@ namespace OfficeToPDF
                     normalTemplate.Saved = true;
 
                     // Hide the document window if need be
-                    if ((Boolean)options["hidden"])
+                    if (options.hidden)
                     {
                         word.Visible = false;
                         var activeWin = word.ActiveWindow;
@@ -357,9 +377,9 @@ namespace OfficeToPDF
 
                     // Check if we have a template file to apply to this document
                     // The template must be a file and must end in .dot, .dotx or .dotm
-                    if (!String.IsNullOrEmpty((String)options["template"]) && !(bool)options["merge"])
+                    if (!String.IsNullOrEmpty(options.template) && !options.merge)
                     {
-                        string template = (string)options["template"];
+                        string template = options.template;
                         if (File.Exists(template) && System.Text.RegularExpressions.Regex.IsMatch(template, @"^.*\.dot[mx]?$"))
                         {
                             doc.set_AttachedTemplate(template);
@@ -373,19 +393,19 @@ namespace OfficeToPDF
                     }
 
                     // See if we have to update fields
-                    if (!(Boolean)options["word_no_field_update"])
+                    if (! options.word_no_field_update)
                     {
                         UpdateDocumentFields(doc, word, inputFile, options);
                     }
 
                     var pageSetup = doc.PageSetup;
-                    if ((float)options["word_header_dist"] >= 0)
+                    if (options.word_header_dist >= 0)
                     {
-                        pageSetup.HeaderDistance = (float)options["word_header_dist"];
+                        pageSetup.HeaderDistance = options.word_header_dist;
                     }
-                    if ((float)options["word_footer_dist"] >= 0)
+                    if (options.word_footer_dist >= 0)
                     {
-                        pageSetup.FooterDistance = (float)options["word_footer_dist"];
+                        pageSetup.FooterDistance = options.word_footer_dist;
                     }
                     ReleaseCOMObject(pageSetup);
                     try
@@ -417,18 +437,18 @@ namespace OfficeToPDF
                 // renders borders correctly
                 word.ScreenUpdating = true;
 
-                if (String.IsNullOrEmpty((string)options["printer"])) {
+                if (String.IsNullOrEmpty(options.printer)) {
                     // No printer given, so export
                     try
                     {
                         doc.ExportAsFixedFormat(outputFile, WdExportFormat.wdExportFormatPDF, false,
                         quality, WdExportRange.wdExportAllDocument,
-                        1, 1, showMarkup, includeProps, true, bookmarks, includeTags, bitmapMissingFonts, pdfa);
+                        1, 1, showMarkup, includeProps, true, bookmarks, includeTags, bitmapMissingFonts, options.pdfa);
                     } catch (Exception)
                     {
                         // Couldn't export, so see if there is a fallback printer
-                        if (!String.IsNullOrEmpty((string)options["fallback_printer"])) {
-                            PrintToGhostscript((string)options["fallback_printer"], outputFile, printFunc);
+                        if (!String.IsNullOrEmpty(options.fallback_printer)) {
+                            PrintToGhostscript(options.fallback_printer, outputFile, printFunc);
                         }
                         else
                         {
@@ -437,7 +457,7 @@ namespace OfficeToPDF
                     }
                 } else
                 {
-                    PrintToGhostscript((string)options["printer"], outputFile, printFunc);
+                    PrintToGhostscript(options.printer, outputFile, printFunc);
                 }
 
                 if (tmpl != null)
@@ -454,7 +474,7 @@ namespace OfficeToPDF
                 ((_Document)doc).Close(ref saveChanges, ref oMissing, ref oMissing);
 
                 // Reset options
-                foreach (AppOption opt in wordOptionList)
+                foreach (IAppOption opt in wordOptionList)
                 {
                     opt.ResetValue(ref wdOptions);
                 }
@@ -465,15 +485,17 @@ namespace OfficeToPDF
                 ReleaseCOMObject(tmpl);
                 ReleaseCOMObject(normalTemplate);
 
-                return (int)ExitCode.Success;
+                return ExitCode.Success;
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
-                return (int)ExitCode.UnknownError;
+                return ExitCode.UnknownError;
             }
             finally
             {
+                watchdog.Stop();
+
                 if (temporaryStorageDir != null && Directory.Exists(temporaryStorageDir))
                 {
                     try
@@ -563,7 +585,7 @@ namespace OfficeToPDF
 
         // Try and close Word, giving time for Office to get
         // itself in order
-        private static bool CloseWordApplication(Microsoft.Office.Interop.Word.Application word)
+        internal static bool CloseWordApplication(Microsoft.Office.Interop.Word.Application word)
         {
             object oMissing = System.Reflection.Missing.Value;
             int tries = 20;
@@ -574,82 +596,14 @@ namespace OfficeToPDF
                     ((_Application)word).Quit(ref oMissing, ref oMissing, ref oMissing);
                     return true;
                 }
-                catch (COMException)
+                catch (COMException ce)
                 {
+                    if (ce.HResult == -2147023174) // The RPC server is unavailable. (Exception from HRESULT: 0x800706BA)
+                        break; // The watchdog may have gone off
                     Thread.Sleep(500);
                 }
             }
             return false;
-        }
-        // We want to be able to reset the options in Word so it doesn't affect subsequent
-        // usage
-        private class AppOption
-        {
-            public string Name { get; set; }
-            public Boolean Value { get; set; }
-            public Boolean OriginalValue { get; set; }
-            public int IntValue { get; set; }
-            public int OriginalIntValue { get; set; }
-            protected Type VarType { get; set; }
-            public AppOption(string name, Boolean value, ref Options wdOptions)
-            {
-                try
-                {
-                    Name = name;
-                    Value = value;
-                    VarType = typeof(Boolean);
-                    OriginalValue = (Boolean)wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.GetProperty, null, wdOptions, null);
-
-                    if (OriginalValue != value)
-                    {
-                        wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.SetProperty, null, wdOptions, new Object[] { value });
-                    }
-                }
-                catch
-                {
-                    // We may be setting word options that are not available in the version of word
-                    // being used, so just skip these errors
-                }
-            }
-            public AppOption(string name, int value, ref Options wdOptions)
-            {
-                try
-                {
-                    Name = name;
-                    IntValue = value;
-                    VarType = typeof(int);
-                    OriginalIntValue = (int)wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.GetProperty, null, wdOptions, null);
-
-                    if (OriginalIntValue != value)
-                    {
-                        wdOptions.GetType().InvokeMember(name, System.Reflection.BindingFlags.SetProperty, null, wdOptions, new Object[] { value });
-                    }
-                }
-                catch
-                {
-                    // We may be setting word options that are not available in the version of word
-                    // being used, so just skip these errors
-                }
-            }
-
-            // Allow the value on the options to be reset
-            public void ResetValue(ref Options wdOptions)
-            {
-                if (VarType == typeof(Boolean))
-                {
-                    if (Value != this.OriginalValue)
-                    {
-                        wdOptions.GetType().InvokeMember(Name, System.Reflection.BindingFlags.SetProperty, null, wdOptions, new Object[] { OriginalValue });
-                    }
-                }
-                else
-                {
-                    if (IntValue != OriginalIntValue)
-                    {
-                        wdOptions.GetType().InvokeMember(Name, System.Reflection.BindingFlags.SetProperty, null, wdOptions, new Object[] { OriginalIntValue });
-                    }
-                }
-            }
         }
 
         // Remove fill-in fields which can cause blocking dialogs
@@ -720,12 +674,12 @@ namespace OfficeToPDF
         }
 
         // Update all the fields in a document
-        private static void UpdateDocumentFields(Microsoft.Office.Interop.Word.Document doc, Microsoft.Office.Interop.Word.Application word, String inputFile, Hashtable options)
+        private static void UpdateDocumentFields(Microsoft.Office.Interop.Word.Document doc, Microsoft.Office.Interop.Word.Application word, String inputFile, ArgParser options)
         {
             // Update fields quickly if it is safe to do so. We have
             // to check for broken links as they may raise Word dialogs or leave broken content
-            if ((Boolean)options["word_field_quick_update"] ||
-                ((Boolean)options["word_field_quick_update_safe"] && !HasBrokenLinks(doc)))
+            if (options.word_field_quick_update ||
+                (options.word_field_quick_update_safe && !HasBrokenLinks(doc)))
             {
                 RemoveFillInFields(doc, true);
                 return;

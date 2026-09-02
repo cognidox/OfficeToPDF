@@ -1,5 +1,9 @@
 # OfficeToPDF
 
+![Build](https://github.com/cognidox/OfficeToPDF/actions/workflows/build.yml/badge.svg)
+
+![Windows badge](https://badgen.net/badge/icon/Windows?icon=windows&label)
+
 ## Giving back to the community
 
 [Cognidox](https://www.cognidox.com/) would not exist without the help of many open source projects. Perl,
@@ -22,7 +26,7 @@ documents to people outside the department.
 
 There are some technical requirements that must be met before you can use it:</p>
 
-* .NET Framework 4
+* .NET Framework 4.8
 * Office 2016, 2013, 2010 **or** Office 2007
 
 If you are using Office 2007, you will also need:
